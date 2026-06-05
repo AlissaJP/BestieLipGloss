@@ -2,27 +2,46 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ShoppingBag, Heart, Star, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, Heart, Star, MessageSquare, X, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
+const VALID_CODES: Record<string, number> = {
+  BESTIE10: 10,
+  BESTIE15: 15,
+};
+
 export default function MonComptePage() {
-  const { user } = useAuthStore();
+  const { user, addCoupon, removeCoupon } = useAuthStore();
   const { items: favoris } = useFavoritesStore();
   const { lang } = useLanguageStore();
   const t = translations[lang];
 
-  const [promoCode, setPromoCode] = useState('');
-  const [promoStatus, setPromoStatus] = useState<'valid' | 'invalid' | null>(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponStatus, setCouponStatus] = useState<'valid' | 'invalid' | 'duplicate' | null>(null);
 
-  const handlePromo = () => {
-    if (!promoCode.trim()) return;
-    // Demo: accept "BESTIE10" as valid
-    setPromoStatus(promoCode.toUpperCase() === 'BESTIE10' ? 'valid' : 'invalid');
-    setTimeout(() => setPromoStatus(null), 3000);
+  const savedCoupons = user?.coupons ?? [];
+
+  const handleAddCoupon = () => {
+    const code = couponInput.toUpperCase().trim();
+    if (!code) return;
+    if (VALID_CODES[code] === undefined) {
+      setCouponStatus('invalid');
+      setTimeout(() => setCouponStatus(null), 3000);
+      return;
+    }
+    if (savedCoupons.includes(code)) {
+      setCouponStatus('duplicate');
+      setTimeout(() => setCouponStatus(null), 3000);
+      return;
+    }
+    addCoupon(code);
+    setCouponInput('');
+    setCouponStatus('valid');
+    setTimeout(() => setCouponStatus(null), 3000);
   };
 
   const menuItems = [
@@ -60,9 +79,9 @@ export default function MonComptePage() {
 
       <div className="max-w-4xl mx-auto px-4 py-12">
 
-        {/* Promo code + Points */}
+        {/* Coupons + Points */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {/* Promo code card — 2/3 width */}
+          {/* Coupon card — 2/3 width */}
           <motion.div
             whileHover={{ y: -2 }}
             className="sm:col-span-2 bg-white rounded-2xl p-5 border border-pink-100 shadow-sm"
@@ -71,29 +90,68 @@ export default function MonComptePage() {
               <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
                 <span className="text-base">🏷️</span>
               </div>
-              <h3 className="font-playfair font-semibold text-gray-800">{t.account.promoTitle}</h3>
+              <h3 className="font-playfair font-semibold text-gray-800">Mes coupons</h3>
             </div>
+
+            {/* Saved coupons list */}
+            {savedCoupons.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                <AnimatePresence>
+                  {savedCoupons.map((code) => (
+                    <motion.div
+                      key={code}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-primary font-lato text-sm font-semibold px-3 py-1.5 rounded-full"
+                    >
+                      <span>🏷️ {code}</span>
+                      <span className="text-gray-400 text-xs">(-{VALID_CODES[code]}%)</span>
+                      <button
+                        onClick={() => removeCoupon(code)}
+                        className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
+                        aria-label={`Supprimer ${code}`}
+                      >
+                        <X size={13} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Add new coupon */}
             <div className="flex gap-2">
               <input
                 type="text"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handlePromo()}
-                placeholder={t.account.promoPlaceholder}
-                className="flex-1 font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-gray-50 focus:bg-white transition-colors"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCoupon()}
+                placeholder="Ex : BESTIE10"
+                className="flex-1 font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-gray-50 focus:bg-white transition-colors uppercase"
               />
               <button
-                onClick={handlePromo}
-                className="bg-primary text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap"
+                onClick={handleAddCoupon}
+                className="bg-primary text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
-                {t.account.promoApply}
+                <Plus size={14} />Enregistrer
               </button>
             </div>
-            {promoStatus && (
-              <p className={`font-lato text-xs mt-2.5 font-medium ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}>
-                {promoStatus === 'valid' ? t.account.promoSaved : t.account.promoInvalid}
-              </p>
-            )}
+            <AnimatePresence>
+              {couponStatus && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className={`font-lato text-xs mt-2 font-medium ${couponStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}
+                >
+                  {couponStatus === 'valid' && '✓ Coupon enregistré dans ta liste !'}
+                  {couponStatus === 'invalid' && 'Code invalide. Essaie BESTIE10 ou BESTIE15.'}
+                  {couponStatus === 'duplicate' && 'Ce coupon est déjà dans ta liste.'}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Points — 1/3 width */}

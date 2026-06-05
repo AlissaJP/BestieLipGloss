@@ -18,6 +18,7 @@ interface CartState {
   addItem: (product: Omit<CartItem, 'quantity'>) => void;
   removeItem: (variantKey: string) => void;
   updateQuantity: (variantKey: string, quantity: number) => void;
+  updateItemVariant: (oldKey: string, patch: Pick<CartItem, 'variantKey' | 'shade' | 'image' | 'bgColor'>) => void;
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -58,6 +59,13 @@ export const useCartStore = create<CartState>()(
           ),
         });
       },
+
+      updateItemVariant: (oldKey, patch) =>
+        set({
+          items: get().items.map((i) =>
+            i.variantKey === oldKey ? { ...i, ...patch } : i
+          ),
+        }),
 
       clearCart: () => set({ items: [] }),
       openCart: () => set({ isOpen: true }),

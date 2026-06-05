@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Clock, CreditCard, Truck, PackageCheck,
-  LogOut, CheckCircle, ArrowRight, TrendingUp, ShoppingBag, X,
+  LogOut, CheckCircle, ArrowRight, ArrowLeft, TrendingUp, ShoppingBag, X,
   Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
+  Package, Plus, Trash2, Edit3, Eye, EyeOff,
 } from 'lucide-react';
-import { useAdminStore, Order, OrderStatus, AdminCustomer } from '@/store/adminStore';
+import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct } from '@/store/adminStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
-type Tab = 'overview' | 'users' | 'pending' | 'paid' | 'shipping' | 'delivered';
+type Tab = 'overview' | 'users' | 'pending' | 'paid' | 'shipping' | 'delivered' | 'products';
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
   pending:   'bg-amber-50  text-amber-600  border border-amber-100',
@@ -265,7 +266,10 @@ function UserDrawer({ customer, orders, onClose }: {
 /* ─── Main dashboard ─── */
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isLoggedIn, logout, orders, customers, updateOrderStatus } = useAdminStore();
+  const {
+    isLoggedIn, logout, orders, customers, updateOrderStatus,
+    managedProducts, addProduct, updateProduct, deleteProduct, togglePublished,
+  } = useAdminStore();
   const { lang, setLang } = useLanguageStore();
   const t = translations[lang].admin;
   const [tab, setTab] = useState<Tab>('overview');
@@ -309,6 +313,7 @@ export default function AdminDashboard() {
     { id: 'paid',      label: t.nav.paid,      icon: <CreditCard size={15} />,   count: paid.length },
     { id: 'shipping',  label: t.nav.shipping,  icon: <Truck size={15} />,        count: shipping.length },
     { id: 'delivered', label: t.nav.delivered, icon: <PackageCheck size={15} />, count: delivered.length },
+    { id: 'products',  label: 'Produits',      icon: <Package size={15} />,       count: managedProducts.length },
   ];
 
   const handleTabSelect = (id: Tab) => {
@@ -592,6 +597,16 @@ export default function AdminDashboard() {
                   onAction={updateOrderStatus} statusLabels={t.status} />
               )}
 
+              {tab === 'products' && (
+                <ProductsTab
+                  products={managedProducts}
+                  onAdd={addProduct}
+                  onUpdate={updateProduct}
+                  onDelete={deleteProduct}
+                  onToggle={togglePublished}
+                />
+              )}
+
             </motion.div>
           </AnimatePresence>
         </main>
@@ -684,5 +699,435 @@ function OrdersSection({
         </div>
       )}
     </div>
+  );
+}
+
+/* ─── Product management ─── */
+
+const BG_OPTIONS: { value: string; color: string }[] = [
+  { value: 'bg-pink-100',    color: '#FCE7F3' },
+  { value: 'bg-pink-200',    color: '#FBCFE8' },
+  { value: 'bg-pink-300',    color: '#F9A8D4' },
+  { value: 'bg-pink-400',    color: '#F472B6' },
+  { value: 'bg-red-200',     color: '#FECACA' },
+  { value: 'bg-red-400',     color: '#F87171' },
+  { value: 'bg-red-900',     color: '#7F1D1D' },
+  { value: 'bg-amber-100',   color: '#FEF3C7' },
+  { value: 'bg-amber-200',   color: '#FDE68A' },
+  { value: 'bg-amber-300',   color: '#FCD34D' },
+  { value: 'bg-orange-200',  color: '#FED7AA' },
+  { value: 'bg-orange-300',  color: '#FDBA74' },
+  { value: 'bg-yellow-200',  color: '#FEF08A' },
+  { value: 'bg-purple-200',  color: '#E9D5FF' },
+  { value: 'bg-purple-300',  color: '#D8B4FE' },
+  { value: 'bg-fuchsia-300', color: '#F0ABFC' },
+  { value: 'bg-teal-100',    color: '#CCFBF1' },
+  { value: 'bg-green-100',   color: '#DCFCE7' },
+];
+
+const BADGE_OPTS = ['Best-seller ✨', 'Artisanal 🌿', 'Nouveau 🆕', 'Édition limitée 💎', 'Bio 🌱'];
+const INPUT_CLS = 'w-full font-lato text-sm border border-pink-100 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white transition-colors';
+
+function toSlug(str: string) {
+  return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string };
+type FormState = {
+  name: string; shade: string; introImage: string;
+  price_htg: string; price_usd: string; description: string;
+  badge: string; bgColor: string; stock: string;
+  variants: FormVariant[]; ingredients: string[]; benefits: string[];
+};
+
+function emptyForm(): FormState {
+  return { name: '', shade: '', introImage: '', price_htg: '', price_usd: '', description: '', badge: 'Best-seller ✨', bgColor: 'bg-pink-200', stock: '10', variants: [], ingredients: [], benefits: [] };
+}
+
+function productToForm(p: ManagedProduct): FormState {
+  return { name: p.name, shade: p.shade, introImage: p.introImage ?? '', price_htg: String(p.price_htg), price_usd: String(p.price_usd), description: p.description, badge: p.badge, bgColor: p.bgColor, stock: String(p.stock), variants: p.variants ? [...p.variants] : [], ingredients: [...p.ingredients], benefits: [...p.benefits] };
+}
+
+function FLabel({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+        {label}{required && <span className="text-primary ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2 mt-1">
+      {BG_OPTIONS.map((opt) => (
+        <button key={opt.value} type="button" onClick={() => onChange(opt.value)} title={opt.value}
+          style={{ background: opt.color }}
+          className={`w-8 h-8 rounded-full border-2 transition-all ${value === opt.value ? 'border-gray-700 scale-110 shadow-md' : 'border-white hover:scale-105'}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TagInput({ tags, placeholder, colorClass, onAdd, onRemove }: {
+  tags: string[]; placeholder: string; colorClass: string;
+  onAdd: (v: string) => void; onRemove: (i: number) => void;
+}) {
+  const [input, setInput] = useState('');
+  const add = () => { if (!input.trim()) return; onAdd(input.trim()); setInput(''); };
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2 min-h-[28px]">
+        {tags.map((tag, i) => (
+          <span key={i} className={`flex items-center gap-1 ${colorClass} font-lato text-xs px-3 py-1 rounded-full`}>
+            {tag}
+            <button type="button" onClick={() => onRemove(i)} className="opacity-60 hover:opacity-100 ml-0.5 hover:text-red-500 transition-colors"><X size={11} /></button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())} placeholder={placeholder} className={INPUT_CLS + ' text-xs py-2'} />
+        <button type="button" onClick={add} className="px-3 bg-primary text-white rounded-xl hover:bg-pink-400 transition-colors flex-shrink-0"><Plus size={13} /></button>
+      </div>
+    </div>
+  );
+}
+
+function ProductForm({ initial, onSave, onCancel }: {
+  initial: ManagedProduct | null;
+  onSave: (data: Omit<ManagedProduct, 'id' | 'published'>) => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState<FormState>(initial ? productToForm(initial) : emptyForm());
+  const [vForm, setVForm] = useState<FormVariant | null>(null);
+  const [vIdx, setVIdx] = useState<number | null>(null);
+
+  const upd = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((prev) => ({ ...prev, [k]: v }));
+
+  const openVariant = (v?: FormVariant, idx?: number) => {
+    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: 'bg-pink-300' });
+    setVIdx(idx ?? null);
+  };
+
+  const saveVariant = () => {
+    if (!vForm || !vForm.name.trim()) return;
+    const v = { ...vForm, id: vForm.id || toSlug(vForm.name) };
+    if (vIdx !== null) {
+      const arr = [...form.variants]; arr[vIdx] = v; upd('variants', arr);
+    } else {
+      upd('variants', [...form.variants, v]);
+    }
+    setVForm(null); setVIdx(null);
+  };
+
+  const handleSubmit = () => {
+    if (!form.name.trim() || !form.price_htg) return;
+    onSave({
+      slug: toSlug(form.name),
+      name: form.name.trim(),
+      shade: form.shade.trim(),
+      introImage: form.introImage.trim() || undefined,
+      price_htg: Number(form.price_htg) || 0,
+      price_usd: Number(form.price_usd) || 0,
+      description: form.description.trim(),
+      badge: form.badge,
+      bgColor: form.bgColor,
+      bgColorMini: form.variants.length > 0 ? form.variants.map((v) => v.bgColor) : [form.bgColor],
+      stock: Number(form.stock) || 0,
+      variants: form.variants.length > 0 ? form.variants : undefined,
+      ingredients: form.ingredients,
+      benefits: form.benefits,
+    });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={onCancel} className="w-9 h-9 rounded-xl bg-pink-50 hover:bg-pink-100 flex items-center justify-center text-gray-500 transition-colors">
+          <ArrowLeft size={16} />
+        </button>
+        <div>
+          <h2 className="font-playfair font-bold text-xl text-gray-800">{initial ? 'Modifier le produit' : 'Nouveau produit'}</h2>
+          <p className="font-lato text-xs text-gray-400">Sera enregistré comme brouillon — publie-le manuellement</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-24">
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Informations de base</p>
+            <FLabel label="Nom du produit" required>
+              <input value={form.name} onChange={(e) => upd('name', e.target.value)} placeholder="Ex : Rosée Matinale" className={INPUT_CLS} />
+              {form.name && <p className="font-lato text-[10px] text-gray-400 mt-1">Slug : /{toSlug(form.name)}</p>}
+            </FLabel>
+            <FLabel label="Teinte / sous-titre">
+              <input value={form.shade} onChange={(e) => upd('shade', e.target.value)} placeholder="Ex : Rose cerise nacré" className={INPUT_CLS} />
+            </FLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <FLabel label="Prix HTG" required>
+                <input type="number" value={form.price_htg} onChange={(e) => upd('price_htg', e.target.value)} placeholder="450" className={INPUT_CLS} />
+              </FLabel>
+              <FLabel label="Prix USD">
+                <input type="number" step="0.01" value={form.price_usd} onChange={(e) => upd('price_usd', e.target.value)} placeholder="3.50" className={INPUT_CLS} />
+              </FLabel>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FLabel label="Stock">
+                <input type="number" value={form.stock} onChange={(e) => upd('stock', e.target.value)} placeholder="10" className={INPUT_CLS} />
+              </FLabel>
+              <FLabel label="Badge">
+                <select value={form.badge} onChange={(e) => upd('badge', e.target.value)} className={INPUT_CLS}>
+                  {BADGE_OPTS.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </FLabel>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visuel</p>
+            <FLabel label="Photo d'introduction (URL)">
+              <input value={form.introImage} onChange={(e) => upd('introImage', e.target.value)} placeholder="https://…" className={INPUT_CLS} />
+              {form.introImage && (
+                <img src={form.introImage} alt="aperçu" className="mt-2 w-full h-32 object-cover rounded-xl border border-pink-100"
+                  onError={(e) => (e.currentTarget.style.display = 'none')} />
+              )}
+            </FLabel>
+            <FLabel label="Couleur de fond">
+              <ColorPicker value={form.bgColor} onChange={(v) => upd('bgColor', v)} />
+            </FLabel>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Description</p>
+            <textarea value={form.description} onChange={(e) => upd('description', e.target.value)} rows={4} placeholder="Décris le produit…" className={INPUT_CLS + ' resize-none'} />
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <div className="flex items-center justify-between">
+              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variétés ({form.variants.length})</p>
+              <button type="button" onClick={() => openVariant()} className="flex items-center gap-1 font-lato text-xs font-semibold text-primary hover:text-pink-400 transition-colors">
+                <Plus size={12} /> Ajouter
+              </button>
+            </div>
+
+            {vForm && (
+              <div className="border border-pink-200 rounded-xl p-4 space-y-3 bg-pink-50/40">
+                <p className="font-lato text-xs font-semibold text-gray-600">{vIdx !== null ? 'Modifier' : 'Nouvelle variété'}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={vForm.name} onChange={(e) => setVForm((v) => v ? { ...v, name: e.target.value } : v)} placeholder="Nom (ex : Cherry)" className={INPUT_CLS + ' text-xs py-2'} />
+                  <input value={vForm.shade} onChange={(e) => setVForm((v) => v ? { ...v, shade: e.target.value } : v)} placeholder="Teinte courte" className={INPUT_CLS + ' text-xs py-2'} />
+                </div>
+                <input value={vForm.image} onChange={(e) => setVForm((v) => v ? { ...v, image: e.target.value } : v)} placeholder="URL photo" className={INPUT_CLS + ' text-xs py-2'} />
+                <textarea value={vForm.description} onChange={(e) => setVForm((v) => v ? { ...v, description: e.target.value } : v)} rows={2} placeholder="Description…" className={INPUT_CLS + ' resize-none text-xs py-2'} />
+                <div>
+                  <p className="font-lato text-[10px] text-gray-400 mb-1.5">Couleur de fond</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BG_OPTIONS.map((opt) => (
+                      <button key={opt.value} type="button" onClick={() => setVForm((v) => v ? { ...v, bgColor: opt.value } : v)}
+                        style={{ background: opt.color }}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${vForm.bgColor === opt.value ? 'border-gray-700 scale-110' : 'border-white'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={saveVariant} className="flex-1 bg-primary text-white font-lato text-xs font-semibold py-2 rounded-xl hover:bg-pink-400 transition-colors">Enregistrer</button>
+                  <button type="button" onClick={() => { setVForm(null); setVIdx(null); }} className="px-4 bg-gray-100 text-gray-500 font-lato text-xs py-2 rounded-xl hover:bg-gray-200 transition-colors">Annuler</button>
+                </div>
+              </div>
+            )}
+
+            {form.variants.length > 0 && (
+              <div className="space-y-2">
+                {form.variants.map((v, i) => (
+                  <div key={v.id || i} className="flex items-center gap-3 bg-pink-50/60 rounded-xl px-3 py-2.5 border border-pink-100">
+                    {v.image ? (
+                      <img src={v.image} alt={v.name} className="w-9 h-9 rounded-lg object-cover border border-pink-100 flex-shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: BG_OPTIONS.find((o) => o.value === v.bgColor)?.color ?? '#F9A8D4' }} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-lato text-sm font-semibold text-gray-700 truncate">{v.name}</p>
+                      <p className="font-lato text-xs text-gray-400 truncate">{v.shade}</p>
+                    </div>
+                    <button type="button" onClick={() => openVariant(v, i)} className="text-gray-400 hover:text-primary transition-colors p-1"><Edit3 size={13} /></button>
+                    <button type="button" onClick={() => upd('variants', form.variants.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingrédients</p>
+            <TagInput tags={form.ingredients} placeholder="Ex : Beurre de karité"
+              colorClass="bg-green-50 border border-green-100 text-green-700"
+              onAdd={(v) => upd('ingredients', [...form.ingredients, v])}
+              onRemove={(i) => upd('ingredients', form.ingredients.filter((_, idx) => idx !== i))} />
+          </div>
+
+          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bénéfices</p>
+            <TagInput tags={form.benefits} placeholder="Ex : Hydratation longue durée"
+              colorClass="bg-blue-50 border border-blue-100 text-blue-700"
+              onAdd={(v) => upd('benefits', [...form.benefits, v])}
+              onRemove={(i) => upd('benefits', form.benefits.filter((_, idx) => idx !== i))} />
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 px-4 md:px-7 py-4 flex items-center justify-between gap-4 z-30"
+        style={{ boxShadow: '0 -4px 20px rgba(242,167,187,0.12)' }}>
+        <p className="font-lato text-xs text-gray-400 hidden sm:block">Le produit sera enregistré comme brouillon</p>
+        <div className="flex gap-3 ml-auto">
+          <button type="button" onClick={onCancel} className="font-lato text-sm text-gray-400 hover:text-gray-600 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            Annuler
+          </button>
+          <button type="button" onClick={handleSubmit} disabled={!form.name.trim() || !form.price_htg}
+            className="font-lato text-sm font-semibold text-white px-6 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+            {initial ? 'Enregistrer les modifications' : 'Enregistrer le produit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
+  p: ManagedProduct;
+  onEdit: (p: ManagedProduct) => void;
+  onDelete: (id: number) => void;
+  onToggle: (id: number) => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const bgColor = BG_OPTIONS.find((o) => o.value === p.bgColor)?.color ?? '#FBCFE8';
+
+  return (
+    <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden flex flex-col" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+      <div className="h-28 relative flex items-center justify-center" style={{ background: bgColor }}>
+        {p.introImage ? (
+          <img src={p.introImage} alt={p.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+        ) : (
+          <span className="text-5xl select-none">💋</span>
+        )}
+        <span className={`absolute top-2.5 right-2.5 font-lato text-[10px] font-bold px-2 py-0.5 rounded-full ${
+          p.published ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-600 border border-amber-100'
+        }`}>
+          {p.published ? '✓ Publié' : '⏸ Brouillon'}
+        </span>
+      </div>
+
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="min-w-0">
+            <p className="font-playfair font-bold text-gray-800 truncate">{p.name}</p>
+            <p className="font-lato text-xs text-gray-400 truncate">{p.shade}</p>
+          </div>
+          <span className="font-lato text-[10px] text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">#{p.id}</span>
+        </div>
+        <div className="flex items-center gap-2 mt-1.5 mb-4 flex-wrap">
+          <span className="font-playfair font-bold text-primary text-sm">{p.price_htg} HTG</span>
+          <span className="font-lato text-[10px] text-gray-400 bg-pink-50 px-2 py-0.5 rounded-full">{p.badge}</span>
+          {p.variants && <span className="font-lato text-[10px] text-gray-400">{p.variants.length} teintes</span>}
+          <span className="font-lato text-[10px] text-gray-400 ml-auto">Stock : {p.stock}</span>
+        </div>
+
+        <div className="flex gap-2 mt-auto">
+          <button onClick={() => onToggle(p.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 font-lato text-xs font-semibold py-2 rounded-xl border-2 transition-all ${
+              p.published ? 'border-amber-200 text-amber-600 hover:bg-amber-50' : 'border-green-200 text-green-600 hover:bg-green-50'
+            }`}
+          >
+            {p.published ? <><EyeOff size={12} /> Retirer</> : <><Eye size={12} /> Publier</>}
+          </button>
+          <button onClick={() => onEdit(p)} className="px-3 py-2 rounded-xl border-2 border-pink-100 text-primary hover:bg-pink-50 transition-colors" title="Modifier">
+            <Edit3 size={13} />
+          </button>
+          {confirmDelete ? (
+            <button onClick={() => onDelete(p.id)} className="px-3 py-2 rounded-xl bg-red-400 text-white font-lato text-xs font-bold hover:bg-red-500 transition-colors">
+              Sûr ?
+            </button>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)} onBlur={() => setTimeout(() => setConfirmDelete(false), 200)}
+              className="px-3 py-2 rounded-xl border-2 border-gray-100 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors" title="Supprimer">
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductsTab({
+  products, onAdd, onUpdate, onDelete, onToggle,
+}: {
+  products: ManagedProduct[];
+  onAdd: (p: Omit<ManagedProduct, 'id' | 'published'>) => void;
+  onUpdate: (id: number, updates: Partial<Omit<ManagedProduct, 'id'>>) => void;
+  onDelete: (id: number) => void;
+  onToggle: (id: number) => void;
+}) {
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editing, setEditing] = useState<ManagedProduct | null>(null);
+
+  const openForm = (p?: ManagedProduct) => { setEditing(p ?? null); setView('form'); };
+  const closeForm = () => { setView('list'); setEditing(null); };
+  const handleSave = (data: Omit<ManagedProduct, 'id' | 'published'>) => {
+    if (editing) { onUpdate(editing.id, data); } else { onAdd(data); }
+    closeForm();
+  };
+
+  const publishedCount = products.filter((p) => p.published).length;
+
+  return (
+    <AnimatePresence mode="wait">
+      {view === 'list' ? (
+        <motion.div key="prod-list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <h2 className="font-playfair font-bold text-xl md:text-2xl text-gray-800">Produits</h2>
+              <p className="font-lato text-sm text-gray-400 mt-0.5">
+                {products.length} enregistré{products.length !== 1 ? 's' : ''} · {publishedCount} publié{publishedCount !== 1 ? 's' : ''}
+              </p>
+              <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#F2A7BB,#EFBBA6)' }} />
+            </div>
+            <button onClick={() => openForm()}
+              className="flex items-center gap-2 font-lato text-sm font-semibold text-white px-5 py-2.5 rounded-xl shadow-sm hover:opacity-90 transition-opacity whitespace-nowrap"
+              style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+              <Plus size={14} /> Nouveau produit
+            </button>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-pink-100 p-16 text-center" style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.08)' }}>
+              <div className="text-4xl mb-3">🛍️</div>
+              <p className="font-playfair text-gray-400 text-lg">Aucun produit enregistré</p>
+              <p className="font-lato text-sm text-gray-300 mt-1">Clique sur "Nouveau produit" pour commencer</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <AnimatePresence>
+                {products.map((p) => (
+                  <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }}>
+                    <AdminProductCard p={p} onEdit={openForm} onDelete={onDelete} onToggle={onToggle} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div key="prod-form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <ProductForm initial={editing} onSave={handleSave} onCancel={closeForm} />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

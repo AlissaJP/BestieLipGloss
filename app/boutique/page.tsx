@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
-import { products } from '@/data/products';
+import { products as staticProducts } from '@/data/products';
+import { useAdminStore } from '@/store/adminStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
@@ -13,8 +14,13 @@ export default function BoutiquePage() {
   const [filter, setFilter] = useState<Filter>('all');
   const { lang } = useLanguageStore();
   const t = translations[lang];
+  const managedProducts = useAdminStore((s) => s.managedProducts);
 
-  const filtered = products.filter((p) => {
+  const catalog = managedProducts.length > 0
+    ? managedProducts.filter((p) => p.published)
+    : staticProducts;
+
+  const filtered = catalog.filter((p) => {
     if (filter === 'artisanal') return p.badge.includes('Artisanal');
     if (filter === 'bestseller') return p.badge.includes('Best-seller');
     return true;
@@ -56,7 +62,7 @@ export default function BoutiquePage() {
           transition={{ delay: 0.2 }}
           className="font-cormorant text-xl text-gray-600 italic"
         >
-          {products.length} {t.shop.subtitle}
+          {catalog.length} {t.shop.subtitle}
         </motion.p>
       </div>
 

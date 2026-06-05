@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 export default function InscriptionPage() {
@@ -12,6 +12,7 @@ export default function InscriptionPage() {
     prenom: '',
     nom: '',
     email: '',
+    telephone: '',
     password: '',
     confirm: '',
   });
@@ -26,7 +27,7 @@ export default function InscriptionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.prenom || !form.email || !form.password || !form.confirm) {
+    if (!form.prenom || !form.email || !form.telephone || !form.password || !form.confirm) {
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -44,6 +45,7 @@ export default function InscriptionPage() {
     login({
       name: form.prenom + (form.nom ? ' ' + form.nom : ''),
       email: form.email,
+      telephone: form.telephone,
     });
     router.push('/');
   };
@@ -116,6 +118,23 @@ export default function InscriptionPage() {
                     placeholder="ton@email.com"
                     className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                  Numéro de téléphone <span className="text-primary">*</span>
+                </label>
+                <div className="relative">
+                  <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="tel"
+                    value={form.telephone}
+                    onChange={update('telephone')}
+                    placeholder="+509 XXXX-XXXX"
+                    className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    autoComplete="tel"
                   />
                 </div>
               </div>

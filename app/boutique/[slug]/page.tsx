@@ -1,22 +1,34 @@
-import { notFound } from 'next/navigation';
-import { products } from '@/data/products';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, notFound } from 'next/navigation';
+import { useAdminStore } from '@/store/adminStore';
+import { products as staticProducts } from '@/data/products';
 import ProductDetailClient from './ProductDetailClient';
 
-interface Props {
-  params: Promise<{ slug: string }>;
-}
+export default function ProductPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const managedProducts = useAdminStore((s) => s.managedProducts);
+  const [hydrated, setHydrated] = useState(false);
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
+  useEffect(() => setHydrated(true), []);
 
-export default async function ProductPage({ params }: Props) {
-  const { slug } = await params;
-  const product = products.find((p) => p.slug === slug);
+  const catalog = managedProducts.length > 0 ? managedProducts : staticProducts;
+  const product = catalog.find((p) => p.slug === slug);
+  const related = catalog
+    .filter((p) => ('published' in p ? p.published : true))
+    .filter((p) => p.slug !== slug)
+    .slice(0, 3);
 
-  if (!product) notFound();
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-primary animate-spin" />
+      </div>
+    );
+  }
 
-  const related = products.filter((p) => p.slug !== slug).slice(0, 3);
+  if (!product) return notFound();
 
   return <ProductDetailClient product={product} related={related} />;
 }

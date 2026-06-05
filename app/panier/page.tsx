@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, Upload, CheckCircle, MapPin } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, Upload, CheckCircle, MapPin, Phone, UserCircle, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore, type Address } from '@/store/authStore';
 import CheckoutStepper from '@/components/CheckoutStepper';
+import { products } from '@/data/products';
+import type { ColorVariant } from '@/data/products';
 
 const CITY_FEES: Record<string, number> = {
   'Port-au-Prince centre': 150,
@@ -29,13 +30,7 @@ const PROMO_CODES: Record<string, number> = {
   BESTIE15: 0.15,
 };
 
-type DeliveryFormData = {
-  prenom: string;
-  nom: string;
-  whatsapp: string;
-};
-
-type SavedDelivery = DeliveryFormData & { address: Address };
+type SavedDelivery = { name: string; telephone: string; address: Address };
 
 const inputCls = 'w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white min-h-[44px]';
 const labelCls = 'font-lato text-sm text-gray-700 font-medium block mb-1.5';
@@ -53,7 +48,7 @@ function formatAddress(addr: Address): string {
 }
 
 export default function PanierPage() {
-  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, updateItemVariant, clearCart, totalPrice } = useCartStore();
   const { user } = useAuthStore();
 
   const [step, setStep] = useState(0);
@@ -70,7 +65,12 @@ export default function PanierPage() {
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [deliveryData, setDeliveryData] = useState<SavedDelivery | null>(null);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<DeliveryFormData>();
+  // Detect cart items that were added from the card without a variant choice
+  const itemsNeedingVariant = items.filter((item) => {
+    const p = products.find((pd) => pd.id === item.id);
+    return p?.variants && item.variantKey === String(item.id);
+  });
+  const hasUnselectedVariants = itemsNeedingVariant.length > 0;
 
   const subtotal = totalPrice();
   const discountAmount = Math.round(subtotal * promoDiscount);
@@ -85,10 +85,14 @@ export default function PanierPage() {
     else { setPromoDiscount(0); setPromoError('Code promo invalide'); }
   };
 
-  const onDeliverySubmit = (data: DeliveryFormData) => {
+  const handleDeliveryNext = () => {
     if (!selectedAddr) { setAddrError('Sélectionne une adresse de livraison.'); return; }
     setAddrError('');
-    setDeliveryData({ ...data, address: selectedAddr });
+    setDeliveryData({
+      name: user?.name ?? '',
+      telephone: user?.telephone ?? '',
+      address: selectedAddr,
+    });
     setStep(2);
   };
 
@@ -150,50 +154,113 @@ export default function PanierPage() {
                   <div className="lg:col-span-2 space-y-4">
 
                     {/* Cart items */}
-                    {items.map((item) => (
-                      <div key={item.variantKey} className="bg-white rounded-2xl p-4 border border-pink-100 flex gap-4 items-center">
-                        {item.image ? (
-                          <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50">
-                            <Image src={item.image} alt={item.shade} fill className="object-cover object-center" sizes="160px" quality={90} />
+                    {items.map((item) => {
+                      const productData = products.find((p) => p.id === item.id);
+                      const needsVariant = !!(productData?.variants && item.variantKey === String(item.id));
+                      return (
+                        <div key={item.variantKey} className={`bg-white rounded-2xl p-4 border-2 transition-colors ${needsVariant ? 'border-amber-300' : 'border-pink-100'}`}>
+                          <div className="flex gap-4 items-center">
+                            {item.image ? (
+                              <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50">
+                                <Image src={item.image} alt={item.shade} fill className="object-cover object-center" sizes="160px" quality={90} />
+                              </div>
+                            ) : (
+                              <div className={`${item.bgColor} w-20 h-20 rounded-xl flex items-center justify-center text-3xl flex-shrink-0`} aria-hidden="true">💋</div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
+                              {needsVariant ? (
+                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">⚠ Choisir une teinte</p>
+                              ) : (
+                                <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
+                              )}
+                              <p className="font-playfair font-bold text-primary mt-1">{item.price_htg * item.quantity} HTG</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-3">
+                              <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Supprimer ${item.name}`}>
+                                <Trash2 size={15} />
+                              </button>
+                              <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-1.5">
+                                <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Diminuer"><Minus size={13} /></button>
+                                <span className="font-lato text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                                <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Augmenter"><Plus size={13} /></button>
+                              </div>
+                            </div>
                           </div>
-                        ) : (
-                          <div className={`${item.bgColor} w-20 h-20 rounded-xl flex items-center justify-center text-3xl flex-shrink-0`} aria-hidden="true">💋</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
-                          <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
-                          <p className="font-playfair font-bold text-primary mt-1">{item.price_htg * item.quantity} HTG</p>
+
+                          {/* Inline variant picker */}
+                          {needsVariant && productData?.variants && (
+                            <div className="mt-3 pt-3 border-t border-amber-100">
+                              <p className="font-lato text-xs text-gray-500 mb-2">Sélectionne une teinte :</p>
+                              <div className="flex flex-wrap gap-2">
+                                {productData.variants.map((v: ColorVariant) => (
+                                  <button
+                                    key={v.id}
+                                    onClick={() => updateItemVariant(item.variantKey, {
+                                      variantKey: `${item.id}::${v.id}`,
+                                      shade: v.name,
+                                      image: v.image,
+                                      bgColor: v.bgColor,
+                                    })}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-lato text-xs border-2 border-pink-200 hover:border-primary hover:text-primary text-gray-600 transition-all"
+                                  >
+                                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${v.bgColor}`} />
+                                    {v.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex flex-col items-end gap-3">
-                          <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Supprimer ${item.name}`}>
-                            <Trash2 size={15} />
-                          </button>
-                          <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-1.5">
-                            <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Diminuer"><Minus size={13} /></button>
-                            <span className="font-lato text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Augmenter"><Plus size={13} /></button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Promo code */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
                       <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         <Tag size={16} className="text-primary" />Code promo
                       </p>
-                      <div className="flex gap-2">
-                        <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="Ex: BESTIE10"
-                          className="flex-1 font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white"
-                          onKeyDown={(e) => e.key === 'Enter' && applyPromo()} />
-                        <button onClick={applyPromo} className="bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-                          Appliquer
-                        </button>
-                      </div>
+                      {user ? (
+                        <>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <select
+                                value={promoCode}
+                                onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); setPromoDiscount(0); }}
+                                className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer pr-9"
+                              >
+                                <option value="">— Choisir un coupon —</option>
+                                {(user.coupons ?? []).map((code) => (
+                                  <option key={code} value={code}>{code}</option>
+                                ))}
+                              </select>
+                              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
+                            <button
+                              onClick={applyPromo}
+                              disabled={!promoCode}
+                              className="bg-primary hover:bg-pink-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+                            >
+                              Appliquer
+                            </button>
+                          </div>
+                          {(user.coupons ?? []).length === 0 && (
+                            <p className="font-lato text-xs text-gray-400 mt-2">
+                              Aucun coupon enregistré.{' '}
+                              <Link href="/mon-compte" className="text-primary hover:underline">Ajouter dans Mon compte →</Link>
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="bg-pink-50 rounded-xl p-3 text-center border border-pink-100">
+                          <p className="font-lato text-xs text-gray-500">
+                            <Link href="/connexion" className="text-primary font-semibold hover:underline">Connecte-toi</Link>{' '}
+                            pour utiliser tes coupons.
+                          </p>
+                        </div>
+                      )}
                       {promoError && <p className="font-lato text-xs text-red-500 mt-2">{promoError}</p>}
                       {promoDiscount > 0 && <p className="font-lato text-xs text-green-600 mt-2">✓ Code appliqué — {promoDiscount * 100}% de réduction !</p>}
-                      <p className="font-lato text-xs text-gray-400 mt-2">Essaie BESTIE10 ou BESTIE15</p>
                     </div>
 
                     {/* Delivery estimator */}
@@ -261,7 +328,20 @@ export default function PanierPage() {
                           <span className="font-playfair font-bold text-primary text-xl">{total} HTG</span>
                         </div>
                       </div>
-                      <button onClick={() => setStep(1)} className="w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors mt-6 min-h-[48px]">
+                      {hasUnselectedVariants && (
+                        <p className="font-lato text-xs text-amber-600 text-center mt-4">
+                          ⚠ Choisis une teinte pour chaque produit avant de continuer.
+                        </p>
+                      )}
+                      <button
+                        onClick={() => !hasUnselectedVariants && setStep(1)}
+                        disabled={hasUnselectedVariants}
+                        className={`w-full font-lato font-semibold py-3.5 rounded-xl transition-colors mt-3 min-h-[48px] ${
+                          hasUnselectedVariants
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-primary hover:bg-pink-400 text-white'
+                        }`}
+                      >
                         Continuer → Livraison
                       </button>
                       <Link href="/boutique" className="block text-center font-lato text-xs text-gray-400 hover:text-primary transition-colors mt-3">
@@ -280,35 +360,39 @@ export default function PanierPage() {
               <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">📦 Informations de livraison</h1>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <form onSubmit={handleSubmit(onDeliverySubmit)} className="lg:col-span-2 space-y-5">
+                <div className="lg:col-span-2 space-y-5">
 
-                  {/* Prénom / Nom */}
-                  <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-5">
+                  {/* Infos du profil (lecture seule) */}
+                  <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800">Destinataire</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className={labelCls}>Prénom *</label>
-                        <input {...register('prenom', { required: 'Prénom requis' })} className={inputCls} placeholder="Marie-Claire" />
-                        {errors.prenom && <p className="font-lato text-xs text-red-500 mt-1">{errors.prenom.message}</p>}
+                    {user ? (
+                      <div className="bg-pink-50 rounded-xl p-4 border border-pink-100 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <UserCircle size={22} className="text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-lato text-sm font-semibold text-gray-800 truncate">{user.name}</p>
+                            <p className="font-lato text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <Phone size={11} />{user.telephone ?? 'Aucun numéro enregistré'}
+                            </p>
+                          </div>
+                        </div>
+                        <Link href="/mon-compte/informations" className="font-lato text-xs text-primary hover:underline whitespace-nowrap flex-shrink-0">
+                          Modifier
+                        </Link>
                       </div>
-                      <div>
-                        <label className={labelCls}>Nom *</label>
-                        <input {...register('nom', { required: 'Nom requis' })} className={inputCls} placeholder="Joseph" />
-                        {errors.nom && <p className="font-lato text-xs text-red-500 mt-1">{errors.nom.message}</p>}
+                    ) : (
+                      <div className="bg-pink-50 rounded-xl p-4 text-center border border-pink-100">
+                        <p className="font-lato text-sm text-gray-600 mb-3">Connecte-toi pour utiliser tes informations.</p>
+                        <Link href="/connexion" className="inline-flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
+                          Se connecter
+                        </Link>
                       </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Numéro WhatsApp *</label>
-                      <input {...register('whatsapp', {
-                        required: 'Numéro WhatsApp requis',
-                        pattern: { value: /^[0-9\s\-\+]{8,15}$/, message: 'Numéro invalide' },
-                      })} className={inputCls} placeholder="509-XX-XX-XXXX" type="tel" />
-                      {errors.whatsapp && <p className="font-lato text-xs text-red-500 mt-1">{errors.whatsapp.message}</p>}
-                      <p className="font-lato text-xs text-gray-400 mt-1">Ta commande sera confirmée sur ce numéro</p>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Address selector */}
+                  {/* Sélecteur d'adresse */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
                       <MapPin size={16} className="text-primary" />Adresse de livraison
@@ -323,38 +407,35 @@ export default function PanierPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {/* Dropdown menu */}
-                        <select
-                          value={selectedAddr?.id ?? ''}
-                          onChange={(e) => {
-                            const addr = savedAddresses.find((a) => a.id === e.target.value) ?? null;
-                            setSelectedAddr(addr);
-                            setAddrError('');
-                          }}
-                          className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white appearance-none cursor-pointer min-h-[44px]"
-                          aria-label="Sélectionner une adresse"
-                        >
-                          <option value="" disabled>Choisir une adresse…</option>
-                          {savedAddresses.map((addr) => (
-                            <option key={addr.id} value={addr.id}>
-                              {(addr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'} {addr.label} — {addr.adresse}, {addr.ville}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Preview of selected address */}
-                        {selectedAddr && (
-                          <div className="bg-pink-50 rounded-xl p-4 border border-pink-100 flex items-start gap-3">
-                            <span className="text-xl mt-0.5">{(selectedAddr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'}</span>
+                        {savedAddresses.map((addr) => (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => { setSelectedAddr(addr); setAddrError(''); }}
+                            className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-start gap-3 ${
+                              selectedAddr?.id === addr.id
+                                ? 'border-primary bg-pink-50'
+                                : 'border-pink-100 bg-white hover:border-pink-200'
+                            }`}
+                          >
+                            <span className="text-xl mt-0.5 flex-shrink-0">{(addr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="font-lato text-sm font-semibold text-gray-800">{selectedAddr.label}</p>
-                              <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(selectedAddr)}</p>
+                              <p className="font-lato text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                {addr.label}
+                                {addr.est_principale && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">Principale</span>
+                                )}
+                              </p>
+                              <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-xs text-primary font-semibold mt-1.5">
-                                Frais de livraison : {addrFee(selectedAddr, discountedSubtotal) === 0 ? '🎉 Gratuite' : `${addrFee(selectedAddr, discountedSubtotal)} HTG`}
+                                Livraison : {addrFee(addr, discountedSubtotal) === 0 ? '🎉 Gratuite' : `${addrFee(addr, discountedSubtotal)} HTG`}
                               </p>
                             </div>
-                          </div>
-                        )}
+                            {selectedAddr?.id === addr.id && (
+                              <span className="w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 mt-0.5">✓</span>
+                            )}
+                          </button>
+                        ))}
 
                         <Link href="/mon-compte/informations" className="inline-flex items-center gap-1.5 font-lato text-sm text-primary hover:underline">
                           <Plus size={14} />Ajouter une nouvelle adresse
@@ -370,11 +451,12 @@ export default function PanierPage() {
                       className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px]">
                       ← Retour
                     </button>
-                    <button type="submit" className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[44px]">
+                    <button type="button" onClick={handleDeliveryNext}
+                      className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[44px]">
                       Continuer → Paiement
                     </button>
                   </div>
-                </form>
+                </div>
 
                 {/* Mini summary */}
                 <div className="lg:col-span-1">
@@ -530,9 +612,9 @@ export default function PanierPage() {
                     {deliveryData && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 text-xs font-lato text-gray-600 space-y-0.5">
                         <p className="font-semibold text-gray-800">Livraison pour :</p>
-                        <p>{deliveryData.prenom} {deliveryData.nom}</p>
+                        <p>{deliveryData.name}</p>
                         <p>{formatAddress(deliveryData.address)}</p>
-                        <p>📱 {deliveryData.whatsapp}</p>
+                        {deliveryData.telephone && <p>📱 {deliveryData.telephone}</p>}
                       </div>
                     )}
                     <div className="space-y-2 text-sm font-lato text-gray-600">
