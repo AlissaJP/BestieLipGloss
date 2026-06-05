@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Clock, CreditCard, Truck, PackageCheck,
   LogOut, CheckCircle, ArrowRight, TrendingUp, ShoppingBag, X,
-  Phone, Mail, MapPin, Calendar, ChevronRight, Search,
+  Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
 } from 'lucide-react';
 import { useAdminStore, Order, OrderStatus, AdminCustomer } from '@/store/adminStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
@@ -54,22 +54,18 @@ function Badge({ status }: { status: OrderStatus }) {
   );
 }
 
-function StatCard({
-  icon, label, value, sub, gradient,
-}: {
+function StatCard({ icon, label, value, sub, gradient }: {
   icon: React.ReactNode; label: string; value: string | number; sub?: string; gradient: string;
 }) {
   return (
-    <div
-      className="bg-white rounded-2xl border border-pink-100 p-5 overflow-hidden relative"
-      style={{ boxShadow: '0 2px 16px rgba(242,167,187,0.10)' }}
-    >
+    <div className="bg-white rounded-2xl border border-pink-100 p-4 md:p-5 overflow-hidden relative"
+      style={{ boxShadow: '0 2px 16px rgba(242,167,187,0.10)' }}>
       <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-15 pointer-events-none" style={{ background: gradient }} />
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-sm" style={{ background: gradient }}>
+      <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-sm" style={{ background: gradient }}>
         {icon}
       </div>
       <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest">{label}</p>
-      <p className="font-playfair font-bold text-[26px] text-gray-800 leading-tight mt-0.5">{value}</p>
+      <p className="font-playfair font-bold text-2xl md:text-[26px] text-gray-800 leading-tight mt-0.5">{value}</p>
       {sub && <p className="font-lato text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
@@ -77,8 +73,8 @@ function StatCard({
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="mb-6">
-      <h2 className="font-playfair font-bold text-2xl text-gray-800">{title}</h2>
+    <div className="mb-5 md:mb-6">
+      <h2 className="font-playfair font-bold text-xl md:text-2xl text-gray-800">{title}</h2>
       <p className="font-lato text-sm text-gray-400 mt-0.5">{subtitle}</p>
       <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#F2A7BB,#EFBBA6)' }} />
     </div>
@@ -87,21 +83,15 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
 
 function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   return (
-    <div className="relative mb-5">
+    <div className="relative mb-4 md:mb-5">
       <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
       <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full pl-10 pr-4 py-2.5 border border-pink-100 rounded-xl font-lato text-sm outline-none focus:border-primary/50 bg-white transition-colors"
         style={{ boxShadow: '0 1px 8px rgba(242,167,187,0.08)' }}
       />
       {value && (
-        <button
-          onClick={() => onChange('')}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
-        >
+        <button onClick={() => onChange('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors">
           <X size={13} />
         </button>
       )}
@@ -109,15 +99,54 @@ function SearchBar({ value, onChange, placeholder }: { value: string; onChange: 
   );
 }
 
-/* ─── User detail drawer ─── */
-function UserDrawer({
-  customer,
-  orders,
-  onClose,
+/* ─── Sidebar nav content (shared between desktop sidebar & mobile drawer) ─── */
+function SidebarContent({
+  navItems, tab, t, onSelect,
 }: {
-  customer: AdminCustomer;
-  orders: Order[];
-  onClose: () => void;
+  navItems: { id: Tab; label: string; icon: React.ReactNode; count?: number }[];
+  tab: Tab;
+  t: ReturnType<typeof useT>;
+  onSelect: (id: Tab) => void;
+}) {
+  return (
+    <>
+      <div className="px-5 py-5 border-b border-pink-50">
+        <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest">{t.space}</p>
+        <p className="font-playfair font-semibold text-gray-700 text-sm mt-0.5">{t.title}</p>
+      </div>
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm transition-all ${
+              tab === item.id
+                ? 'text-primary font-semibold shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-pink-50/60'
+            }`}
+            style={tab === item.id ? { background: 'linear-gradient(135deg,rgba(242,167,187,0.18),rgba(239,187,166,0.12))' } : {}}
+          >
+            <span className="flex items-center gap-2.5">{item.icon}{item.label}</span>
+            {item.count !== undefined && (
+              <span className={`font-lato text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center transition-colors ${
+                tab === item.id ? 'bg-primary/15 text-primary' : 'bg-pink-50 text-gray-400'
+              }`}>
+                {item.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+      <div className="px-5 py-4 border-t border-pink-50">
+        <p className="font-lato text-[10px] text-gray-300">{t.connectedAs}</p>
+      </div>
+    </>
+  );
+}
+
+/* ─── User detail drawer ─── */
+function UserDrawer({ customer, orders, onClose }: {
+  customer: AdminCustomer; orders: Order[]; onClose: () => void;
 }) {
   const t = useT();
   const customerOrders = orders.filter((o) => o.customer === customer.name);
@@ -126,29 +155,21 @@ function UserDrawer({
     <AnimatePresence>
       <>
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30"
           onClick={onClose}
         />
         <motion.aside
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
+          initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-          className="fixed right-0 top-0 bottom-0 w-[400px] bg-[#FAF9F7] z-40 overflow-y-auto flex flex-col"
+          className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-[#FAF9F7] z-40 overflow-y-auto flex flex-col"
           style={{ boxShadow: '-4px 0 40px rgba(242,167,187,0.18)' }}
         >
-          <div
-            className="px-6 py-5 flex items-center justify-between border-b border-pink-100 bg-white sticky top-0 z-10"
-            style={{ boxShadow: '0 1px 12px rgba(242,167,187,0.10)' }}
-          >
+          <div className="px-5 md:px-6 py-5 flex items-center justify-between border-b border-pink-100 bg-white sticky top-0 z-10"
+            style={{ boxShadow: '0 1px 12px rgba(242,167,187,0.10)' }}>
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
-                style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
-              >
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+                style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
                 <span className="font-playfair font-bold text-white text-base">{customer.name.charAt(0)}</span>
               </div>
               <div>
@@ -156,46 +177,29 @@ function UserDrawer({
                 <p className="font-lato text-xs text-gray-400">{customer.id}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-pink-50 hover:bg-pink-100 flex items-center justify-center transition-colors"
-            >
+            <button onClick={onClose} className="w-8 h-8 rounded-xl bg-pink-50 hover:bg-pink-100 flex items-center justify-center transition-colors">
               <X size={15} className="text-gray-500" />
             </button>
           </div>
 
-          <div className="flex-1 px-6 py-5 space-y-5">
+          <div className="flex-1 px-5 md:px-6 py-5 space-y-5">
             <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3.5"
               style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
               <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t.drawer.profile}</p>
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
-                    <Mail size={13} className="text-primary" />
+                {[
+                  { icon: <Mail size={13} className="text-primary" />, label: t.drawer.email, value: customer.email },
+                  { icon: <Phone size={13} className="text-primary" />, label: t.drawer.phone, value: customer.phone },
+                  { icon: <Calendar size={13} className="text-primary" />, label: t.drawer.memberSince, value: customer.joinDate },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">{icon}</div>
+                    <div>
+                      <p className="font-lato text-[10px] text-gray-400">{label}</p>
+                      <p className="font-lato text-sm text-gray-700 font-medium break-all">{value}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-lato text-[10px] text-gray-400">{t.drawer.email}</p>
-                    <p className="font-lato text-sm text-gray-700 font-medium">{customer.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
-                    <Phone size={13} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-lato text-[10px] text-gray-400">{t.drawer.phone}</p>
-                    <p className="font-lato text-sm text-gray-700 font-medium">{customer.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
-                    <Calendar size={13} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-lato text-[10px] text-gray-400">{t.drawer.memberSince}</p>
-                    <p className="font-lato text-sm text-gray-700 font-medium">{customer.joinDate}</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -213,9 +217,7 @@ function UserDrawer({
             </div>
 
             <div>
-              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                {t.drawer.orderHistory}
-              </p>
+              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">{t.drawer.orderHistory}</p>
               {customerOrders.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-pink-100 p-6 text-center">
                   <p className="font-lato text-sm text-gray-300 italic">{t.drawer.noOrders}</p>
@@ -223,17 +225,11 @@ function UserDrawer({
               ) : (
                 <div className="space-y-2.5">
                   {customerOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="bg-white rounded-2xl border border-pink-100 p-4 relative overflow-hidden"
-                      style={{ boxShadow: '0 2px 10px rgba(242,167,187,0.07)' }}
-                    >
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl"
-                        style={{ background: STATUS_BAR[order.status] }}
-                      />
+                    <div key={order.id} className="bg-white rounded-2xl border border-pink-100 p-4 relative overflow-hidden"
+                      style={{ boxShadow: '0 2px 10px rgba(242,167,187,0.07)' }}>
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl" style={{ background: STATUS_BAR[order.status] }} />
                       <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-lato text-[11px] font-bold text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded">{order.id}</span>
                             <Badge status={order.status} />
@@ -249,9 +245,8 @@ function UserDrawer({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="font-playfair font-bold text-gray-800">{order.total.toLocaleString()} HTG</p>
-                          <p className="font-lato text-[10px] text-gray-400 flex items-center gap-1 mt-1">
-                            <MapPin size={10} />
-                            {order.address.split(',')[0]}
+                          <p className="font-lato text-[10px] text-gray-400 flex items-center gap-1 mt-1 justify-end">
+                            <MapPin size={10} />{order.address.split(',')[0]}
                           </p>
                         </div>
                       </div>
@@ -278,6 +273,7 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [orderSearch, setOrderSearch] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn && !loggingOut) router.replace('/admin');
@@ -301,9 +297,7 @@ export default function AdminDashboard() {
   function filterOrders(list: Order[]) {
     if (!orderSearch.trim()) return list;
     const q = orderSearch.toLowerCase();
-    return list.filter((o) =>
-      o.customer.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.address.toLowerCase().includes(q)
-    );
+    return list.filter((o) => o.customer.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.address.toLowerCase().includes(q));
   }
 
   const handleLogout = () => { setLoggingOut(true); logout(); router.push('/'); };
@@ -317,6 +311,12 @@ export default function AdminDashboard() {
     { id: 'delivered', label: t.nav.delivered, icon: <PackageCheck size={15} />, count: delivered.length },
   ];
 
+  const handleTabSelect = (id: Tab) => {
+    setTab(id);
+    setOrderSearch('');
+    setMobileSidebarOpen(false);
+  };
+
   const pendingAlert = pending.length > 0
     ? t.pendingAlert.replace('{n}', String(pending.length)).replace('{s}', pending.length > 1 ? 's' : '')
     : t.allUpToDate;
@@ -325,134 +325,124 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#FAF9F7] flex flex-col">
 
       {/* ── Top bar ── */}
-      <header
-        className="bg-white border-b border-pink-100 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20"
-        style={{ boxShadow: '0 1px 20px rgba(242,167,187,0.12)' }}
-      >
-        <div className="flex items-center gap-3">
-          <span className="font-greatvibes text-[26px] text-primary leading-none" style={{ fontFamily: 'var(--font-greatvibes)' }}>
+      <header className="bg-white border-b border-pink-100 px-4 md:px-6 py-3.5 flex items-center justify-between sticky top-0 z-20"
+        style={{ boxShadow: '0 1px 20px rgba(242,167,187,0.12)' }}>
+
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="md:hidden w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-gray-500 hover:bg-pink-100 transition-colors"
+          >
+            <Menu size={18} />
+          </button>
+          <span className="font-greatvibes text-[22px] md:text-[26px] text-primary leading-none" style={{ fontFamily: 'var(--font-greatvibes)' }}>
             Bestie LipGloss
           </span>
-          <span className="font-lato text-[10px] font-bold uppercase tracking-wider text-primary/80 bg-pink-50 border border-pink-100 px-2.5 py-0.5 rounded-full">
+          <span className="hidden sm:inline font-lato text-[10px] font-bold uppercase tracking-wider text-primary/80 bg-pink-50 border border-pink-100 px-2.5 py-0.5 rounded-full">
             Admin
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Language switcher */}
-          <div className="flex items-center gap-1 bg-pink-50/60 border border-pink-100 rounded-xl p-1">
+          <div className="flex items-center gap-0.5 md:gap-1 bg-pink-50/60 border border-pink-100 rounded-xl p-1">
             {LANGS.map(({ code, flag, label }) => (
               <button
                 key={code}
                 onClick={() => setLang(code)}
-                className={`flex items-center gap-1 font-lato text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all ${
-                  lang === code
-                    ? 'bg-white text-primary shadow-sm border border-pink-100'
-                    : 'text-gray-400 hover:text-gray-600'
+                className={`flex items-center gap-1 font-lato text-xs font-bold px-2 md:px-2.5 py-1.5 rounded-lg transition-all ${
+                  lang === code ? 'bg-white text-primary shadow-sm border border-pink-100' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 <span>{flag}</span>
-                <span>{label}</span>
+                <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
           </div>
 
-          <div className="w-px h-5 bg-pink-100" />
+          <div className="hidden md:block w-px h-5 bg-pink-100" />
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 font-lato text-sm text-gray-400 hover:text-primary transition-colors px-3.5 py-2 rounded-xl hover:bg-pink-50"
+            className="flex items-center gap-1.5 md:gap-2 font-lato text-sm text-gray-400 hover:text-primary transition-colors px-2.5 md:px-3.5 py-2 rounded-xl hover:bg-pink-50"
           >
             <LogOut size={14} />
-            {t.logout}
+            <span className="hidden md:inline">{t.logout}</span>
           </button>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Sidebar ── */}
-        <aside
-          className="w-60 bg-white border-r border-pink-100 flex flex-col shrink-0"
-          style={{ boxShadow: '2px 0 20px rgba(242,167,187,0.06)' }}
-        >
-          <div className="px-5 py-5 border-b border-pink-50">
-            <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest">{t.space}</p>
-            <p className="font-playfair font-semibold text-gray-700 text-sm mt-0.5">{t.title}</p>
-          </div>
-
-          <nav className="flex-1 px-3 py-4 space-y-0.5">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => { setTab(item.id); setOrderSearch(''); }}
-                className={`w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm transition-all ${
-                  tab === item.id
-                    ? 'text-primary font-semibold shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-pink-50/60'
-                }`}
-                style={
-                  tab === item.id
-                    ? { background: 'linear-gradient(135deg,rgba(242,167,187,0.18),rgba(239,187,166,0.12))' }
-                    : {}
-                }
-              >
-                <span className="flex items-center gap-2.5">{item.icon}{item.label}</span>
-                {item.count !== undefined && (
-                  <span className={`font-lato text-[11px] font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center transition-colors ${
-                    tab === item.id ? 'bg-primary/15 text-primary' : 'bg-pink-50 text-gray-400'
-                  }`}>
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          <div className="px-5 py-4 border-t border-pink-50">
-            <p className="font-lato text-[10px] text-gray-300">{t.connectedAs}</p>
-          </div>
+        {/* ── Sidebar — desktop only ── */}
+        <aside className="hidden md:flex w-60 bg-white border-r border-pink-100 flex-col shrink-0"
+          style={{ boxShadow: '2px 0 20px rgba(242,167,187,0.06)' }}>
+          <SidebarContent navItems={navItems} tab={tab} t={t} onSelect={handleTabSelect} />
         </aside>
 
+        {/* ── Mobile sidebar drawer ── */}
+        <AnimatePresence>
+          {mobileSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
+                onClick={() => setMobileSidebarOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+                transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+                className="fixed left-0 top-0 bottom-0 w-64 bg-white z-40 flex flex-col md:hidden"
+                style={{ boxShadow: '4px 0 40px rgba(242,167,187,0.18)' }}
+              >
+                {/* Close button */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-pink-50">
+                  <span className="font-greatvibes text-[22px] text-primary" style={{ fontFamily: 'var(--font-greatvibes)' }}>
+                    Bestie LipGloss
+                  </span>
+                  <button onClick={() => setMobileSidebarOpen(false)}
+                    className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-gray-400">
+                    <X size={15} />
+                  </button>
+                </div>
+                <SidebarContent navItems={navItems} tab={tab} t={t} onSelect={handleTabSelect} />
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
         {/* ── Main content ── */}
-        <main className="flex-1 overflow-y-auto p-7">
+        <main className="flex-1 overflow-y-auto p-4 md:p-7">
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
 
               {/* ── Overview ── */}
               {tab === 'overview' && (
-                <div className="space-y-7">
-                  <div
-                    className="rounded-3xl p-6 relative overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg,rgba(242,167,187,0.22) 0%,rgba(239,187,166,0.28) 100%)' }}
-                  >
-                    <div
-                      className="absolute right-0 top-0 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)', transform: 'translate(30%,-30%)' }}
-                    />
-                    <p className="font-cormorant italic text-xl text-gray-600">{t.welcome}</p>
-                    <p className="font-playfair font-bold text-2xl text-gray-800 mt-0.5">{t.welcomeSub}</p>
+                <div className="space-y-5 md:space-y-7">
+                  <div className="rounded-3xl p-5 md:p-6 relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg,rgba(242,167,187,0.22) 0%,rgba(239,187,166,0.28) 100%)' }}>
+                    <div className="absolute right-0 top-0 w-40 h-40 rounded-full opacity-20 pointer-events-none"
+                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)', transform: 'translate(30%,-30%)' }} />
+                    <p className="font-cormorant italic text-lg md:text-xl text-gray-600">{t.welcome}</p>
+                    <p className="font-playfair font-bold text-xl md:text-2xl text-gray-800 mt-0.5">{t.welcomeSub}</p>
                     <p className="font-lato text-sm text-gray-500 mt-1.5">{pendingAlert}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-                    <StatCard icon={<Users size={17} className="text-white" />} label={t.stats.clients} value={customers.length} sub={t.stats.registered} gradient="linear-gradient(135deg,#A78BFA,#C4B5FD)" />
-                    <StatCard icon={<Clock size={17} className="text-white" />} label={t.stats.pending} value={pending.length} sub={t.stats.toApprove} gradient="linear-gradient(135deg,#F59E0B,#FCD34D)" />
-                    <StatCard icon={<Truck size={17} className="text-white" />} label={t.stats.shipping} value={shipping.length} sub={t.stats.onTheWay} gradient="linear-gradient(135deg,#3B82F6,#93C5FD)" />
-                    <StatCard icon={<TrendingUp size={17} className="text-white" />} label={t.stats.revenue} value={revenue.toLocaleString()} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#F2A7BB,#EFBBA6)" />
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+                    <StatCard icon={<Users size={16} className="text-white" />} label={t.stats.clients} value={customers.length} sub={t.stats.registered} gradient="linear-gradient(135deg,#A78BFA,#C4B5FD)" />
+                    <StatCard icon={<Clock size={16} className="text-white" />} label={t.stats.pending} value={pending.length} sub={t.stats.toApprove} gradient="linear-gradient(135deg,#F59E0B,#FCD34D)" />
+                    <StatCard icon={<Truck size={16} className="text-white" />} label={t.stats.shipping} value={shipping.length} sub={t.stats.onTheWay} gradient="linear-gradient(135deg,#3B82F6,#93C5FD)" />
+                    <StatCard icon={<TrendingUp size={16} className="text-white" />} label={t.stats.revenue} value={revenue.toLocaleString()} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#F2A7BB,#EFBBA6)" />
                   </div>
 
-                  <div
-                    className="bg-white rounded-3xl border border-pink-100 overflow-hidden"
-                    style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.10)' }}
-                  >
-                    <div className="px-6 py-4 border-b border-pink-50 flex items-center gap-2.5">
+                  <div className="bg-white rounded-3xl border border-pink-100 overflow-hidden"
+                    style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.10)' }}>
+                    <div className="px-5 md:px-6 py-4 border-b border-pink-50 flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
                         <ShoppingBag size={13} className="text-white" />
                       </div>
@@ -460,16 +450,16 @@ export default function AdminDashboard() {
                     </div>
                     <div className="divide-y divide-pink-50/60">
                       {orders.slice(0, 8).map((order) => (
-                        <div key={order.id} className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-pink-50/30 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span className="font-lato text-[11px] font-bold text-gray-300 bg-gray-50 px-2 py-0.5 rounded-lg shrink-0">{order.id}</span>
+                        <div key={order.id} className="px-4 md:px-6 py-3.5 flex items-center justify-between gap-3 hover:bg-pink-50/30 transition-colors">
+                          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <span className="font-lato text-[11px] font-bold text-gray-300 bg-gray-50 px-2 py-0.5 rounded-lg shrink-0 hidden sm:inline">{order.id}</span>
                             <div className="min-w-0">
                               <p className="font-lato text-sm font-medium text-gray-700 truncate">{order.customer}</p>
                               <p className="font-lato text-xs text-gray-400">{order.date}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="font-lato text-sm font-semibold text-gray-700">{order.total.toLocaleString()} HTG</span>
+                          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                            <span className="font-lato text-sm font-semibold text-gray-700 hidden sm:inline">{order.total.toLocaleString()} HTG</span>
                             <Badge status={order.status} />
                           </div>
                         </div>
@@ -486,15 +476,42 @@ export default function AdminDashboard() {
                     title={t.users.title}
                     subtitle={t.users.subtitle.replace('{n}', String(customers.length))}
                   />
-                  <SearchBar
-                    value={userSearch}
-                    onChange={setUserSearch}
-                    placeholder={t.users.searchPlaceholder}
-                  />
-                  <div
-                    className="bg-white rounded-3xl border border-pink-100 overflow-hidden"
-                    style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.10)' }}
-                  >
+                  <SearchBar value={userSearch} onChange={setUserSearch} placeholder={t.users.searchPlaceholder} />
+
+                  {/* Mobile: cards */}
+                  <div className="md:hidden space-y-3">
+                    {filteredCustomers.length === 0 ? (
+                      <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center">
+                        <p className="font-lato text-sm text-gray-300 italic">{t.users.noResults}</p>
+                      </div>
+                    ) : filteredCustomers.map((c) => (
+                      <button key={c.id} onClick={() => setSelectedCustomer(c)}
+                        className="w-full bg-white rounded-2xl border border-pink-100 p-4 flex items-center justify-between gap-3 hover:bg-pink-50/30 transition-colors text-left"
+                        style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                            style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+                            <span className="font-lato font-bold text-xs text-white">{c.name.charAt(0)}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-lato text-sm font-semibold text-gray-700 truncate">{c.name}</p>
+                            <p className="font-lato text-xs text-gray-400 truncate">{c.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right">
+                            <p className="font-playfair font-bold text-primary text-sm">{c.totalSpent.toLocaleString()} HTG</p>
+                            <p className="font-lato text-xs text-gray-400">{c.ordersCount} cmd</p>
+                          </div>
+                          <ChevronRight size={15} className="text-gray-300" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Desktop: table */}
+                  <div className="hidden md:block bg-white rounded-3xl border border-pink-100 overflow-hidden"
+                    style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.10)' }}>
                     {filteredCustomers.length === 0 ? (
                       <div className="p-12 text-center">
                         <p className="font-lato text-sm text-gray-300 italic">{t.users.noResults}</p>
@@ -507,25 +524,18 @@ export default function AdminDashboard() {
                               {t.users.headers.map((h, i) => (
                                 <th key={i} className={`font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest py-3.5 ${
                                   i === 0 ? 'pl-6 pr-4 text-left' : i >= 4 && i < 6 ? 'px-4 text-right' : 'px-4 text-left'
-                                }`}>
-                                  {h}
-                                </th>
+                                }`}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-pink-50/60">
                             {filteredCustomers.map((c) => (
-                              <tr
-                                key={c.id}
-                                onClick={() => setSelectedCustomer(c)}
-                                className="hover:bg-pink-50/30 transition-colors cursor-pointer group"
-                              >
+                              <tr key={c.id} onClick={() => setSelectedCustomer(c)}
+                                className="hover:bg-pink-50/30 transition-colors cursor-pointer group">
                                 <td className="pl-6 pr-4 py-4">
                                   <div className="flex items-center gap-3">
-                                    <div
-                                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm"
-                                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
-                                    >
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
                                       <span className="font-lato font-bold text-xs text-white">{c.name.charAt(0)}</span>
                                     </div>
                                     <span className="font-lato text-sm font-medium text-gray-700">{c.name}</span>
@@ -534,15 +544,9 @@ export default function AdminDashboard() {
                                 <td className="px-4 py-4 font-lato text-sm text-gray-500">{c.email}</td>
                                 <td className="px-4 py-4 font-lato text-sm text-gray-500">{c.phone}</td>
                                 <td className="px-4 py-4 font-lato text-sm text-gray-400">{c.joinDate}</td>
-                                <td className="px-4 py-4 text-right">
-                                  <span className="font-lato text-sm font-semibold text-gray-700">{c.ordersCount}</span>
-                                </td>
-                                <td className="px-4 py-4 text-right">
-                                  <span className="font-lato text-sm font-bold text-primary">{c.totalSpent.toLocaleString()} HTG</span>
-                                </td>
-                                <td className="px-4 py-4">
-                                  <ChevronRight size={15} className="text-gray-300 group-hover:text-primary transition-colors ml-auto" />
-                                </td>
+                                <td className="px-4 py-4 text-right"><span className="font-lato text-sm font-semibold text-gray-700">{c.ordersCount}</span></td>
+                                <td className="px-4 py-4 text-right"><span className="font-lato text-sm font-bold text-primary">{c.totalSpent.toLocaleString()} HTG</span></td>
+                                <td className="px-4 py-4"><ChevronRight size={15} className="text-gray-300 group-hover:text-primary transition-colors ml-auto" /></td>
                               </tr>
                             ))}
                           </tbody>
@@ -555,61 +559,37 @@ export default function AdminDashboard() {
 
               {/* ── Orders tabs ── */}
               {tab === 'pending' && (
-                <OrdersSection
-                  title={t.sections.pending.title}
-                  subtitle={t.sections.pending.subtitle}
-                  orders={filterOrders(pending)}
-                  search={orderSearch} onSearch={setOrderSearch}
-                  searchPlaceholder={t.orders.searchPlaceholder}
-                  noResultsLabel={t.orders.noResults}
+                <OrdersSection title={t.sections.pending.title} subtitle={t.sections.pending.subtitle}
+                  orders={filterOrders(pending)} search={orderSearch} onSearch={setOrderSearch}
+                  searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.approve} actionIcon={<CheckCircle size={13} />}
-                  nextStatus="paid" onAction={updateOrderStatus}
-                  statusLabels={t.status}
-                />
+                  nextStatus="paid" onAction={updateOrderStatus} statusLabels={t.status} />
               )}
               {tab === 'paid' && (
-                <OrdersSection
-                  title={t.sections.paid.title}
-                  subtitle={t.sections.paid.subtitle}
-                  orders={filterOrders(paid)}
-                  search={orderSearch} onSearch={setOrderSearch}
-                  searchPlaceholder={t.orders.searchPlaceholder}
-                  noResultsLabel={t.orders.noResults}
+                <OrdersSection title={t.sections.paid.title} subtitle={t.sections.paid.subtitle}
+                  orders={filterOrders(paid)} search={orderSearch} onSearch={setOrderSearch}
+                  searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.ship} actionIcon={<Truck size={13} />}
-                  nextStatus="shipping" onAction={updateOrderStatus}
-                  statusLabels={t.status}
-                />
+                  nextStatus="shipping" onAction={updateOrderStatus} statusLabels={t.status} />
               )}
               {tab === 'shipping' && (
-                <OrdersSection
-                  title={t.sections.shipping.title}
-                  subtitle={t.sections.shipping.subtitle}
-                  orders={filterOrders(shipping)}
-                  search={orderSearch} onSearch={setOrderSearch}
-                  searchPlaceholder={t.orders.searchPlaceholder}
-                  noResultsLabel={t.orders.noResults}
+                <OrdersSection title={t.sections.shipping.title} subtitle={t.sections.shipping.subtitle}
+                  orders={filterOrders(shipping)} search={orderSearch} onSearch={setOrderSearch}
+                  searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.markDelivered} actionIcon={<PackageCheck size={13} />}
-                  nextStatus="delivered" onAction={updateOrderStatus}
-                  statusLabels={t.status}
-                />
+                  nextStatus="delivered" onAction={updateOrderStatus} statusLabels={t.status} />
               )}
               {tab === 'delivered' && (
                 <OrdersSection
                   title={t.sections.delivered.title}
-                  subtitle={t.sections.delivered.subtitle
-                    .replace('{n}', String(delivered.length))
-                    .replace('{s}', delivered.length > 1 ? 's' : '')}
-                  orders={filterOrders(delivered)}
-                  search={orderSearch} onSearch={setOrderSearch}
-                  searchPlaceholder={t.orders.searchPlaceholder}
-                  noResultsLabel={t.orders.noResults}
+                  subtitle={t.sections.delivered.subtitle.replace('{n}', String(delivered.length)).replace('{s}', delivered.length > 1 ? 's' : '')}
+                  orders={filterOrders(delivered)} search={orderSearch} onSearch={setOrderSearch}
+                  searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
-                  onAction={updateOrderStatus}
-                  statusLabels={t.status}
-                />
+                  onAction={updateOrderStatus} statusLabels={t.status} />
               )}
 
             </motion.div>
@@ -618,11 +598,7 @@ export default function AdminDashboard() {
       </div>
 
       {selectedCustomer && (
-        <UserDrawer
-          customer={selectedCustomer}
-          orders={orders}
-          onClose={() => setSelectedCustomer(null)}
-        />
+        <UserDrawer customer={selectedCustomer} orders={orders} onClose={() => setSelectedCustomer(null)} />
       )}
     </div>
   );
@@ -645,7 +621,7 @@ function OrdersSection({
       <SectionHeader title={title} subtitle={subtitle} />
       <SearchBar value={search} onChange={onSearch} placeholder={searchPlaceholder} />
       {orders.length === 0 && !search ? (
-        <div className="bg-white rounded-3xl border border-pink-100 p-16 text-center" style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.08)' }}>
+        <div className="bg-white rounded-3xl border border-pink-100 p-12 md:p-16 text-center" style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.08)' }}>
           <div className="text-4xl mb-3">💕</div>
           <p className="font-playfair text-gray-400 text-lg">{emptyLabel}</p>
           <p className="font-lato text-sm text-gray-300 mt-1">{emptyDesc}</p>
@@ -658,17 +634,16 @@ function OrdersSection({
         <div className="space-y-3">
           <AnimatePresence>
             {orders.map((order) => (
-              <motion.div
-                key={order.id} layout
+              <motion.div key={order.id} layout
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 24 }}
                 transition={{ duration: 0.22 }}
-                className="bg-white rounded-2xl border border-pink-100 p-5 pl-6 relative overflow-hidden"
+                className="bg-white rounded-2xl border border-pink-100 p-4 md:p-5 pl-5 md:pl-6 relative overflow-hidden"
                 style={{ boxShadow: '0 2px 16px rgba(242,167,187,0.09)' }}
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: STATUS_BAR[order.status] }} />
-                <div className="flex flex-wrap items-start justify-between gap-5">
-                  <div className="space-y-2 flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-3 md:gap-5">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-lato text-[11px] font-bold text-gray-300 bg-gray-50 px-2 py-0.5 rounded-lg">{order.id}</span>
                       <span className={`inline-block font-lato text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${STATUS_STYLE[order.status]}`}>
                         {statusLabels[order.status]}
@@ -681,21 +656,21 @@ function OrdersSection({
                       <span className="mt-0.5">📍</span><span>{order.address}</span>
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-3 shrink-0">
-                    <div className="text-right space-y-1">
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 shrink-0">
+                    <div className="sm:text-right space-y-1">
                       {order.items.map((item, i) => (
-                        <p key={i} className="font-lato text-xs text-gray-500">
+                        <p key={i} className="font-lato text-xs text-gray-500 hidden sm:block">
                           {item.qty}× <span className="text-primary font-medium">{item.shade}</span>
                         </p>
                       ))}
-                      <p className="font-playfair font-bold text-lg text-gray-800 mt-1">{order.total.toLocaleString()} HTG</p>
+                      <p className="font-playfair font-bold text-base md:text-lg text-gray-800">{order.total.toLocaleString()} HTG</p>
                       <p className="font-lato text-xs text-gray-400">{PAYMENT_LABEL[order.paymentMethod]}</p>
                     </div>
                     {actionLabel && nextStatus && (
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => onAction(order.id, nextStatus)}
-                        className="flex items-center gap-1.5 font-lato text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm"
+                        className="flex items-center gap-1.5 font-lato text-xs font-bold text-white px-3 md:px-4 py-2 rounded-xl shadow-sm shrink-0"
                         style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
                       >
                         {actionIcon}{actionLabel}<ArrowRight size={11} />
