@@ -3,7 +3,6 @@ import {
   Playfair_Display,
   Cormorant_Garamond,
   Lato,
-  Great_Vibes,
 } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
@@ -32,13 +31,6 @@ const lato = Lato({
   display: 'swap',
 });
 
-const greatVibes = Great_Vibes({
-  variable: '--font-greatvibes-family',
-  subsets: ['latin'],
-  weight: ['400'],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
   title: 'Bestie LipGloss — Beauté Naturelle Haïtienne',
   description:
@@ -52,8 +44,13 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${playfair.variable} ${cormorant.variable} ${lato.variable} ${greatVibes.variable}`}
+      className={`${playfair.variable} ${cormorant.variable} ${lato.variable}`}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Great+Vibes:wght@400&display=swap" rel="stylesheet" />
+      </head>
       <body className="bg-[#FAF9F7] text-[#2D2D2D] min-h-screen antialiased">
         <Header />
         <main className="pt-16 lg:pt-20">{children}</main>
