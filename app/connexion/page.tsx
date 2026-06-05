@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useAdminStore } from '@/store/adminStore';
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ export default function ConnexionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuthStore();
+  const { login: adminLogin } = useAdminStore();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +26,22 @@ export default function ConnexionPage() {
     }
     setIsLoading(true);
     setError('');
-    await new Promise((r) => setTimeout(r, 800));
-    const raw = email.split('@')[0].replace(/[._-]/g, ' ');
-    const name = raw.charAt(0).toUpperCase() + raw.slice(1);
-    login({ name, email });
+    await new Promise((r) => setTimeout(r, 700));
+
+    // Accès administrateur
+    if (email.trim().toLowerCase() === 'admin' && password.trim().toLowerCase() === 'admin') {
+      adminLogin('admin', 'bestie2024');
+      router.push('/admin/dashboard');
+      return;
+    }
+
+    // Connexion utilisateur normal
+    const isEmail = email.includes('@');
+    const name = isEmail
+      ? (() => { const raw = email.split('@')[0].replace(/[._-]/g, ' '); return raw.charAt(0).toUpperCase() + raw.slice(1); })()
+      : email.trim().charAt(0).toUpperCase() + email.trim().slice(1);
+    const storedEmail = isEmail ? email.trim() : `${email.trim().toLowerCase().replace(/\s+/g, '.')}@bestie.app`;
+    login({ name, email: storedEmail });
     router.push('/');
   };
 
@@ -56,15 +70,15 @@ export default function ConnexionPage() {
             <div className="space-y-5">
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Adresse e-mail
+                  Pseudo ou adresse e-mail
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ton@email.com"
+                    placeholder="ton pseudo ou ton@email.com"
                     className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
                   />

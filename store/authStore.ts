@@ -4,9 +4,13 @@ import { persist } from 'zustand/middleware';
 export interface Address {
   id: string;
   label: string;
+  country?: 'ht' | 'us';
   adresse: string;
+  departement?: string;
   ville: string;
-  quartier: string;
+  quartier?: string;
+  state?: string;
+  zipCode?: string;
 }
 
 export interface User {

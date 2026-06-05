@@ -192,7 +192,7 @@ export default function HomePage() {
             <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800">{t.home.why.title}</h2>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-2xl mx-auto">
             {whyItems.map((item, i) => (
               <FadeIn key={item.title} delay={i * 0.15}>
                 <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-pink-50 h-full">

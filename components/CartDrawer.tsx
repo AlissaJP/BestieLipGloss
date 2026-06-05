@@ -85,7 +85,8 @@ export default function CartDrawer() {
                             alt={item.shade}
                             fill
                             className="object-cover object-center"
-                            sizes="64px"
+                            sizes="128px"
+                            quality={90}
                           />
                         </div>
                       ) : (

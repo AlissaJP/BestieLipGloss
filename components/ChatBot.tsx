@@ -2,195 +2,397 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, GripHorizontal } from 'lucide-react';
+import { X, Send } from 'lucide-react';
 
-type Message = { id: number; text: string; from: 'bot' | 'user' };
+type Message = { id: number; text: string; from: 'bot' | 'user'; streaming?: boolean };
 
 const FAQ = [
   {
-    q: '📦 Comment commander ?',
+    q: '📦 Commander',
     a: 'Choisis ton produit dans la boutique, ajoute-le au panier, puis clique sur "Commander". Tu recevras une confirmation par WhatsApp. 🛍️',
   },
   {
-    q: '🚚 Délai de livraison ?',
+    q: '🚚 Livraison',
     a: 'Livraison dans tout Haïti en 24 à 72h selon ta localisation. Tu seras contactée par WhatsApp pour confirmer. 📍',
   },
   {
-    q: '💰 Prix & paiement ?',
+    q: '💰 Paiement',
     a: 'Nos glosses vont de 400 à 600 HTG. Paiement à la livraison (cash) ou par transfert MonCash / Natcash. 💳',
   },
   {
-    q: '🎨 Couleurs disponibles ?',
-    a: 'La Rosée Matinale existe en 4 teintes : Cherry, Honey Rose, Strawberry et Rouge Grenat. Visite la boutique pour découvrir tous nos produits ! ✨',
+    q: '🎨 Couleurs',
+    a: 'La Rosée Matinale existe en 4 teintes : Cherry, Honey Rose, Strawberry et Rouge Grenat. Visite la boutique ! ✨',
   },
   {
-    q: '🌿 Ingrédients naturels ?',
-    a: 'Oui, 100% naturels ! Beurre de karité, huile d\'argan, vitamine E. Aucun parabène, aucune silicone. Ta peau mérite le meilleur. 💚',
+    q: '🌿 Ingrédients',
+    a: "Oui, 100% naturels ! Beurre de karité, huile d'argan, vitamine E. Aucun parabène. Ta peau mérite le meilleur. 💚",
   },
   {
-    q: '📞 Contacter Bestie',
-    a: 'Écris-nous sur WhatsApp au +509 0000 0000. Nous répondons en moins de 2h ! Tu peux aussi envoyer un message via le bouton WhatsApp du site. 💬',
+    q: '📞 Nous contacter',
+    a: 'Écris-nous sur WhatsApp au +509 0000 0000. Nous répondons en moins de 2h ! 💬',
   },
 ];
 
-const GREETING = 'Bonjour ! 💕 Je suis l\'assistante Bestie. Clique sur une question pour que je t\'aide !';
+const GREETING =
+  'Bonjour belle ! 💕 Je suis ton assistante Bestie. Clique sur une suggestion ou pose-moi ta question !';
+
+const KEYWORDS: { words: string[]; faqIndex: number }[] = [
+  { words: ['commander', 'commande', 'acheter', 'achat', 'panier', 'order'], faqIndex: 0 },
+  { words: ['livraison', 'délai', 'livrer', 'délais', 'temps', 'attente'], faqIndex: 1 },
+  { words: ['prix', 'paiement', 'payer', 'coût', 'tarif', 'moncash', 'natcash', 'htg'], faqIndex: 2 },
+  { words: ['couleur', 'teinte', 'cherry', 'honey', 'strawberry', 'grenat', 'shade'], faqIndex: 3 },
+  { words: ['ingrédient', 'naturel', 'karité', 'argan', 'parabène', 'composition'], faqIndex: 4 },
+  { words: ['contact', 'whatsapp', 'téléphone', 'appeler', 'numéro', 'joindre'], faqIndex: 5 },
+];
+
+const DEFAULT_REPLY =
+  "Je ne suis pas sûre de comprendre 😊 Essaie l'une des suggestions ci-dessous, ou contacte-nous directement sur WhatsApp au +509 0000 0000 💬";
+
+function getBotReply(input: string): string {
+  const lower = input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+  for (const { words, faqIndex } of KEYWORDS) {
+    if (words.some((w) => lower.includes(w))) return FAQ[faqIndex].a;
+  }
+  return DEFAULT_REPLY;
+}
+
+function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
+  const [imgError, setImgError] = useState(false);
+  const cls =
+    size === 'lg'
+      ? 'w-11 h-11 rounded-2xl object-cover'
+      : 'w-6 h-6 rounded-full object-cover shrink-0';
+
+  if (imgError) {
+    return (
+      <div
+        className={
+          size === 'lg'
+            ? 'w-11 h-11 rounded-2xl flex items-center justify-center text-2xl bg-white/25 backdrop-blur-sm'
+            : 'w-6 h-6 rounded-full flex items-center justify-center text-sm shrink-0'
+        }
+        style={
+          size === 'sm'
+            ? { background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }
+            : {}
+        }
+      >
+        👧
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/avatar-bot.png"
+      alt="Bestie"
+      className={cls}
+      onError={() => setImgError(true)}
+    />
+  );
+}
 
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: 0, text: GREETING, from: 'bot' },
   ]);
+  const [isTyping, setIsTyping] = useState(false);
   const [counter, setCounter] = useState(1);
+  const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const constraintsRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOpen]);
+    if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) setTimeout(() => inputRef.current?.focus(), 200);
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => { if (streamRef.current) clearInterval(streamRef.current); };
+  }, []);
+
+  const streamReply = (fullText: string, msgId: number) => {
+    let i = 0;
+    streamRef.current = setInterval(() => {
+      i += 2; // advance 2 chars per tick for a snappy feel
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId ? { ...m, text: fullText.slice(0, i), streaming: i < fullText.length } : m
+        )
+      );
+      if (i >= fullText.length) {
+        clearInterval(streamRef.current!);
+        streamRef.current = null;
+      }
+    }, 22);
+  };
+
+  const deliverBotReply = (reply: string, userId: number) => {
+    const botId = userId + 1;
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      setMessages((prev) => [...prev, { id: botId, text: '', from: 'bot', streaming: true }]);
+      streamReply(reply, botId);
+    }, 700);
+  };
+
+  const sendMessage = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isTyping) return;
+    const reply = getBotReply(trimmed);
+    const userId = counter;
+    setMessages((prev) => [...prev, { id: userId, text: trimmed, from: 'user' }]);
+    setCounter((c) => c + 2);
+    setInputValue('');
+    deliverBotReply(reply, userId);
+  };
 
   const handleFAQ = (faq: { q: string; a: string }) => {
-    setMessages((prev) => [
-      ...prev,
-      { id: counter, text: faq.q, from: 'user' },
-      { id: counter + 1, text: faq.a, from: 'bot' },
-    ]);
+    if (isTyping) return;
+    const userId = counter;
+    setMessages((prev) => [...prev, { id: userId, text: faq.q, from: 'user' }]);
     setCounter((c) => c + 2);
+    deliverBotReply(faq.a, userId);
   };
 
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      dragElastic={0}
-      className="fixed bottom-6 right-6 z-50"
-      style={{ touchAction: 'none', userSelect: 'none' }}
-      ref={constraintsRef}
-    >
+    <div className="fixed bottom-6 right-6 z-50">
       {/* Chat window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.95 }}
+            initial={{ opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-pink-100 overflow-hidden"
-            onPointerDown={(e) => e.stopPropagation()}
+            exit={{ opacity: 0, y: 16, scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            className="absolute bottom-20 right-0 w-[350px] bg-white rounded-3xl overflow-hidden"
+            style={{
+              boxShadow:
+                '0 8px 40px rgba(242,167,187,0.35), 0 2px 12px rgba(0,0,0,0.10)',
+            }}
           >
-            {/* Header — also serves as drag handle visual cue */}
-            <div className="bg-primary px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl" aria-hidden="true">💋</span>
+            {/* Header */}
+            <div
+              className="px-5 py-4 flex items-center justify-between"
+              style={{
+                background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <BotAvatar size="lg" />
                 <div>
-                  <p className="font-lato font-bold text-white text-sm">Bestie Assistant</p>
-                  <p className="font-lato text-white/80 text-xs flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-300 inline-block" />
-                    En ligne
+                  <p className="font-playfair font-bold text-white text-[17px] leading-tight">
+                    Bestie
+                  </p>
+                  <p className="font-lato text-white/85 text-[11px] flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-300 inline-block animate-pulse" />
+                    En ligne maintenant
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <GripHorizontal size={16} className="text-white/50" aria-hidden="true" />
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
-                  aria-label="Fermer le chat"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition-colors"
+                aria-label="Fermer"
+              >
+                <X size={14} className="text-white" />
+              </button>
             </div>
 
             {/* Messages */}
             <div
-              className="h-52 overflow-y-auto p-3 space-y-2"
-              style={{ background: 'linear-gradient(180deg, #fdf2f4 0%, #fff 100%)' }}
-              onPointerDown={(e) => e.stopPropagation()}
+              className="h-60 overflow-y-auto px-4 py-4 space-y-3"
+              style={{
+                background: 'linear-gradient(180deg, #FFF5F8 0%, #FFFFFF 60%)',
+              }}
             >
               {messages.map((msg) => (
-                <div
+                <motion.div
                   key={msg.id}
-                  className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex items-end gap-2 ${
+                    msg.from === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
                 >
+                  {msg.from === 'bot' && <BotAvatar size="sm" />}
                   <div
-                    className={`max-w-[85%] px-3 py-2 text-xs font-lato leading-relaxed ${
+                    className={`max-w-[78%] px-3.5 py-2.5 font-lato text-[13px] leading-relaxed ${
                       msg.from === 'bot'
-                        ? 'bg-white text-gray-700 shadow-sm rounded-2xl rounded-tl-none'
-                        : 'bg-primary text-white rounded-2xl rounded-tr-none'
+                        ? 'bg-white text-gray-700 rounded-2xl rounded-bl-sm shadow-sm border border-pink-50'
+                        : 'text-white rounded-2xl rounded-br-sm shadow-sm'
                     }`}
+                    style={
+                      msg.from === 'user'
+                        ? { background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }
+                        : {}
+                    }
                   >
                     {msg.text}
+                    {msg.streaming && (
+                      <span
+                        className="inline-block w-0.5 h-3.5 ml-0.5 rounded-full align-middle animate-pulse"
+                        style={{ background: '#F2A7BB', verticalAlign: 'middle' }}
+                      />
+                    )}
                   </div>
-                </div>
+                </motion.div>
               ))}
+
+              {/* Dots typing indicator (shown before stream starts) */}
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-end gap-2"
+                  >
+                    <BotAvatar size="sm" />
+                    <div className="bg-white border border-pink-50 shadow-sm rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: '#F2A7BB' }}
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{
+                            duration: 0.55,
+                            delay: i * 0.15,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick replies */}
-            <div
-              className="p-3 border-t border-pink-100 space-y-1.5 max-h-44 overflow-y-auto bg-white"
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <p className="font-lato text-xs text-gray-400 mb-2">Questions fréquentes :</p>
-              {FAQ.map((faq) => (
-                <button
-                  key={faq.q}
-                  onClick={() => handleFAQ(faq)}
-                  className="w-full text-left font-lato text-xs text-gray-700 bg-pink-50 hover:bg-pink-100 active:bg-pink-200 px-3 py-2 rounded-full transition-colors border border-pink-100 hover:border-primary/30"
-                >
-                  {faq.q}
-                </button>
-              ))}
+            {/* FAQ chips */}
+            <div className="px-4 pt-2.5 pb-2 border-t border-pink-50 bg-white">
+              <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">
+                Suggestions
+              </p>
+              <div
+                className="flex gap-2 overflow-x-auto pb-1"
+                style={{ scrollbarWidth: 'none' }}
+              >
+                {FAQ.map((faq) => (
+                  <button
+                    key={faq.q}
+                    onClick={() => handleFAQ(faq)}
+                    className="font-lato text-[12px] text-primary bg-pink-50 hover:bg-pink-100 active:scale-95 px-3 py-1.5 rounded-full whitespace-nowrap border border-pink-100 hover:border-primary/40 transition-all shrink-0"
+                  >
+                    {faq.q}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Input */}
+            <div className="px-4 py-3 bg-white border-t border-pink-50 flex items-center gap-2.5">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') sendMessage(inputValue);
+                }}
+                placeholder="Écris ta question…"
+                className="flex-1 font-lato text-sm bg-pink-50/70 border border-pink-100 rounded-full px-4 py-2.5 outline-none focus:border-primary/50 focus:bg-pink-50 transition-all placeholder-gray-300"
+              />
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                onClick={() => sendMessage(inputValue)}
+                disabled={!inputValue.trim() || isTyping}
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35"
+                style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
+                aria-label="Envoyer"
+              >
+                <Send size={14} className="text-white" />
+              </motion.button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Toggle button */}
-      <motion.button
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.93 }}
-        onClick={() => setIsOpen((o) => !o)}
-        onPointerDown={(e) => e.stopPropagation()}
-        className="w-14 h-14 bg-primary hover:bg-pink-400 rounded-full shadow-xl flex items-center justify-center transition-colors relative"
-        aria-label={isOpen ? 'Fermer le chat' : 'Ouvrir le chat Bestie'}
-      >
-        <AnimatePresence mode="wait">
-          {isOpen ? (
-            <motion.span
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <X size={22} className="text-white" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="open"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <MessageCircle size={22} className="text-white" />
-            </motion.span>
-          )}
-        </AnimatePresence>
-
-        {/* Notification dot */}
+      <div className="relative">
         {!isOpen && (
           <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full"
-            aria-hidden="true"
+            className="absolute inset-0 rounded-full"
+            style={{ background: 'rgba(242,167,187,0.4)' }}
+            animate={{ scale: [1, 1.55, 1.55], opacity: [0.7, 0, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
           />
         )}
-      </motion.button>
-    </motion.div>
+        <motion.button
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.91 }}
+          onClick={() => setIsOpen((o) => !o)}
+          className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
+            boxShadow: '0 4px 20px rgba(242,167,187,0.55)',
+          }}
+          aria-label={isOpen ? 'Fermer le chat' : 'Ouvrir le chat Bestie'}
+        >
+          <AnimatePresence mode="wait">
+            {isOpen ? (
+              <motion.span
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <X size={20} className="text-white" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="open"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full h-full flex items-center justify-center"
+              >
+                <BotAvatarButton />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+function BotAvatarButton() {
+  const [imgError, setImgError] = useState(false);
+  if (imgError) return <span className="text-2xl">👧</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/avatar-bot.png"
+      alt="Bestie"
+      className="w-full h-full object-cover rounded-full"
+      onError={() => setImgError(true)}
+    />
   );
 }

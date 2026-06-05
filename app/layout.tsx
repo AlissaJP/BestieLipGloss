@@ -5,10 +5,7 @@ import {
   Lato,
 } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import ChatBot from '@/components/ChatBot';
-import AuthModal from '@/components/AuthModal';
+import SiteShell from '@/components/SiteShell';
 
 const playfair = Playfair_Display({
   variable: '--font-playfair-family',
@@ -52,11 +49,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Great+Vibes:wght@400&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-[#FAF9F7] text-[#2D2D2D] min-h-screen antialiased">
-        <Header />
-        <main className="pt-16 lg:pt-20">{children}</main>
-        <Footer />
-        <ChatBot />
-        <AuthModal />
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

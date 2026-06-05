@@ -104,55 +104,6 @@ export default function CommentCommanderPage() {
         </div>
       </section>
 
-      {/* Delivery fees table */}
-      <section className="max-w-4xl mx-auto px-4 pb-12">
-        <div className="bg-white rounded-2xl p-6 border border-pink-100">
-          <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-5">
-            📍 Frais de livraison par ville
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-pink-100">
-                  <th className="font-playfair font-semibold text-gray-800 text-left py-3 pr-4">Ville</th>
-                  <th className="font-playfair font-semibold text-gray-800 text-right py-3">Frais</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { city: 'Port-au-Prince centre', fee: '150 HTG' },
-                  { city: 'Pétion-Ville', fee: '200 HTG' },
-                  { city: 'Zone métropolitaine', fee: '250 HTG' },
-                  { city: 'Cap-Haïtien', fee: '350 HTG' },
-                  { city: 'Autres villes', fee: '400 HTG' },
-                  { city: '🎉 Commande ≥ 2 000 HTG', fee: 'GRATUITE', highlight: true },
-                ].map((row) => (
-                  <tr
-                    key={row.city}
-                    className={`border-b border-pink-50 ${row.highlight ? 'bg-green-50' : ''}`}
-                  >
-                    <td
-                      className={`font-lato text-sm py-3 pr-4 ${
-                        row.highlight ? 'text-green-700 font-semibold' : 'text-gray-600'
-                      }`}
-                    >
-                      {row.city}
-                    </td>
-                    <td
-                      className={`font-lato text-sm py-3 text-right font-bold ${
-                        row.highlight ? 'text-green-700' : 'text-primary'
-                      }`}
-                    >
-                      {row.fee}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section className="max-w-4xl mx-auto px-4 pb-16">
         <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-6">

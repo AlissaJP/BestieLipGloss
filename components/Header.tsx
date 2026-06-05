@@ -308,6 +308,27 @@ export default function Header() {
                   )}
                 </div>
 
+                {/* Mobile language switcher */}
+                <div className="pt-3 pb-2 border-t border-pink-100">
+                  <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">{t.lang.label}</p>
+                  <div className="flex gap-2">
+                    {LANGS.map(({ code, flag }) => (
+                      <button
+                        key={code}
+                        onClick={() => { setLang(code); setIsMenuOpen(false); }}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-lato text-sm flex-1 justify-center transition-colors ${
+                          lang === code
+                            ? 'bg-primary text-white font-semibold'
+                            : 'bg-pink-50 text-gray-600 hover:bg-pink-100'
+                        }`}
+                      >
+                        <span>{flag}</span>
+                        <span className="uppercase font-semibold">{code}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Mobile search */}
                 <div className="pt-2 pb-1 border-t border-pink-100">
                   <input type="text" placeholder={t.search.placeholderMobile}
