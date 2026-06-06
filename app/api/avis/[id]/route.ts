@@ -4,8 +4,9 @@ type Statut = 'en_attente' | 'publie' | 'refuse';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const body = await request.json();
   const { statut }: { statut: Statut } = body;
 
@@ -14,5 +15,5 @@ export async function PATCH(
   }
 
   // TODO (BDD): UPDATE Avis SET statut = ? WHERE id = ?
-  return NextResponse.json({ success: true, id: params.id, statut });
+  return NextResponse.json({ success: true, id, statut });
 }

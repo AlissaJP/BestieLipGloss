@@ -4,8 +4,9 @@ type OrderStatus = 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const { nouveau_statut, ancien_statut, id_admin, note } = await request.json() as {
     nouveau_statut: OrderStatus;
     ancien_statut: OrderStatus | null;
@@ -27,7 +28,7 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    id_commande: params.id,
+    id_commande: id,
     ancien_statut,
     nouveau_statut,
     date_changement: new Date().toISOString(),
@@ -38,17 +39,17 @@ export async function POST(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // TODO (BDD):
   // SELECT h.*, u.prenom as admin_prenom FROM HistoriqueStatutCommande h
   // LEFT JOIN Utilisateur u ON h.id_admin = u.id
   // WHERE h.id_commande = ?
   // ORDER BY h.date_changement ASC
 
-  // Stub: return derived timeline from order status (replace with real DB query)
   return NextResponse.json({
-    id_commande: params.id,
+    id_commande: id,
     historique: [],
   });
 }

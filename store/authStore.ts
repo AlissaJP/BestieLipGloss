@@ -11,6 +11,9 @@ export interface Address {
   quartier?: string;
   state?: string;
   zipCode?: string;
+  telephone_livraison?: string;
+  instructions_livraison?: string;
+  est_principale?: boolean;
 }
 
 export interface User {

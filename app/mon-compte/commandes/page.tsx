@@ -42,6 +42,15 @@ const STATUSES = [
     active: 'bg-green-500 text-white shadow-sm shadow-green-200',
     dot: 'bg-green-400',
   },
+  {
+    key: 'annule',
+    label: 'Annulée',
+    desc: 'Commande annulée',
+    emoji: '🚫',
+    pill: 'bg-gray-100 text-gray-500',
+    active: 'bg-gray-500 text-white shadow-sm shadow-gray-200',
+    dot: 'bg-gray-400',
+  },
 ];
 
 export default function CommandesPage() {

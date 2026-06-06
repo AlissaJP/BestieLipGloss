@@ -16,13 +16,14 @@ export default function BoutiquePage() {
   const t = translations[lang];
   const managedProducts = useAdminStore((s) => s.managedProducts);
 
-  const catalog = managedProducts.length > 0
+  const catalog = (managedProducts.length > 0
     ? managedProducts.filter((p) => p.published)
-    : staticProducts;
+    : staticProducts
+  ).filter((p) => p.is_active !== false);
 
   const filtered = catalog.filter((p) => {
-    if (filter === 'artisanal') return p.badge.includes('Artisanal');
-    if (filter === 'bestseller') return p.badge.includes('Best-seller');
+    if (filter === 'artisanal') return p.badge_type === 'artisanal' || p.badge.includes('Artisanal');
+    if (filter === 'bestseller') return p.is_bestseller === true || p.badge.includes('Best-seller');
     return true;
   });
 

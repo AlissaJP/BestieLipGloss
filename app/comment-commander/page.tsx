@@ -1,5 +1,9 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, MessageCircle, CreditCard, Package } from 'lucide-react';
+import type { ZoneLivraison } from '@/app/api/zones-livraison/route';
 
 const steps = [
   {
@@ -20,42 +24,69 @@ const steps = [
     number: '03',
     icon: <MessageCircle size={28} className="text-green-600" />,
     title: 'Effectue le paiement',
-    desc: 'Règle ta commande via MonCash ou Zelle selon les instructions affichées. Envoie ensuite la capture d\'écran de confirmation.',
+    desc: "Règle ta commande via MonCash ou Zelle selon les instructions affichées. Envoie ensuite la capture d'écran de confirmation.",
     color: 'bg-green-50',
   },
   {
     number: '04',
     icon: <Package size={28} className="text-accent" />,
     title: 'Reçois ta livraison',
-    desc: 'Notre équipe vérifie ton paiement et te contacte sur WhatsApp sous 2h. La livraison s\'effectue en 24 à 72h selon ta ville.',
+    desc: "Notre équipe vérifie ton paiement et te contacte sur WhatsApp sous 2h. La livraison s'effectue en 24 à 72h selon ta ville.",
     color: 'bg-amber-50',
   },
 ];
 
-const faqs = [
+const staticFaqs = [
   {
     q: 'Quels sont les délais de livraison ?',
     a: 'La livraison prend 24 à 72 heures après confirmation du paiement. Port-au-Prince et Pétion-Ville sont généralement livrés en 24h.',
   },
   {
-    q: 'Quels sont les frais de livraison ?',
-    a: 'Les frais varient selon la ville : 150 HTG (Port-au-Prince centre), 200 HTG (Pétion-Ville), 250 HTG (Zone métropolitaine), 350 HTG (Cap-Haïtien), 400 HTG (autres villes). La livraison est GRATUITE pour toute commande de 2 000 HTG ou plus.',
-  },
-  {
     q: 'Comment puis-je payer ?',
-    a: 'Nous acceptons MonCash (numéro haïtien) et Zelle (pour les clients en dehors d\'Haïti). D\'autres modes de paiement seront disponibles bientôt.',
+    a: "Nous acceptons MonCash (numéro haïtien) et Zelle (pour les clients en dehors d'Haïti). D'autres modes de paiement seront disponibles bientôt.",
   },
   {
     q: 'Puis-je retourner un produit ?',
-    a: 'Pour des raisons d\'hygiène, nous n\'acceptons pas les retours sur les produits cosmétiques ouverts. Si ton produit est endommagé à la réception, contacte-nous immédiatement sur WhatsApp avec une photo.',
+    a: "Pour des raisons d'hygiène, nous n'acceptons pas les retours sur les produits cosmétiques ouverts. Si ton produit est endommagé à la réception, contacte-nous immédiatement sur WhatsApp avec une photo.",
   },
   {
-    q: 'Est-ce que vous livrez en dehors d\'Haïti ?',
-    a: 'Pour l\'instant, nous livrons uniquement en Haïti. Nous travaillons sur des options de livraison internationale — reste connectée !',
+    q: "Est-ce que vous livrez en dehors d'Haïti ?",
+    a: "Pour l'instant, nous livrons uniquement en Haïti. Nous travaillons sur des options de livraison internationale — reste connectée !",
   },
 ];
 
+function buildDeliveryAnswer(zones: ZoneLivraison[]): string {
+  if (zones.length === 0) {
+    return "Les frais varient selon la ville : 150 HTG (Port-au-Prince centre), 200 HTG (Pétion-Ville), 250 HTG (Zone métropolitaine), 350 HTG (Cap-Haïtien), 400 HTG (autres villes). La livraison est GRATUITE pour toute commande de 2 000 HTG ou plus.";
+  }
+  const lines = zones.map((z) => {
+    const seuil = z.seuil_gratuit ? ` — gratuite dès ${z.seuil_gratuit} HTG` : '';
+    return `${z.frais_htg} HTG (${z.nom_zone})${seuil}`;
+  });
+  const uniqueSeuils = [...new Set(zones.map((z) => z.seuil_gratuit).filter(Boolean))];
+  const freeNote = uniqueSeuils.length === 1
+    ? ` La livraison est GRATUITE pour toute commande de ${uniqueSeuils[0]} HTG ou plus.`
+    : '';
+  return `Les frais varient selon la zone : ${lines.join(', ')}.${freeNote}`;
+}
+
 export default function CommentCommanderPage() {
+  const [zones, setZones] = useState<ZoneLivraison[]>([]);
+
+  useEffect(() => {
+    fetch('/api/zones-livraison')
+      .then((r) => r.json())
+      .then((d) => setZones(d.zones ?? []))
+      .catch(() => {});
+  }, []);
+
+  const deliveryFaq = {
+    q: 'Quels sont les frais de livraison ?',
+    a: buildDeliveryAnswer(zones),
+  };
+
+  const faqs = [staticFaqs[0], deliveryFaq, ...staticFaqs.slice(1)];
+
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
       {/* Header */}

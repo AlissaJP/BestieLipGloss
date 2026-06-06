@@ -1,27 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, Upload, CheckCircle, MapPin, Phone, UserCircle, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, Upload, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore, type Address } from '@/store/authStore';
 import CheckoutStepper from '@/components/CheckoutStepper';
 import { products } from '@/data/products';
 import type { ColorVariant } from '@/data/products';
-
-const CITY_FEES: Record<string, number> = {
-  'Port-au-Prince centre': 150,
-  'Pétion-Ville': 200,
-  'Zone métropolitaine': 250,
-  'Cap-Haïtien': 350,
-  'Jacmel': 400,
-  'Les Cayes': 400,
-  'Gonaïves': 400,
-  'Saint-Marc': 400,
-  'Autre ville': 400,
-};
+import type { ZoneLivraison } from '@/app/api/zones-livraison/route';
 
 const USA_FEE = 3500;
 
@@ -32,9 +21,18 @@ type SavedDelivery = { name: string; telephone: string; address: Address };
 const inputCls = 'w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white min-h-[44px]';
 const labelCls = 'font-lato text-sm text-gray-700 font-medium block mb-1.5';
 
-function addrFee(addr: Address, discountedSubtotal: number): number {
+function generateNumeroCommande(): string {
+  const year = new Date().getFullYear();
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `BES-${year}-${suffix}`;
+}
+
+function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison[]): number {
   if ((addr.country ?? 'ht') === 'us') return USA_FEE;
-  return discountedSubtotal >= 2000 ? 0 : (CITY_FEES[addr.ville] ?? 400);
+  const zone = zones.find((z) => z.nom_zone === addr.ville);
+  const frais = zone?.frais_htg ?? 400;
+  const seuil = zone?.seuil_gratuit ?? 2000;
+  return discountedSubtotal >= seuil ? 0 : frais;
 }
 
 function formatAddress(addr: Address): string {
@@ -54,14 +52,34 @@ export default function PanierPage() {
   const [promoInfo, setPromoInfo] = useState<PromoInfo | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
 
-  // Selected address (shared between estimator in Step 0 and delivery form in Step 1)
+  // E4 — zones de livraison depuis l'API
+  const [zones, setZones] = useState<ZoneLivraison[]>([]);
+  useEffect(() => {
+    fetch('/api/zones-livraison')
+      .then((r) => r.json())
+      .then((d) => setZones(d.zones ?? []))
+      .catch(() => {});
+  }, []);
+
   const savedAddresses = user?.addresses ?? [];
   const [selectedAddr, setSelectedAddr] = useState<Address | null>(savedAddresses[0] ?? null);
   const [addrError, setAddrError] = useState('');
 
+  // E5 — champs de livraison supplémentaires
+  const [telephoneLivraison, setTelephoneLivraison] = useState('');
+  const [instructionsLivraison, setInstructionsLivraison] = useState('');
+
   const [paymentMethod, setPaymentMethod] = useState<'moncash' | 'zelle'>('moncash');
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  // E3 — référence de transaction
+  const [referenceTransaction, setReferenceTransaction] = useState('');
+  // E2 — note client
+  const [noteClient, setNoteClient] = useState('');
   const [deliveryData, setDeliveryData] = useState<SavedDelivery | null>(null);
+  // E2 — numero_commande généré une seule fois
+  const [numeroCommande, setNumeroCommande] = useState('');
 
   // Detect cart items that were added from the card without a variant choice
   const itemsNeedingVariant = items.filter((item) => {
@@ -78,7 +96,7 @@ export default function PanierPage() {
     : 0;
   const discountedSubtotal = subtotal - discountAmount;
 
-  const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal) : 0;
+  const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones) : 0;
   const total = discountedSubtotal + deliveryFee;
 
   const applyPromo = async () => {
@@ -109,13 +127,44 @@ export default function PanierPage() {
     setAddrError('');
     setDeliveryData({
       name: user?.name ?? '',
-      telephone: user?.telephone ?? '',
+      telephone: telephoneLivraison || (user?.telephone ?? ''),
       address: selectedAddr,
     });
+    if (!numeroCommande) setNumeroCommande(generateNumeroCommande());
+    setPaymentError('');
     setStep(2);
   };
 
-  const onConfirmOrder = () => { clearCart(); setStep(3); };
+  const onConfirmOrder = async () => {
+    setPaymentLoading(true);
+    setPaymentError('');
+    const devise: 'HTG' | 'USD' = paymentMethod === 'zelle' ? 'USD' : 'HTG';
+    try {
+      const res = await fetch('/api/paiement/soumettre', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_commande: numeroCommande,
+          mode_paiement: paymentMethod,
+          montant_paye: paymentMethod === 'zelle' ? parseFloat((total / 130).toFixed(2)) : total,
+          devise_paiement: devise,
+          reference_transaction: referenceTransaction || null,
+          note_client: noteClient || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPaymentError(data.message ?? 'Une erreur est survenue. Réessaie.');
+        return;
+      }
+      clearCart();
+      setStep(3);
+    } catch {
+      setPaymentError('Erreur de connexion. Vérifie ta connexion et réessaie.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   /* ——— STEP 3 : Success ——— */
   if (step === 3) {
@@ -130,6 +179,12 @@ export default function PanierPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">Commande confirmée ! 🎉</h1>
             <p className="font-lato text-gray-600 leading-relaxed mb-2">Merci ! Ta commande est en cours de vérification.</p>
+            {numeroCommande && (
+              <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 border border-gray-200 inline-block">
+                <p className="font-lato text-xs text-gray-500 mb-0.5">Numéro de commande</p>
+                <p className="font-playfair font-bold text-gray-800 tracking-wider">{numeroCommande}</p>
+              </div>
+            )}
             <p className="font-cormorant text-lg text-gray-500 italic mb-8">Tu recevras une confirmation sur WhatsApp dans les 2h. 💕</p>
             <div className="bg-pink-50 rounded-2xl p-4 mb-8 text-left">
               <p className="font-lato text-sm text-gray-600">
@@ -321,7 +376,7 @@ export default function PanierPage() {
                           </select>
                           {selectedAddr && (
                             <p className="font-lato text-xs text-primary font-semibold mt-2">
-                              Frais estimés : {addrFee(selectedAddr, discountedSubtotal) === 0 ? '🎉 Livraison gratuite' : `${addrFee(selectedAddr, discountedSubtotal)} HTG`}
+                              Frais estimés : {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Livraison gratuite' : `${addrFee(selectedAddr, discountedSubtotal, zones)} HTG`}
                             </p>
                           )}
                         </>
@@ -455,7 +510,7 @@ export default function PanierPage() {
                               </p>
                               <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-xs text-primary font-semibold mt-1.5">
-                                Livraison : {addrFee(addr, discountedSubtotal) === 0 ? '🎉 Gratuite' : `${addrFee(addr, discountedSubtotal)} HTG`}
+                                Livraison : {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Gratuite' : `${addrFee(addr, discountedSubtotal, zones)} HTG`}
                               </p>
                             </div>
                             {selectedAddr?.id === addr.id && (
@@ -471,6 +526,42 @@ export default function PanierPage() {
                     )}
 
                     {addrError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
+                  </div>
+
+                  {/* E5 — Contacts & instructions livraison */}
+                  <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
+                    <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
+                      <Phone size={16} className="text-primary" />Contact &amp; instructions
+                    </h3>
+                    <div>
+                      <label className={labelCls} htmlFor="tel-livraison">
+                        Numéro WhatsApp pour la livraison
+                        <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                      </label>
+                      <input
+                        id="tel-livraison"
+                        type="tel"
+                        placeholder={user?.telephone ?? '509-XX-XX-XXXX'}
+                        value={telephoneLivraison}
+                        onChange={(e) => setTelephoneLivraison(e.target.value)}
+                        className={inputCls}
+                      />
+                      <p className="font-lato text-xs text-gray-400 mt-1">Laisse vide pour utiliser le numéro de ton compte.</p>
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="instructions-livraison">
+                        Instructions de localisation
+                        <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                      </label>
+                      <textarea
+                        id="instructions-livraison"
+                        rows={3}
+                        placeholder="Ex. : maison blanche avec portail bleu, en face de l'église…"
+                        value={instructionsLivraison}
+                        onChange={(e) => setInstructionsLivraison(e.target.value)}
+                        className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex gap-3">
@@ -624,10 +715,59 @@ export default function PanierPage() {
                     </label>
                   </div>
 
+                  {/* E3 — Référence de transaction */}
+                  <div className="bg-white rounded-2xl p-6 border border-pink-100">
+                    <label className={labelCls} htmlFor="reference-transaction">
+                      Référence de transaction
+                      <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                    </label>
+                    <input
+                      id="reference-transaction"
+                      type="text"
+                      placeholder={paymentMethod === 'moncash' ? 'ID de confirmation MonCash' : 'Référence de confirmation Zelle'}
+                      value={referenceTransaction}
+                      onChange={(e) => setReferenceTransaction(e.target.value)}
+                      className={inputCls}
+                    />
+                    <p className="font-lato text-xs text-gray-400 mt-1">Disponible dans ton appli après le paiement.</p>
+                  </div>
+
+                  {/* E2 — Note client */}
+                  <div className="bg-white rounded-2xl p-6 border border-pink-100">
+                    <label className={labelCls} htmlFor="note-client">
+                      <MessageSquare size={14} className="inline mr-1 text-primary" />
+                      Message pour Bestie
+                      <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                    </label>
+                    <textarea
+                      id="note-client"
+                      rows={3}
+                      placeholder="Un message, une demande spéciale…"
+                      value={noteClient}
+                      onChange={(e) => setNoteClient(e.target.value)}
+                      className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
+                    />
+                  </div>
+
+                  {paymentError && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                      <span className="text-amber-500 mt-0.5 flex-shrink-0">⚠</span>
+                      <p className="font-lato text-sm text-amber-800">{paymentError}</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-3">
-                    <button onClick={() => setStep(1)} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px]">← Retour</button>
-                    <button onClick={onConfirmOrder} className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2">
-                      <CheckCircle size={18} />Confirmer ma commande
+                    <button onClick={() => setStep(1)} disabled={paymentLoading} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px] disabled:opacity-50">← Retour</button>
+                    <button
+                      onClick={onConfirmOrder}
+                      disabled={paymentLoading}
+                      className="flex-1 bg-primary hover:bg-pink-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-lato font-semibold py-3.5 rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2"
+                    >
+                      {paymentLoading ? (
+                        <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Envoi en cours…</>
+                      ) : (
+                        <><CheckCircle size={18} />Confirmer ma commande</>
+                      )}
                     </button>
                   </div>
                 </div>

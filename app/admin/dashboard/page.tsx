@@ -7,19 +7,20 @@ import {
   LayoutDashboard, Users, Clock, CreditCard, Truck, PackageCheck,
   LogOut, CheckCircle, ArrowRight, ArrowLeft, TrendingUp, ShoppingBag, X,
   Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
-  Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink,
+  Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink, XCircle, Ban,
 } from 'lucide-react';
 import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct } from '@/store/adminStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
-type Tab = 'overview' | 'users' | 'pending' | 'paid' | 'shipping' | 'delivered' | 'products';
+type Tab = 'overview' | 'users' | 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled' | 'products';
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
   pending:   'bg-amber-50  text-amber-600  border border-amber-100',
   paid:      'bg-green-50  text-green-600  border border-green-100',
   shipping:  'bg-blue-50   text-blue-600   border border-blue-100',
   delivered: 'bg-pink-50   text-primary    border border-pink-100',
+  cancelled: 'bg-gray-100  text-gray-500   border border-gray-200',
 };
 
 const STATUS_BAR: Record<OrderStatus, string> = {
@@ -27,6 +28,7 @@ const STATUS_BAR: Record<OrderStatus, string> = {
   paid:      'linear-gradient(180deg,#22C55E,#4ADE80)',
   shipping:  'linear-gradient(180deg,#3B82F6,#60A5FA)',
   delivered: 'linear-gradient(180deg,#F2A7BB,#EFBBA6)',
+  cancelled: 'linear-gradient(180deg,#9CA3AF,#D1D5DB)',
 };
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -298,6 +300,7 @@ export default function AdminDashboard() {
   const paid      = orders.filter((o) => o.status === 'paid');
   const shipping  = orders.filter((o) => o.status === 'shipping');
   const delivered = orders.filter((o) => o.status === 'delivered');
+  const cancelled = orders.filter((o) => o.status === 'cancelled');
   const revenue   = [...paid, ...shipping, ...delivered].reduce((s, o) => s + o.total, 0);
 
   const filteredCustomers = userSearch.trim()
@@ -338,6 +341,7 @@ export default function AdminDashboard() {
     { id: 'paid',      label: t.nav.paid,      icon: <CreditCard size={15} />,   count: paid.length },
     { id: 'shipping',  label: t.nav.shipping,  icon: <Truck size={15} />,        count: shipping.length },
     { id: 'delivered', label: t.nav.delivered, icon: <PackageCheck size={15} />, count: delivered.length },
+    { id: 'cancelled', label: t.nav.cancelled, icon: <Ban size={15} />,          count: cancelled.length },
     { id: 'products',  label: 'Produits',      icon: <Package size={15} />,       count: managedProducts.length },
   ];
 
@@ -596,7 +600,8 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.approve} actionIcon={<CheckCircle size={13} />}
-                  nextStatus="paid" onAction={handleStatusChange} statusLabels={t.status} />
+                  nextStatus="paid" cancelLabel={t.orders.cancel}
+                  onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'paid' && (
                 <OrdersSection title={t.sections.paid.title} subtitle={t.sections.paid.subtitle}
@@ -604,7 +609,8 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.ship} actionIcon={<Truck size={13} />}
-                  nextStatus="shipping" onAction={handleStatusChange} statusLabels={t.status} />
+                  nextStatus="shipping" cancelLabel={t.orders.cancel}
+                  onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'shipping' && (
                 <OrdersSection title={t.sections.shipping.title} subtitle={t.sections.shipping.subtitle}
@@ -612,13 +618,23 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.markDelivered} actionIcon={<PackageCheck size={13} />}
-                  nextStatus="delivered" onAction={handleStatusChange} statusLabels={t.status} />
+                  nextStatus="delivered" cancelLabel={t.orders.cancel}
+                  onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'delivered' && (
                 <OrdersSection
                   title={t.sections.delivered.title}
                   subtitle={t.sections.delivered.subtitle.replace('{n}', String(delivered.length)).replace('{s}', delivered.length > 1 ? 's' : '')}
                   orders={filterOrders(delivered)} search={orderSearch} onSearch={setOrderSearch}
+                  searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
+                  emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
+                  onAction={handleStatusChange} statusLabels={t.status} />
+              )}
+              {tab === 'cancelled' && (
+                <OrdersSection
+                  title={t.sections.cancelled.title}
+                  subtitle={t.sections.cancelled.subtitle}
+                  orders={filterOrders(cancelled)} search={orderSearch} onSearch={setOrderSearch}
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   onAction={handleStatusChange} statusLabels={t.status} />
@@ -649,13 +665,14 @@ export default function AdminDashboard() {
 /* ─── OrdersSection ─── */
 function OrdersSection({
   title, subtitle, orders, search, onSearch, searchPlaceholder, noResultsLabel,
-  emptyLabel, emptyDesc, actionLabel, actionIcon, nextStatus, onAction, statusLabels,
+  emptyLabel, emptyDesc, actionLabel, actionIcon, nextStatus, cancelLabel, onAction, statusLabels,
 }: {
   title: string; subtitle: string; orders: Order[];
   search: string; onSearch: (v: string) => void; searchPlaceholder: string; noResultsLabel: string;
   emptyLabel: string; emptyDesc: string;
   actionLabel?: string; actionIcon?: React.ReactNode;
-  nextStatus?: OrderStatus; onAction: (id: string, status: OrderStatus) => void;
+  nextStatus?: OrderStatus; cancelLabel?: string;
+  onAction: (id: string, status: OrderStatus) => void;
   statusLabels: Record<OrderStatus, string>;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -721,6 +738,15 @@ function OrdersSection({
                           {actionIcon}{actionLabel}<ArrowRight size={11} />
                         </motion.button>
                       )}
+                      {cancelLabel && order.status !== 'cancelled' && (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => onAction(order.id, 'cancelled')}
+                          className="flex items-center gap-1.5 font-lato text-xs font-semibold text-gray-400 hover:text-red-500 px-3 py-2 rounded-xl border border-gray-100 hover:border-red-200 hover:bg-red-50 transition-all shrink-0"
+                        >
+                          <XCircle size={12} />{cancelLabel}
+                        </motion.button>
+                      )}
                       <button
                         onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
                         className="flex items-center gap-1 font-lato text-[10px] text-gray-400 hover:text-primary transition-colors"
@@ -744,21 +770,27 @@ function OrdersSection({
                     >
                       <div className="mt-4 pt-4 border-t border-pink-50">
                         <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-3">Progression commande</p>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {STATUS_FLOW.map((s) => {
-                            const current = order.status === s;
-                            const passed = STATUS_FLOW.indexOf(order.status) > STATUS_FLOW.indexOf(s);
-                            return (
-                              <span key={s} className={`font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold ${
-                                current ? 'bg-primary text-white border-primary' :
-                                passed   ? 'bg-green-50 text-green-600 border-green-100' :
-                                           'bg-gray-50 text-gray-300 border-gray-100'
-                              }`}>
-                                {passed ? '✓ ' : ''}{statusLabels[s]}
-                              </span>
-                            );
-                          })}
-                        </div>
+                        {order.status === 'cancelled' ? (
+                          <span className="font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold bg-gray-100 text-gray-500 border-gray-200 inline-flex items-center gap-1">
+                            <XCircle size={10} /> {statusLabels['cancelled']}
+                          </span>
+                        ) : (
+                          <div className="flex gap-1.5 flex-wrap">
+                            {STATUS_FLOW.map((s) => {
+                              const current = order.status === s;
+                              const passed = STATUS_FLOW.indexOf(order.status) > STATUS_FLOW.indexOf(s);
+                              return (
+                                <span key={s} className={`font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold ${
+                                  current ? 'bg-primary text-white border-primary' :
+                                  passed   ? 'bg-green-50 text-green-600 border-green-100' :
+                                             'bg-gray-50 text-gray-300 border-gray-100'
+                                }`}>
+                                  {passed ? '✓ ' : ''}{statusLabels[s]}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                         <p className="font-lato text-[10px] text-gray-300 mt-2 italic">
                           Dates de transition disponibles après connexion base de données.
                         </p>
@@ -805,7 +837,7 @@ function toSlug(str: string) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string };
+type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string; ordre_affichage: number };
 type FormState = {
   name: string; shade: string; introImage: string;
   price_htg: string; price_usd: string; description: string;
@@ -818,7 +850,13 @@ function emptyForm(): FormState {
 }
 
 function productToForm(p: ManagedProduct): FormState {
-  return { name: p.name, shade: p.shade, introImage: p.introImage ?? '', price_htg: String(p.price_htg), price_usd: String(p.price_usd), description: p.description, badge: p.badge, bgColor: p.bgColor, stock: String(p.stock), variants: p.variants ? [...p.variants] : [], ingredients: [...p.ingredients], benefits: [...p.benefits] };
+  return {
+    name: p.name, shade: p.shade, introImage: p.introImage ?? '',
+    price_htg: String(p.price_htg), price_usd: String(p.price_usd),
+    description: p.description, badge: p.badge, bgColor: p.bgColor, stock: String(p.stock),
+    variants: p.variants ? p.variants.map((v) => ({ ...v, ordre_affichage: v.ordre_affichage ?? 0 })) : [],
+    ingredients: [...p.ingredients], benefits: [...p.benefits],
+  };
 }
 
 function FLabel({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -881,7 +919,7 @@ function ProductForm({ initial, onSave, onCancel }: {
   const upd = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const openVariant = (v?: FormVariant, idx?: number) => {
-    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: 'bg-pink-300' });
+    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: 'bg-pink-300', ordre_affichage: form.variants.length + 1 });
     setVIdx(idx ?? null);
   };
 
@@ -995,7 +1033,19 @@ function ProductForm({ initial, onSave, onCancel }: {
                   <input value={vForm.name} onChange={(e) => setVForm((v) => v ? { ...v, name: e.target.value } : v)} placeholder="Nom (ex : Cherry)" className={INPUT_CLS + ' text-xs py-2'} />
                   <input value={vForm.shade} onChange={(e) => setVForm((v) => v ? { ...v, shade: e.target.value } : v)} placeholder="Teinte courte" className={INPUT_CLS + ' text-xs py-2'} />
                 </div>
-                <input value={vForm.image} onChange={(e) => setVForm((v) => v ? { ...v, image: e.target.value } : v)} placeholder="URL photo" className={INPUT_CLS + ' text-xs py-2'} />
+                <div className="flex gap-2">
+                  <input value={vForm.image} onChange={(e) => setVForm((v) => v ? { ...v, image: e.target.value } : v)} placeholder="URL photo" className={INPUT_CLS + ' text-xs py-2 flex-1'} />
+                  <div className="flex-shrink-0 w-24">
+                    <input
+                      type="number" min={0}
+                      value={vForm.ordre_affichage}
+                      onChange={(e) => setVForm((v) => v ? { ...v, ordre_affichage: parseInt(e.target.value) || 0 } : v)}
+                      placeholder="Ordre"
+                      title="ordre_affichage"
+                      className={INPUT_CLS + ' text-xs py-2'}
+                    />
+                  </div>
+                </div>
                 <textarea value={vForm.description} onChange={(e) => setVForm((v) => v ? { ...v, description: e.target.value } : v)} rows={2} placeholder="Description…" className={INPUT_CLS + ' resize-none text-xs py-2'} />
                 <div>
                   <p className="font-lato text-[10px] text-gray-400 mb-1.5">Couleur de fond</p>

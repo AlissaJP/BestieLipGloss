@@ -159,6 +159,7 @@ export const translations = {
         paid: 'Payées',
         shipping: 'En livraison',
         delivered: 'Livrées',
+        cancelled: 'Annulées',
       },
       stats: {
         clients: 'Clientes',
@@ -186,6 +187,7 @@ export const translations = {
         approve: 'Approuver',
         ship: 'Expédier',
         markDelivered: 'Marquer livrée',
+        cancel: 'Annuler',
       },
       drawer: {
         profile: 'Profil',
@@ -202,12 +204,14 @@ export const translations = {
         paid: { title: 'Commandes payées', subtitle: 'Paiement confirmé — prépare et expédie les colis' },
         shipping: { title: 'En livraison', subtitle: 'Colis en route vers les clientes' },
         delivered: { title: 'Commandes livrées', subtitle: '{n} livraison{s} effectuée{s} avec succès' },
+        cancelled: { title: 'Commandes annulées', subtitle: 'Commandes ayant été annulées' },
       },
       status: {
         pending: 'En attente',
         paid: 'Payée',
         shipping: 'En livraison',
         delivered: 'Livrée',
+        cancelled: 'Annulée',
       },
     },
   },
@@ -372,6 +376,7 @@ export const translations = {
         paid: 'Paid',
         shipping: 'Shipping',
         delivered: 'Delivered',
+        cancelled: 'Cancelled',
       },
       stats: {
         clients: 'Customers',
@@ -399,6 +404,7 @@ export const translations = {
         approve: 'Approve',
         ship: 'Ship',
         markDelivered: 'Mark as delivered',
+        cancel: 'Cancel',
       },
       drawer: {
         profile: 'Profile',
@@ -415,12 +421,14 @@ export const translations = {
         paid: { title: 'Paid Orders', subtitle: 'Payment confirmed — prepare and ship the packages' },
         shipping: { title: 'Shipping', subtitle: 'Packages on the way to customers' },
         delivered: { title: 'Delivered Orders', subtitle: '{n} successful delivery{s}' },
+        cancelled: { title: 'Cancelled Orders', subtitle: 'Orders that have been cancelled' },
       },
       status: {
         pending: 'Pending',
         paid: 'Paid',
         shipping: 'Shipping',
         delivered: 'Delivered',
+        cancelled: 'Cancelled',
       },
     },
   },
@@ -585,6 +593,7 @@ export const translations = {
         paid: 'Pagados',
         shipping: 'En camino',
         delivered: 'Entregados',
+        cancelled: 'Cancelados',
       },
       stats: {
         clients: 'Clientas',
@@ -612,6 +621,7 @@ export const translations = {
         approve: 'Aprobar',
         ship: 'Enviar',
         markDelivered: 'Marcar entregado',
+        cancel: 'Cancelar',
       },
       drawer: {
         profile: 'Perfil',
@@ -628,12 +638,14 @@ export const translations = {
         paid: { title: 'Pedidos pagados', subtitle: 'Pago confirmado — prepara y envía los paquetes' },
         shipping: { title: 'En camino', subtitle: 'Paquetes en ruta hacia las clientas' },
         delivered: { title: 'Pedidos entregados', subtitle: '{n} entrega{s} realizadas con éxito' },
+        cancelled: { title: 'Pedidos cancelados', subtitle: 'Pedidos que han sido cancelados' },
       },
       status: {
         pending: 'Pendiente',
         paid: 'Pagado',
         shipping: 'En camino',
         delivered: 'Entregado',
+        cancelled: 'Cancelado',
       },
     },
   },

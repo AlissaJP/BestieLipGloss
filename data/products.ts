@@ -5,7 +5,10 @@ export interface ColorVariant {
   description: string;
   image: string;
   bgColor: string;
+  ordre_affichage?: number;
 }
+
+export type BadgeType = 'bestseller' | 'artisanal' | 'nouveau' | 'none';
 
 export interface Product {
   id: number;
@@ -23,6 +26,11 @@ export interface Product {
   bgColorMini: string[];
   introImage?: string;
   variants?: ColorVariant[];
+  is_active?: boolean;
+  is_bestseller?: boolean;
+  badge_type?: BadgeType;
+  collection?: string;
+  stock_alerte_seuil?: number;
 }
 
 export const products: Product[] = [
@@ -52,10 +60,15 @@ export const products: Product[] = [
     bgColor: 'bg-pink-300',
     bgColorMini: ['bg-pink-200', 'bg-amber-200', 'bg-red-400', 'bg-red-900'],
     introImage: '/products/honey/intro.png',
+    is_active: true,
+    is_bestseller: false,
+    badge_type: 'artisanal',
+    collection: 'Collection Honey',
     variants: [
       {
         id: 'cherry',
         name: 'Cherry',
+        ordre_affichage: 1,
         shade: '01# Rose cerise nacré',
         description:
           'Un rose cerise lumineux aux reflets nacrés qui habille tes lèvres d\'un voile doux et féminin. Cette teinte fraîche et romantique s\'adapte à toutes les carnations et sublime naturellement ton sourire au quotidien. Le choix parfait pour un look printanier et pétillant.',
@@ -65,6 +78,7 @@ export const products: Product[] = [
       {
         id: 'honey-rose',
         name: 'Honey Rose',
+        ordre_affichage: 2,
         shade: 'Champagne doré shimmer',
         description:
           'Un champagne rosé aux reflets dorés scintillants qui enveloppe tes lèvres d\'une lumière chaude et sophistiquée. Ce gloss ultra-brillant magnifie particulièrement les teints foncés en leur apportant une profondeur lumineuse irrésistible. Idéal pour un look chic de jour comme de soirée.',
@@ -74,6 +88,7 @@ export const products: Product[] = [
       {
         id: 'strawberry',
         name: 'Strawberry',
+        ordre_affichage: 3,
         shade: '02# Rouge fraise vif',
         description:
           'Un rouge fraise vibrant et intense aux reflets brillants qui réveille immédiatement le regard et illumine ton sourire. Cette teinte audacieuse et joyeuse apporte une énergie positive contagieuse à tous tes looks. Parfaite pour les sorties, les fêtes ou simplement quand tu veux te démarquer.',
@@ -83,6 +98,7 @@ export const products: Product[] = [
       {
         id: 'rouge-grenat',
         name: 'Rouge Grenat',
+        ordre_affichage: 4,
         shade: 'Bordeaux profond envoûtant',
         description:
           'Un rouge grenat profond et envoûtant aux reflets bordeaux qui incarne l\'élégance absolue. Cette teinte somptueuse et majestueuse transforme chaque sourire en une déclaration de confiance et de féminité pleinement assumée. Réservée aux femmes qui osent l\'intensité et qui savent ce qu\'elles valent.',
@@ -116,6 +132,9 @@ export const products: Product[] = [
     badge: 'Best-seller ✨',
     bgColor: 'bg-amber-100',
     bgColorMini: ['bg-yellow-100', 'bg-amber-200', 'bg-orange-100'],
+    is_active: true,
+    is_bestseller: true,
+    badge_type: 'bestseller',
   },
   {
     id: 3,
@@ -142,6 +161,9 @@ export const products: Product[] = [
     badge: 'Best-seller ✨',
     bgColor: 'bg-orange-300',
     bgColorMini: ['bg-orange-200', 'bg-red-200', 'bg-yellow-200'],
+    is_active: true,
+    is_bestseller: true,
+    badge_type: 'bestseller',
   },
   {
     id: 4,
@@ -168,6 +190,9 @@ export const products: Product[] = [
     badge: 'Artisanal 🌿',
     bgColor: 'bg-purple-300',
     bgColorMini: ['bg-purple-200', 'bg-fuchsia-300', 'bg-pink-300'],
+    is_active: true,
+    is_bestseller: false,
+    badge_type: 'artisanal',
   },
   {
     id: 5,
@@ -194,5 +219,8 @@ export const products: Product[] = [
     badge: 'Best-seller ✨',
     bgColor: 'bg-yellow-200',
     bgColorMini: ['bg-amber-100', 'bg-yellow-300', 'bg-orange-200'],
+    is_active: true,
+    is_bestseller: true,
+    badge_type: 'bestseller',
   },
 ];

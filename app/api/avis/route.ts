@@ -37,3 +37,52 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ avis: results });
 }
+
+// TODO (BDD):
+// 1. Vérifier UNIQUE(id_utilisateur, id_produit) — 1 avis max par produit
+// 2. Vérifier commande livrée → commande_verifiee = TRUE
+// INSERT INTO Avis (id_produit, id_utilisateur, nom_client, note, texte, statut, commande_verifiee)
+// VALUES (?, ?, ?, ?, ?, 'en_attente', ?)
+export async function POST(request: NextRequest) {
+  const body = await request.json() as {
+    id_produit: number;
+    id_utilisateur: number;
+    nom_client: string;
+    note: number;
+    texte: string;
+  };
+
+  const { id_produit, id_utilisateur, nom_client, note, texte } = body;
+
+  if (!id_produit || !id_utilisateur || !nom_client?.trim() || !texte?.trim()) {
+    return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 });
+  }
+  if (note < 1 || note > 5 || !Number.isInteger(note)) {
+    return NextResponse.json({ error: 'La note doit être un entier entre 1 et 5.' }, { status: 400 });
+  }
+
+  // Check UNIQUE(id_utilisateur, id_produit)
+  const existing = Array.from(avisStore.values()).find(
+    (a) => a.id_utilisateur === id_utilisateur && a.id_produit === id_produit
+  );
+  if (existing) {
+    return NextResponse.json({ error: 'Tu as déjà soumis un avis pour ce produit.' }, { status: 409 });
+  }
+
+  const newId = Math.max(0, ...Array.from(avisStore.keys())) + 1;
+  const nouvelAvis: Avis = {
+    id: newId,
+    id_produit,
+    id_utilisateur,
+    nom_client: nom_client.trim(),
+    note,
+    texte: texte.trim(),
+    date_creation: new Date().toISOString(),
+    statut: 'en_attente',
+    commande_verifiee: false, // TODO (BDD): vérifier si commande livrée pour ce produit
+  };
+
+  avisStore.set(newId, nouvelAvis);
+
+  return NextResponse.json({ success: true, id: newId, statut: 'en_attente' }, { status: 201 });
+}

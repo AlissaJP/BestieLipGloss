@@ -12,6 +12,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import ProductCard from '@/components/ProductCard';
 import type { Product, ColorVariant } from '@/data/products';
+import type { ImageProduit } from '@/app/api/produits/[id]/images/route';
 
 interface AvisPublie {
   id: number;
@@ -40,17 +41,30 @@ interface Props {
 
 export default function ProductDetailClient({ product, related }: Props) {
   const [reviews, setReviews] = useState<AvisPublie[]>([]);
+  const [productImages, setProductImages] = useState<ImageProduit[]>([]);
+  const [reviewNote, setReviewNote] = useState(0);
+  const [reviewTexte, setReviewTexte] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [flyBalls, setFlyBalls] = useState<Array<{ id: number; x: number; y: number; tx: number; ty: number }>>([]);
+  const sortedVariants = [...(product.variants ?? [])].sort(
+    (a, b) => (a.ordre_affichage ?? 0) - (b.ordre_affichage ?? 0)
+  );
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
-    product.variants?.[0] ?? null
+    sortedVariants[0] ?? null
   );
   useEffect(() => {
     fetch(`/api/avis?id_produit=${product.id}&statut=publie`)
       .then((r) => r.json())
       .then((d) => setReviews(d.avis ?? []))
+      .catch(() => {});
+    fetch(`/api/produits/${product.id}/images`)
+      .then((r) => r.json())
+      .then((d) => setProductImages(d.images ?? []))
       .catch(() => {});
   }, [product.id]);
 
@@ -71,6 +85,44 @@ export default function ProductDetailClient({ product, related }: Props) {
   };
 
   const images = [product.bgColor, ...product.bgColorMini];
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoggedIn) { openAuthModal(); return; }
+    if (reviewNote < 1) { setReviewError('Choisis une note entre 1 et 5 étoiles.'); return; }
+    if (!reviewTexte.trim()) { setReviewError('Écris un avis avant d\'envoyer.'); return; }
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      const res = await fetch('/api/avis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_produit: product.id,
+          id_utilisateur: 0, // TODO (BDD): utiliser user.id depuis la session
+          nom_client: 'Moi', // TODO (BDD): utiliser user.prenom + user.nom
+          note: reviewNote,
+          texte: reviewTexte.trim(),
+        }),
+      });
+      if (res.status === 409) {
+        setReviewError('Tu as déjà soumis un avis pour ce produit.');
+        return;
+      }
+      if (!res.ok) {
+        const d = await res.json();
+        setReviewError(d.error ?? 'Une erreur est survenue.');
+        return;
+      }
+      setReviewSuccess(true);
+      setReviewNote(0);
+      setReviewTexte('');
+    } catch {
+      setReviewError('Erreur de connexion. Réessaie.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!isLoggedIn) { openAuthModal(); return; }
@@ -135,7 +187,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   />
                 </motion.div>
                 <div className="flex gap-3 overflow-x-auto pb-1">
-                  {product.variants?.map((variant) => (
+                  {sortedVariants.map((variant) => (
                     <button
                       key={variant.id}
                       onClick={() => setSelectedVariant(variant)}
@@ -147,6 +199,38 @@ export default function ProductDetailClient({ product, related }: Props) {
                       aria-label={variant.name}
                     >
                       <Image src={variant.image} alt={variant.name} fill className="object-cover object-center" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : productImages.length > 0 ? (
+              <>
+                <motion.div
+                  key={selectedImage}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="relative rounded-3xl overflow-hidden h-80 sm:h-[420px] bg-pink-50 shadow-inner"
+                >
+                  <Image
+                    src={productImages[selectedImage].url}
+                    alt={productImages[selectedImage].alt_text ?? product.name}
+                    fill
+                    className="object-cover object-center"
+                    priority
+                  />
+                </motion.div>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {productImages.map((img, i) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setSelectedImage(i)}
+                      className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                        selectedImage === i ? 'border-primary scale-105 shadow-md' : 'border-transparent hover:border-pink-200'
+                      }`}
+                      aria-label={img.alt_text ?? `Image ${i + 1}`}
+                    >
+                      <Image src={img.url} alt={img.alt_text ?? `Image ${i + 1}`} fill className="object-cover object-center" />
                     </button>
                   ))}
                 </div>
@@ -194,7 +278,7 @@ export default function ProductDetailClient({ product, related }: Props) {
               <div className="mb-5">
                 <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">Teinte</p>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {product.variants.map((variant) => (
+                  {sortedVariants.map((variant) => (
                     <button
                       key={variant.id}
                       onClick={() => setSelectedVariant(variant)}
@@ -249,7 +333,7 @@ export default function ProductDetailClient({ product, related }: Props) {
             </div>
 
             {/* Stock warning */}
-            {product.stock < 10 && (
+            {product.stock < (product.stock_alerte_seuil ?? 10) && (
               <p className="font-lato text-sm text-orange-500 mb-4 flex items-center gap-1">
                 ⚠️ {t.product.outOfStock} <strong>{product.stock}</strong> {t.product.stockWarning}
               </p>
@@ -341,6 +425,69 @@ export default function ProductDetailClient({ product, related }: Props) {
               ))}
             </div>
           )}
+
+          {/* Review submission form */}
+          <div className="mt-8 bg-white rounded-2xl border border-pink-100 p-6">
+            <h3 className="font-playfair font-semibold text-gray-800 mb-4">Laisser un avis</h3>
+            {reviewSuccess ? (
+              <div className="bg-green-50 border border-green-100 rounded-xl p-5 text-center">
+                <p className="font-lato text-sm text-green-700 font-semibold">Merci pour ton avis ! 💕</p>
+                <p className="font-lato text-xs text-green-600 mt-1">Il sera publié après vérification par notre équipe.</p>
+              </div>
+            ) : !isLoggedIn ? (
+              <div className="bg-pink-50 border border-pink-100 rounded-xl p-5 text-center">
+                <p className="font-lato text-sm text-gray-600 mb-3">Connecte-toi pour partager ton expérience.</p>
+                <button onClick={openAuthModal} className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-6 py-2.5 rounded-full transition-colors">
+                  Se connecter
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="space-y-4">
+                <div>
+                  <p className="font-lato text-sm text-gray-700 font-medium mb-2">Ta note</p>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => { setReviewNote(n); setReviewError(''); }}
+                        aria-label={`${n} étoile${n > 1 ? 's' : ''}`}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star
+                          size={28}
+                          className={n <= reviewNote ? 'fill-accent text-accent' : 'text-gray-200 hover:text-accent/50'}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="font-lato text-sm text-gray-700 font-medium block mb-1.5" htmlFor="review-texte">
+                    Ton avis
+                  </label>
+                  <textarea
+                    id="review-texte"
+                    rows={4}
+                    value={reviewTexte}
+                    onChange={(e) => { setReviewTexte(e.target.value); setReviewError(''); }}
+                    placeholder="Partage ton expérience avec ce gloss…"
+                    className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
+                  />
+                </div>
+                {reviewError && (
+                  <p className="font-lato text-xs text-red-500">{reviewError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="bg-primary hover:bg-pink-400 disabled:opacity-60 text-white font-lato font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
+                >
+                  {reviewSubmitting ? 'Envoi…' : 'Envoyer mon avis'}
+                </button>
+              </form>
+            )}
+          </div>
         </section>
 
         {/* Related */}
