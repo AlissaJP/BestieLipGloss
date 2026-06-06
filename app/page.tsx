@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
-import { Leaf, MapPin, Truck, Star } from 'lucide-react';
+import { Sparkles, Droplets, Truck, Smile, Gift, Star } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 import { products } from '@/data/products';
 import { useLanguageStore } from '@/store/languageStore';
@@ -36,8 +36,12 @@ export default function HomePage() {
   const t = translations[lang];
 
   const whyItems = [
-    { icon: <Leaf size={30} className="text-green-600" />, bg: 'bg-green-50', ...t.home.why.natural },
-    { icon: <Truck size={30} className="text-accent" />, bg: 'bg-amber-50', ...t.home.why.delivery },
+    { icon: <Sparkles size={30} className="text-yellow-500" />, bg: 'bg-yellow-50', ...t.home.why.item1 },
+    { icon: <Droplets size={30} className="text-blue-500" />,   bg: 'bg-blue-50',   ...t.home.why.item2 },
+    { icon: <Truck size={30} className="text-amber-500" />,     bg: 'bg-amber-50',   ...t.home.why.item3 },
+    { icon: <Smile size={30} className="text-primary" />,       bg: 'bg-pink-50',    ...t.home.why.item4 },
+    { icon: <Gift size={30} className="text-purple-500" />,     bg: 'bg-purple-50',  ...t.home.why.item5 },
+    { icon: <Star size={30} className="text-rose-500" />,       bg: 'bg-rose-50',    ...t.home.why.item6 },
   ];
 
   return (
@@ -125,7 +129,6 @@ export default function HomePage() {
             </FadeIn>
             <FadeIn delay={0.2}>
               <div>
-                <p className="font-lato text-xs tracking-widest text-accent uppercase mb-3">{t.home.story.eyebrow}</p>
                 <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-6 leading-snug">
                   {t.home.story.title}
                 </h2>
@@ -133,6 +136,9 @@ export default function HomePage() {
                   <p>{t.home.story.p1}</p>
                   <p>{t.home.story.p2}</p>
                   <p>{t.home.story.p3}</p>
+                  {t.home.story.p4 && <p>{t.home.story.p4}</p>}
+                  {t.home.story.p5 && <p>{t.home.story.p5}</p>}
+                  {t.home.story.p6 && <p className="font-medium text-gray-700">{t.home.story.p6}</p>}
                 </div>
                 <div className="flex flex-wrap gap-3 mt-8">
                   {[t.home.story.tag1, t.home.story.tag3].map((tag) => (
@@ -192,9 +198,9 @@ export default function HomePage() {
             <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800">{t.home.why.title}</h2>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {whyItems.map((item, i) => (
-              <FadeIn key={item.title} delay={i * 0.15}>
+              <FadeIn key={item.title} delay={i * 0.1}>
                 <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-pink-50 h-full">
                   <div className={`w-16 h-16 rounded-2xl ${item.bg} flex items-center justify-center mb-4`}>
                     {item.icon}
@@ -205,6 +211,11 @@ export default function HomePage() {
               </FadeIn>
             ))}
           </div>
+          <FadeIn delay={0.4}>
+            <p className="text-center font-playfair font-semibold text-lg text-primary mt-10">
+              {t.home.why.tagline}
+            </p>
+          </FadeIn>
         </div>
       </section>
 

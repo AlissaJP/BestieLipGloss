@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag, Menu, X, Search, User,
-  LogOut, ChevronRight, Settings,
+  LogOut, ChevronRight, Settings, Globe,
 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
@@ -14,10 +14,10 @@ import { useLanguageStore, type Lang } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import CartDrawer from './CartDrawer';
 
-const LANGS: { code: Lang; flag: string }[] = [
-  { code: 'fr', flag: '🇫🇷' },
-  { code: 'en', flag: '🇬🇧' },
-  { code: 'es', flag: '🇪🇸' },
+const LANGS: { code: Lang; flag: string; name: string }[] = [
+  { code: 'fr', flag: '🇫🇷', name: 'Français' },
+  { code: 'en', flag: '🇬🇧', name: 'English' },
+  { code: 'es', flag: '🇪🇸', name: 'Español' },
 ];
 
 export default function Header() {
@@ -25,8 +25,10 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
 
   const { openCart, totalItems } = useCartStore();
   const { isLoggedIn, user, logout } = useAuthStore();
@@ -56,6 +58,7 @@ export default function Header() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setIsUserMenuOpen(false);
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setIsLangOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -63,7 +66,8 @@ export default function Header() {
 
   const handleLang = (code: Lang) => {
     setLang(code);
-    setIsUserMenuOpen(false);
+    setIsLangOpen(false);
+    setIsMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -124,6 +128,47 @@ export default function Header() {
                 </button>
               </div>
 
+              {/* Language globe dropdown — always visible */}
+              <div className="relative" ref={langRef}>
+                <button
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                  className={`p-2 rounded-full transition-colors ${
+                    isLangOpen ? 'text-primary bg-pink-50' : 'text-gray-600 hover:text-primary hover:bg-pink-50'
+                  }`}
+                  aria-label="Language / Langue"
+                  aria-expanded={isLangOpen}
+                >
+                  <Globe size={19} />
+                </button>
+                <AnimatePresence>
+                  {isLangOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute right-0 top-full mt-2 w-40 bg-white rounded-2xl shadow-xl border border-pink-100 overflow-hidden z-50 py-1"
+                    >
+                      {LANGS.map(({ code, flag, name }) => (
+                        <button
+                          key={code}
+                          onClick={() => handleLang(code)}
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 font-lato text-sm transition-colors ${
+                            lang === code
+                              ? 'bg-pink-50 text-primary font-semibold'
+                              : 'text-gray-600 hover:bg-pink-50'
+                          }`}
+                        >
+                          <span className="text-base">{flag}</span>
+                          <span className="flex-1 text-left">{name}</span>
+                          {lang === code && <span className="text-primary text-xs">✓</span>}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Auth — desktop */}
               {isLoggedIn ? (
                 <div className="hidden sm:block relative" ref={userMenuRef}>
@@ -173,27 +218,6 @@ export default function Header() {
                               <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-colors" />
                             </Link>
                           ))}
-                        </div>
-
-                        {/* Language switcher */}
-                        <div className="border-t border-pink-100 px-4 py-3">
-                          <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">{t.lang.label}</p>
-                          <div className="flex gap-1.5">
-                            {LANGS.map(({ code, flag }) => (
-                              <button
-                                key={code}
-                                onClick={() => handleLang(code)}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full font-lato text-xs transition-colors flex-1 justify-center ${
-                                  lang === code
-                                    ? 'bg-primary text-white font-semibold'
-                                    : 'bg-pink-50 text-gray-600 hover:bg-pink-100'
-                                }`}
-                              >
-                                <span>{flag}</span>
-                                <span className="uppercase font-semibold">{code}</span>
-                              </button>
-                            ))}
-                          </div>
                         </div>
 
                         {/* Logout */}
@@ -308,29 +332,8 @@ export default function Header() {
                   )}
                 </div>
 
-                {/* Mobile language switcher */}
-                <div className="pt-3 pb-2 border-t border-pink-100">
-                  <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">{t.lang.label}</p>
-                  <div className="flex gap-2">
-                    {LANGS.map(({ code, flag }) => (
-                      <button
-                        key={code}
-                        onClick={() => { setLang(code); setIsMenuOpen(false); }}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-lato text-sm flex-1 justify-center transition-colors ${
-                          lang === code
-                            ? 'bg-primary text-white font-semibold'
-                            : 'bg-pink-50 text-gray-600 hover:bg-pink-100'
-                        }`}
-                      >
-                        <span>{flag}</span>
-                        <span className="uppercase font-semibold">{code}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Mobile search */}
-                <div className="pt-2 pb-1 border-t border-pink-100">
+                <div className="pt-3 pb-1 border-t border-pink-100">
                   <input type="text" placeholder={t.search.placeholderMobile}
                     className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-2.5 outline-none focus:border-primary bg-gray-50"
                     aria-label="Recherche mobile" />
