@@ -4,19 +4,32 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+
+const PAYS = [
+  { id: 'HT', code: '+509', drapeau: '🇭🇹', nom: 'Haïti' },
+  { id: 'US', code: '+1',   drapeau: '🇺🇸', nom: 'États-Unis' },
+  { id: 'CA', code: '+1',   drapeau: '🇨🇦', nom: 'Canada' },
+  { id: 'FR', code: '+33',  drapeau: '🇫🇷', nom: 'France' },
+  { id: 'MQ', code: '+596', drapeau: '🇲🇶', nom: 'Martinique' },
+  { id: 'GP', code: '+590', drapeau: '🇬🇵', nom: 'Guadeloupe' },
+  { id: 'DO', code: '+1',   drapeau: '🇩🇴', nom: 'Rép. Dominicaine' },
+  { id: 'BR', code: '+55',  drapeau: '🇧🇷', nom: 'Brésil' },
+  { id: 'GB', code: '+44',  drapeau: '🇬🇧', nom: 'Royaume-Uni' },
+];
 
 export default function InscriptionPage() {
   const [form, setForm] = useState({
     prenom: '',
     nom: '',
     email: '',
-    telephone: '',
     password: '',
     confirm: '',
   });
+  const [selectedPaysId, setSelectedPaysId] = useState('HT');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,7 +42,7 @@ export default function InscriptionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.prenom || !form.email || !form.telephone || !form.password || !form.confirm) {
+    if (!form.prenom || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
@@ -43,11 +56,13 @@ export default function InscriptionPage() {
     }
     setIsLoading(true);
     setError('');
+    const pays = PAYS.find((p) => p.id === selectedPaysId)!;
+    const fullPhone = `${pays.code} ${phoneNumber.trim()}`;
     await new Promise((r) => setTimeout(r, 900));
     login({
       name: form.prenom + (form.nom ? ' ' + form.nom : ''),
       email: form.email,
-      telephone: form.telephone,
+      telephone: fullPhone,
     });
     syncCartOnLogin();
     router.push('/');
@@ -129,15 +144,26 @@ export default function InscriptionPage() {
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
                   Numéro WhatsApp <span className="text-primary">*</span>
                 </label>
-                <div className="relative">
-                  <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <div className="flex border border-pink-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-primary transition-colors">
+                  <select
+                    value={selectedPaysId}
+                    onChange={(e) => setSelectedPaysId(e.target.value)}
+                    className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
+                    aria-label="Indicatif pays"
+                  >
+                    {PAYS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.id} {p.code}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="tel"
-                    value={form.telephone}
-                    onChange={update('telephone')}
-                    placeholder="+509 XXXX XXXX ou +1 XXXXXXXXXX"
-                    className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
-                    autoComplete="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="XXXX XXXX"
+                    className="flex-1 px-3 py-3 font-lato text-sm outline-none bg-transparent min-w-0"
+                    autoComplete="tel-national"
                   />
                 </div>
               </div>
