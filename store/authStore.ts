@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface Address {
   id: string;
   label: string;
-  country?: 'ht' | 'us';
+  country?: string;
   adresse: string;
   departement?: string;
   ville: string;

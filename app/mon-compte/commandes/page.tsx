@@ -45,7 +45,7 @@ const STATUSES = [
   {
     key: 'annule',
     label: 'Annulée',
-    desc: 'Commande annulée',
+    desc: 'Commande et livraison annulées',
     emoji: '🚫',
     pill: 'bg-gray-100 text-gray-500',
     active: 'bg-gray-500 text-white shadow-sm shadow-gray-200',

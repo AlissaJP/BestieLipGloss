@@ -28,7 +28,7 @@ function generateNumeroCommande(): string {
 }
 
 function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison[]): number {
-  if ((addr.country ?? 'ht') === 'us') return USA_FEE;
+  if ((addr.country ?? 'hti') === 'usa') return USA_FEE;
   const zone = zones.find((z) => z.nom_zone === addr.ville);
   const frais = zone?.frais_htg ?? 400;
   const seuil = zone?.seuil_gratuit ?? 2000;
@@ -36,7 +36,7 @@ function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison
 }
 
 function formatAddress(addr: Address): string {
-  if ((addr.country ?? 'ht') === 'us') {
+  if ((addr.country ?? 'hti') === 'usa') {
     return `${addr.adresse}, ${addr.ville}${addr.state ? `, ${addr.state}` : ''} ${addr.zipCode ?? ''}, USA`;
   }
   return `${addr.adresse}${addr.quartier ? `, ${addr.quartier}` : ''}, ${addr.ville}, Haïti`;
@@ -370,7 +370,7 @@ export default function PanierPage() {
                             <option value="" disabled>Choisir une adresse…</option>
                             {savedAddresses.map((addr) => (
                               <option key={addr.id} value={addr.id}>
-                                {(addr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'} {addr.label} — {addr.adresse}, {addr.ville}
+                                {(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'} {addr.label} — {addr.adresse}, {addr.ville}
                               </option>
                             ))}
                           </select>
@@ -402,7 +402,7 @@ export default function PanierPage() {
                             {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Gratuite' : `${deliveryFee} HTG`}
                           </span>
                         </div>
-                        {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'ht') === 'ht')(selectedAddr) && (
+                        {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'hti') === 'hti')(selectedAddr) && (
                           <p className="font-lato text-xs text-gray-400">Encore {2000 - discountedSubtotal} HTG pour la livraison gratuite</p>
                         )}
                         <div className="border-t border-pink-100 pt-3 flex justify-between">
@@ -500,7 +500,7 @@ export default function PanierPage() {
                                 : 'border-pink-100 bg-white hover:border-pink-200'
                             }`}
                           >
-                            <span className="text-xl mt-0.5 flex-shrink-0">{(addr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'}</span>
+                            <span className="text-xl mt-0.5 flex-shrink-0">{(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
                             <div className="flex-1 min-w-0">
                               <p className="font-lato text-sm font-semibold text-gray-800 flex items-center gap-2">
                                 {addr.label}
@@ -582,7 +582,7 @@ export default function PanierPage() {
                     <h3 className="font-playfair font-semibold text-gray-800 mb-4">Récapitulatif</h3>
                     {selectedAddr && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 flex items-start gap-2">
-                        <span className="text-base">{(selectedAddr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'}</span>
+                        <span className="text-base">{(selectedAddr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
                         <div className="min-w-0">
                           <p className="font-lato text-xs font-semibold text-gray-800">{selectedAddr.label}</p>
                           <p className="font-lato text-xs text-gray-500 mt-0.5 leading-relaxed">{formatAddress(selectedAddr)}</p>

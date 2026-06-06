@@ -771,9 +771,14 @@ function OrdersSection({
                       <div className="mt-4 pt-4 border-t border-pink-50">
                         <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-3">Progression commande</p>
                         {order.status === 'cancelled' ? (
-                          <span className="font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold bg-gray-100 text-gray-500 border-gray-200 inline-flex items-center gap-1">
-                            <XCircle size={10} /> {statusLabels['cancelled']}
-                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            <span className="font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold bg-gray-100 text-gray-500 border-gray-200 inline-flex items-center gap-1">
+                              <XCircle size={10} /> {statusLabels['cancelled']}
+                            </span>
+                            <span className="font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold bg-gray-100 text-gray-400 border-gray-200 inline-flex items-center gap-1">
+                              <Truck size={10} /> Livraison annulée
+                            </span>
+                          </div>
                         ) : (
                           <div className="flex gap-1.5 flex-wrap">
                             {STATUS_FLOW.map((s) => {
@@ -809,26 +814,28 @@ function OrdersSection({
 
 /* ─── Product management ─── */
 
-const BG_OPTIONS: { value: string; color: string }[] = [
-  { value: 'bg-pink-100',    color: '#FCE7F3' },
-  { value: 'bg-pink-200',    color: '#FBCFE8' },
-  { value: 'bg-pink-300',    color: '#F9A8D4' },
-  { value: 'bg-pink-400',    color: '#F472B6' },
-  { value: 'bg-red-200',     color: '#FECACA' },
-  { value: 'bg-red-400',     color: '#F87171' },
-  { value: 'bg-red-900',     color: '#7F1D1D' },
-  { value: 'bg-amber-100',   color: '#FEF3C7' },
-  { value: 'bg-amber-200',   color: '#FDE68A' },
-  { value: 'bg-amber-300',   color: '#FCD34D' },
-  { value: 'bg-orange-200',  color: '#FED7AA' },
-  { value: 'bg-orange-300',  color: '#FDBA74' },
-  { value: 'bg-yellow-200',  color: '#FEF08A' },
-  { value: 'bg-purple-200',  color: '#E9D5FF' },
-  { value: 'bg-purple-300',  color: '#D8B4FE' },
-  { value: 'bg-fuchsia-300', color: '#F0ABFC' },
-  { value: 'bg-teal-100',    color: '#CCFBF1' },
-  { value: 'bg-green-100',   color: '#DCFCE7' },
+const BG_OPTIONS: string[] = [
+  '#FCE7F3', '#FBCFE8', '#F9A8D4', '#F472B6',
+  '#FECACA', '#F87171', '#7F1D1D',
+  '#FEF3C7', '#FDE68A', '#FCD34D',
+  '#FED7AA', '#FDBA74', '#FEF08A',
+  '#E9D5FF', '#D8B4FE', '#F0ABFC',
+  '#CCFBF1', '#DCFCE7',
 ];
+
+const TAILWIND_HEX: Record<string, string> = {
+  'bg-pink-100': '#FCE7F3', 'bg-pink-200': '#FBCFE8', 'bg-pink-300': '#F9A8D4', 'bg-pink-400': '#F472B6',
+  'bg-red-200': '#FECACA', 'bg-red-400': '#F87171', 'bg-red-900': '#7F1D1D',
+  'bg-amber-100': '#FEF3C7', 'bg-amber-200': '#FDE68A', 'bg-amber-300': '#FCD34D',
+  'bg-orange-200': '#FED7AA', 'bg-orange-300': '#FDBA74',
+  'bg-yellow-200': '#FEF08A', 'bg-purple-200': '#E9D5FF', 'bg-purple-300': '#D8B4FE',
+  'bg-fuchsia-300': '#F0ABFC', 'bg-teal-100': '#CCFBF1', 'bg-green-100': '#DCFCE7',
+};
+
+function resolveColor(bg: string): string {
+  if (bg.startsWith('#')) return bg;
+  return TAILWIND_HEX[bg] ?? '#FBCFE8';
+}
 
 const BADGE_OPTS = ['Best-seller ✨', 'Artisanal 🌿', 'Nouveau 🆕', 'Édition limitée 💎', 'Bio 🌱'];
 const INPUT_CLS = 'w-full font-lato text-sm border border-pink-100 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white transition-colors';
@@ -837,7 +844,7 @@ function toSlug(str: string) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string; ordre_affichage: number };
+type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string; ordre_affichage: number; is_active: boolean };
 type FormState = {
   name: string; shade: string; introImage: string;
   price_htg: string; price_usd: string; description: string;
@@ -846,7 +853,7 @@ type FormState = {
 };
 
 function emptyForm(): FormState {
-  return { name: '', shade: '', introImage: '', price_htg: '', price_usd: '', description: '', badge: 'Best-seller ✨', bgColor: 'bg-pink-200', stock: '10', variants: [], ingredients: [], benefits: [] };
+  return { name: '', shade: '', introImage: '', price_htg: '', price_usd: '', description: '', badge: 'Best-seller ✨', bgColor: '#FBCFE8', stock: '10', variants: [], ingredients: [], benefits: [] };
 }
 
 function productToForm(p: ManagedProduct): FormState {
@@ -854,7 +861,7 @@ function productToForm(p: ManagedProduct): FormState {
     name: p.name, shade: p.shade, introImage: p.introImage ?? '',
     price_htg: String(p.price_htg), price_usd: String(p.price_usd),
     description: p.description, badge: p.badge, bgColor: p.bgColor, stock: String(p.stock),
-    variants: p.variants ? p.variants.map((v) => ({ ...v, ordre_affichage: v.ordre_affichage ?? 0 })) : [],
+    variants: p.variants ? p.variants.map((v) => ({ ...v, ordre_affichage: v.ordre_affichage ?? 0, is_active: v.is_active ?? true })) : [],
     ingredients: [...p.ingredients], benefits: [...p.benefits],
   };
 }
@@ -871,14 +878,22 @@ function FLabel({ label, required, children }: { label: string; required?: boole
 }
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const hex = resolveColor(value);
   return (
-    <div className="flex flex-wrap gap-2 mt-1">
-      {BG_OPTIONS.map((opt) => (
-        <button key={opt.value} type="button" onClick={() => onChange(opt.value)} title={opt.value}
-          style={{ background: opt.color }}
-          className={`w-8 h-8 rounded-full border-2 transition-all ${value === opt.value ? 'border-gray-700 scale-110 shadow-md' : 'border-white hover:scale-105'}`}
-        />
-      ))}
+    <div className="space-y-2.5 mt-1">
+      <div className="flex items-center gap-3">
+        <input type="color" value={hex} onChange={(e) => onChange(e.target.value)}
+          className="w-10 h-10 rounded-xl cursor-pointer border border-pink-100 p-1 bg-white" />
+        <span className="font-lato text-xs text-gray-400 font-mono">{hex}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {BG_OPTIONS.map((preset) => (
+          <button key={preset} type="button" onClick={() => onChange(preset)} title={preset}
+            style={{ background: preset }}
+            className={`w-7 h-7 rounded-full border-2 transition-all ${hex === preset ? 'border-gray-700 scale-110 shadow-md' : 'border-white hover:scale-105'}`}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -919,7 +934,7 @@ function ProductForm({ initial, onSave, onCancel }: {
   const upd = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const openVariant = (v?: FormVariant, idx?: number) => {
-    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: 'bg-pink-300', ordre_affichage: form.variants.length + 1 });
+    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: '#F9A8D4', ordre_affichage: form.variants.length + 1, is_active: true });
     setVIdx(idx ?? null);
   };
 
@@ -1047,13 +1062,29 @@ function ProductForm({ initial, onSave, onCancel }: {
                   </div>
                 </div>
                 <textarea value={vForm.description} onChange={(e) => setVForm((v) => v ? { ...v, description: e.target.value } : v)} rows={2} placeholder="Description…" className={INPUT_CLS + ' resize-none text-xs py-2'} />
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setVForm((v) => v ? { ...v, is_active: !v.is_active } : v)}
+                    className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${vForm.is_active ? 'bg-green-400' : 'bg-gray-200'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${vForm.is_active ? 'left-[calc(100%-18px)]' : 'left-0.5'}`} />
+                  </button>
+                  <span className="font-lato text-xs text-gray-500">{vForm.is_active ? 'Variété active' : 'Variété inactive'}</span>
+                </div>
                 <div>
                   <p className="font-lato text-[10px] text-gray-400 mb-1.5">Couleur de fond</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input type="color" value={resolveColor(vForm.bgColor)}
+                      onChange={(e) => setVForm((v) => v ? { ...v, bgColor: e.target.value } : v)}
+                      className="w-8 h-8 rounded-lg cursor-pointer border border-pink-100 p-0.5 bg-white" />
+                    <span className="font-lato text-[10px] text-gray-400 font-mono">{resolveColor(vForm.bgColor)}</span>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {BG_OPTIONS.map((opt) => (
-                      <button key={opt.value} type="button" onClick={() => setVForm((v) => v ? { ...v, bgColor: opt.value } : v)}
-                        style={{ background: opt.color }}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${vForm.bgColor === opt.value ? 'border-gray-700 scale-110' : 'border-white'}`}
+                    {BG_OPTIONS.map((preset) => (
+                      <button key={preset} type="button" onClick={() => setVForm((v) => v ? { ...v, bgColor: preset } : v)}
+                        style={{ background: preset }}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${resolveColor(vForm.bgColor) === preset ? 'border-gray-700 scale-110' : 'border-white'}`}
                       />
                     ))}
                   </div>
@@ -1072,12 +1103,15 @@ function ProductForm({ initial, onSave, onCancel }: {
                     {v.image ? (
                       <img src={v.image} alt={v.name} className="w-9 h-9 rounded-lg object-cover border border-pink-100 flex-shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: BG_OPTIONS.find((o) => o.value === v.bgColor)?.color ?? '#F9A8D4' }} />
+                      <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: resolveColor(v.bgColor) }} />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-lato text-sm font-semibold text-gray-700 truncate">{v.name}</p>
                       <p className="font-lato text-xs text-gray-400 truncate">{v.shade}</p>
                     </div>
+                    {v.is_active === false && (
+                      <span className="font-lato text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">Inactive</span>
+                    )}
                     <button type="button" onClick={() => openVariant(v, i)} className="text-gray-400 hover:text-primary transition-colors p-1"><Edit3 size={13} /></button>
                     <button type="button" onClick={() => upd('variants', form.variants.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
                   </div>
@@ -1129,7 +1163,7 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
   onToggle: (id: number) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const bgColor = BG_OPTIONS.find((o) => o.value === p.bgColor)?.color ?? '#FBCFE8';
+  const bgColor = resolveColor(p.bgColor);
 
   return (
     <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden flex flex-col" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>

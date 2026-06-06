@@ -6,6 +6,7 @@ export interface ColorVariant {
   image: string;
   bgColor: string;
   ordre_affichage?: number;
+  is_active?: boolean;
 }
 
 export type BadgeType = 'bestseller' | 'artisanal' | 'nouveau' | 'none';

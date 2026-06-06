@@ -100,7 +100,7 @@ const US_CITIES: Record<string, string[]> = {
   WY: ['Cheyenne', 'Casper', 'Laramie', 'Gillette', 'Rock Springs'],
 };
 
-type AddrCountry = 'ht' | 'us';
+type AddrCountry = string;
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
@@ -151,7 +151,7 @@ export default function InformationsPage() {
 
   /* — Adresses — */
   const [showAddAddr, setShowAddAddr] = useState(false);
-  const [addrCountry, setAddrCountry] = useState<AddrCountry>('ht');
+  const [addrCountry, setAddrCountry] = useState<AddrCountry>('hti');
   const [addrForm, setAddrForm] = useState({
     label: '',
     adresse: '',
@@ -168,17 +168,17 @@ export default function InformationsPage() {
 
   const resetAddrForm = () => {
     setAddrForm({ label: '', adresse: '', departement: '', ville: '', quartier: '', usCity: '', state: '', zipCode: '' });
-    setAddrCountry('ht');
+    setAddrCountry('hti');
     setAddrError('');
   };
 
   const saveAddress = () => {
     if (!addrForm.label || !addrForm.adresse) { setAddrError('Remplis les champs obligatoires (*).'); return; }
-    if (addrCountry === 'ht' && (!addrForm.departement || !addrForm.ville)) {
+    if (addrCountry === 'hti' && (!addrForm.departement || !addrForm.ville)) {
       setAddrError('Sélectionne un département et une ville.');
       return;
     }
-    if (addrCountry === 'us' && (!addrForm.usCity || !addrForm.state || !addrForm.zipCode)) {
+    if (addrCountry === 'usa' && (!addrForm.usCity || !addrForm.state || !addrForm.zipCode)) {
       setAddrError('Remplis tous les champs USA (ville, état, ZIP code).');
       return;
     }
@@ -187,11 +187,11 @@ export default function InformationsPage() {
       label: addrForm.label,
       country: addrCountry,
       adresse: addrForm.adresse,
-      departement: addrCountry === 'ht' ? addrForm.departement : undefined,
-      ville: addrCountry === 'ht' ? addrForm.ville : addrForm.usCity,
-      quartier: addrCountry === 'ht' ? addrForm.quartier : undefined,
-      state: addrCountry === 'us' ? addrForm.state : undefined,
-      zipCode: addrCountry === 'us' ? addrForm.zipCode : undefined,
+      departement: addrCountry === 'hti' ? addrForm.departement : undefined,
+      ville: addrCountry === 'hti' ? addrForm.ville : addrForm.usCity,
+      quartier: addrCountry === 'hti' ? addrForm.quartier : undefined,
+      state: addrCountry === 'usa' ? addrForm.state : undefined,
+      zipCode: addrCountry === 'usa' ? addrForm.zipCode : undefined,
     });
     resetAddrForm();
     setShowAddAddr(false);
@@ -313,11 +313,11 @@ export default function InformationsPage() {
               {(user?.addresses ?? []).map((addr) => (
                 <div key={addr.id} className="flex items-start justify-between gap-3 p-4 bg-pink-50/60 rounded-xl border border-pink-100">
                   <div className="flex items-start gap-3">
-                    <span className="text-xl mt-0.5">{(addr.country ?? 'ht') === 'us' ? '🇺🇸' : '🇭🇹'}</span>
+                    <span className="text-xl mt-0.5">{(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
                     <div>
                       <p className="font-lato text-sm font-semibold text-gray-800">{addr.label}</p>
                       <p className="font-lato text-xs text-gray-500 mt-0.5">{addr.adresse}</p>
-                      {(addr.country ?? 'ht') === 'ht' ? (
+                      {(addr.country ?? 'hti') === 'hti' ? (
                         <p className="font-lato text-xs text-gray-500">
                           {addr.departement ? `${addr.departement} · ` : ''}{addr.quartier ? `${addr.quartier}, ` : ''}{addr.ville}, Haïti
                         </p>
@@ -350,7 +350,7 @@ export default function InformationsPage() {
                   <div>
                     <label className={labelCls}>Pays <span className="text-primary">*</span></label>
                     <div className="flex gap-3">
-                      {([['ht', '🇭🇹', 'Haïti'], ['us', '🇺🇸', 'États-Unis']] as const).map(([code, flag, name]) => (
+                      {([['hti', '🇭🇹', 'Haïti'], ['usa', '🇺🇸', 'États-Unis']] as [string, string, string][]).map(([code, flag, name]) => (
                         <button key={code} type="button" onClick={() => setAddrCountry(code)}
                           className={`flex items-center gap-2 flex-1 justify-center px-4 py-2.5 rounded-xl border-2 font-lato text-sm font-semibold transition-all ${
                             addrCountry === code ? 'border-primary bg-pink-50 text-primary' : 'border-pink-100 text-gray-500 hover:border-pink-200 bg-white'
@@ -365,13 +365,13 @@ export default function InformationsPage() {
                   <div>
                     <label className={labelCls}>Adresse (rue, numéro) <span className="text-primary">*</span></label>
                     <input className={inputCls}
-                      placeholder={addrCountry === 'us' ? '123 Main Street, Apt 4B' : 'Rue Martin Luther King, #12'}
+                      placeholder={addrCountry === 'usa' ? '123 Main Street, Apt 4B' : 'Rue Martin Luther King, #12'}
                       value={addrForm.adresse} onChange={e => setAddrForm(p => ({ ...p, adresse: e.target.value }))} />
                   </div>
 
                   {/* Conditional fields */}
                   <AnimatePresence mode="wait">
-                    {addrCountry === 'ht' && (
+                    {addrCountry === 'hti' && (
                       <motion.div key="ht" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -403,7 +403,7 @@ export default function InformationsPage() {
                       </motion.div>
                     )}
 
-                    {addrCountry === 'us' && (
+                    {addrCountry === 'usa' && (
                       <motion.div key="us" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
