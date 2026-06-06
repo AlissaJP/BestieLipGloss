@@ -1,21 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useAdminStore } from '@/store/adminStore';
+import { useCartStore } from '@/store/cartStore';
 
-export default function ConnexionPage() {
+function ConnexionForm() {
+  const searchParams = useSearchParams();
+  const adminRedirect = searchParams.get('reason') === 'admin_required';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(adminRedirect ? 'Accès réservé aux administrateurs.' : '');
   const { login } = useAuthStore();
   const { login: adminLogin } = useAdminStore();
+  const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,8 +33,18 @@ export default function ConnexionPage() {
     setError('');
     await new Promise((r) => setTimeout(r, 700));
 
-    // Accès administrateur
-    if (email.trim().toLowerCase() === 'admin' && password.trim().toLowerCase() === 'admin') {
+    // Accès administrateur — via API pour poser le cookie httpOnly (vérification serveur)
+    if (email.trim().toLowerCase() === 'admin') {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'admin', password: password.trim() }),
+      });
+      if (!res.ok) {
+        setError('Identifiants administrateur invalides.');
+        setIsLoading(false);
+        return;
+      }
       adminLogin('admin', 'bestie2024');
       router.push('/admin/dashboard');
       return;
@@ -42,6 +57,7 @@ export default function ConnexionPage() {
       : email.trim().charAt(0).toUpperCase() + email.trim().slice(1);
     const storedEmail = isEmail ? email.trim() : `${email.trim().toLowerCase().replace(/\s+/g, '.')}@bestie.app`;
     login({ name, email: storedEmail });
+    syncCartOnLogin();
     router.push('/');
   };
 
@@ -90,9 +106,9 @@ export default function ConnexionPage() {
                   <label className="font-lato text-sm font-medium text-gray-700">
                     Mot de passe
                   </label>
-                  <a href="#" className="font-lato text-xs text-primary hover:underline">
+                  <Link href="/mot-de-passe-oublie" className="font-lato text-xs text-primary hover:underline">
                     Mot de passe oublié ?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -158,5 +174,13 @@ export default function ConnexionPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function ConnexionPage() {
+  return (
+    <Suspense fallback={null}>
+      <ConnexionForm />
+    </Suspense>
   );
 }

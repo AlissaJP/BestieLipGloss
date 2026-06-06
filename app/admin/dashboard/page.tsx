@@ -304,7 +304,12 @@ export default function AdminDashboard() {
     return list.filter((o) => o.customer.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.address.toLowerCase().includes(q));
   }
 
-  const handleLogout = () => { setLoggingOut(true); logout(); router.push('/'); };
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await fetch('/api/admin/logout', { method: 'POST' });
+    logout();
+    router.push('/');
+  };
 
   const navItems: { id: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: 'overview',  label: t.nav.overview,  icon: <LayoutDashboard size={15} /> },

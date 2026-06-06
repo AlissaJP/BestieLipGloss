@@ -24,6 +24,8 @@ interface CartState {
   closeCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
+  // Appelé à la connexion : envoie le panier local au serveur puis charge le panier serveur
+  syncCartOnLogin: () => Promise<void>;
 }
 
 export const useCartStore = create<CartState>()(
@@ -76,6 +78,28 @@ export const useCartStore = create<CartState>()(
 
       totalPrice: () =>
         get().items.reduce((acc, i) => acc + i.price_htg * i.quantity, 0),
+
+      syncCartOnLogin: async () => {
+        const localItems = get().items;
+        if (localItems.length > 0) {
+          await Promise.allSettled(
+            localItems.map((item) =>
+              fetch('/api/panier/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_variant: item.variantKey, quantite: item.quantity }),
+              })
+            )
+          );
+        }
+        const res = await fetch('/api/panier').catch(() => null);
+        if (!res?.ok) return;
+        const data = await res.json();
+        // Remplace le local par le serveur seulement si la BDD renvoie des articles
+        if (data.items && data.items.length > 0) {
+          set({ items: data.items });
+        }
+      },
     }),
     { name: 'bestie-cart' }
   )

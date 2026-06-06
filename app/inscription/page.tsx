@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
 
 export default function InscriptionPage() {
   const [form, setForm] = useState({
@@ -20,6 +21,7 @@ export default function InscriptionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuthStore();
+  const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
   const router = useRouter();
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -47,6 +49,7 @@ export default function InscriptionPage() {
       email: form.email,
       telephone: form.telephone,
     });
+    syncCartOnLogin();
     router.push('/');
   };
 
@@ -124,7 +127,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Numéro de téléphone <span className="text-primary">*</span>
+                  Numéro WhatsApp <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -132,7 +135,7 @@ export default function InscriptionPage() {
                     type="tel"
                     value={form.telephone}
                     onChange={update('telephone')}
-                    placeholder="+509 XXXX-XXXX"
+                    placeholder="+509 XXXX XXXX ou +1 XXXXXXXXXX"
                     className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="tel"
                   />
