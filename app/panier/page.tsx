@@ -39,7 +39,7 @@ function formatAddress(addr: Address): string {
   if ((addr.country ?? 'hti') === 'usa') {
     return `${addr.adresse}, ${addr.ville}${addr.state ? `, ${addr.state}` : ''} ${addr.zipCode ?? ''}, USA`;
   }
-  return `${addr.adresse}${addr.quartier ? `, ${addr.quartier}` : ''}, ${addr.ville}, Haïti`;
+  return `${addr.adresse}${addr.quartier ? `, ${addr.quartier}` : ''}, ${addr.ville}, Haiti`;
 }
 
 export default function PanierPage() {
@@ -52,7 +52,6 @@ export default function PanierPage() {
   const [promoInfo, setPromoInfo] = useState<PromoInfo | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
 
-  // E4 — zones de livraison depuis l'API
   const [zones, setZones] = useState<ZoneLivraison[]>([]);
   useEffect(() => {
     fetch('/api/zones-livraison')
@@ -65,7 +64,6 @@ export default function PanierPage() {
   const [selectedAddr, setSelectedAddr] = useState<Address | null>(savedAddresses[0] ?? null);
   const [addrError, setAddrError] = useState('');
 
-  // E5 — champs de livraison supplémentaires
   const [telephoneLivraison, setTelephoneLivraison] = useState('');
   const [instructionsLivraison, setInstructionsLivraison] = useState('');
 
@@ -73,15 +71,11 @@ export default function PanierPage() {
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
-  // E3 — référence de transaction
   const [referenceTransaction, setReferenceTransaction] = useState('');
-  // E2 — note client
   const [noteClient, setNoteClient] = useState('');
   const [deliveryData, setDeliveryData] = useState<SavedDelivery | null>(null);
-  // E2 — numero_commande généré une seule fois
   const [numeroCommande, setNumeroCommande] = useState('');
 
-  // Detect cart items that were added from the card without a variant choice
   const itemsNeedingVariant = items.filter((item) => {
     const p = products.find((pd) => pd.id === item.id);
     return p?.variants && item.variantKey === String(item.id);
@@ -112,18 +106,18 @@ export default function PanierPage() {
         setPromoInfo({ code: data.code, valeur: data.reduction_pct, type: data.type_reduction });
       } else {
         setPromoInfo(null);
-        setPromoError(data.reason ?? 'Code promo invalide.');
+        setPromoError(data.reason ?? 'Invalid promo code.');
       }
     } catch {
       setPromoInfo(null);
-      setPromoError('Erreur lors de la validation. Réessaie.');
+      setPromoError('Validation error. Please try again.');
     } finally {
       setPromoLoading(false);
     }
   };
 
   const handleDeliveryNext = () => {
-    if (!selectedAddr) { setAddrError('Sélectionne une adresse de livraison.'); return; }
+    if (!selectedAddr) { setAddrError('Please select a delivery address.'); return; }
     setAddrError('');
     setDeliveryData({
       name: user?.name ?? '',
@@ -154,13 +148,13 @@ export default function PanierPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setPaymentError(data.message ?? 'Une erreur est survenue. Réessaie.');
+        setPaymentError(data.message ?? 'An error occurred. Please try again.');
         return;
       }
       clearCart();
       setStep(3);
     } catch {
-      setPaymentError('Erreur de connexion. Vérifie ta connexion et réessaie.');
+      setPaymentError('Connection error. Please check your connection and try again.');
     } finally {
       setPaymentLoading(false);
     }
@@ -177,24 +171,24 @@ export default function PanierPage() {
             <CheckCircle size={40} className="text-green-500" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">Commande confirmée ! 🎉</h1>
-            <p className="font-lato text-gray-600 leading-relaxed mb-2">Merci ! Ta commande est en cours de vérification.</p>
+            <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">Order confirmed! 🎉</h1>
+            <p className="font-lato text-gray-600 leading-relaxed mb-2">Thank you! Your order is being verified.</p>
             {numeroCommande && (
               <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 border border-gray-200 inline-block">
-                <p className="font-lato text-xs text-gray-500 mb-0.5">Numéro de commande</p>
+                <p className="font-lato text-xs text-gray-500 mb-0.5">Order number</p>
                 <p className="font-playfair font-bold text-gray-800 tracking-wider">{numeroCommande}</p>
               </div>
             )}
-            <p className="font-cormorant text-lg text-gray-500 italic mb-8">Tu recevras une confirmation sur WhatsApp dans les 2h. 💕</p>
+            <p className="font-cormorant text-lg text-gray-500 italic mb-8">You will receive a WhatsApp confirmation within 2 hours. 💕</p>
             <div className="bg-pink-50 rounded-2xl p-4 mb-8 text-left">
               <p className="font-lato text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">💬 Questions ?</span><br />
-                Écris-nous sur WhatsApp au{' '}
+                <span className="font-semibold text-gray-800">💬 Questions?</span><br />
+                Message us on WhatsApp at{' '}
                 <a href="https://wa.me/50900000000" className="text-primary font-semibold">509-XX-XX-XXXX</a>
               </p>
             </div>
             <Link href="/boutique" className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3.5 rounded-full transition-colors w-full justify-center">
-              Continuer mes achats →
+              Continue shopping →
             </Link>
           </motion.div>
         </motion.div>
@@ -212,15 +206,15 @@ export default function PanierPage() {
           {/* ===================== STEP 0 : CART ===================== */}
           {step === 0 && (
             <motion.div key="cart" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">🛍️ Mon Panier</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">🛍️ My Cart</h1>
 
               {items.length === 0 ? (
                 <div className="text-center py-20">
                   <span className="text-6xl block mb-4" aria-hidden="true">💋</span>
-                  <p className="font-playfair text-gray-500 text-xl mb-2">Ton panier est vide</p>
-                  <p className="font-lato text-sm text-gray-400 mb-8">Découvre nos glosses et ajoute tes teintes préférées</p>
+                  <p className="font-playfair text-gray-500 text-xl mb-2">Your cart is empty</p>
+                  <p className="font-lato text-sm text-gray-400 mb-8">Discover our glosses and add your favorite shades</p>
                   <Link href="/boutique" className="inline-flex items-center gap-2 bg-primary text-white font-lato font-semibold px-7 py-3 rounded-full hover:bg-pink-400 transition-colors">
-                    <ShoppingBag size={16} />Voir la boutique
+                    <ShoppingBag size={16} />View the shop
                   </Link>
                 </div>
               ) : (
@@ -244,20 +238,20 @@ export default function PanierPage() {
                             <div className="flex-1 min-w-0">
                               <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
                               {needsVariant ? (
-                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">⚠ Choisir une teinte</p>
+                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">⚠ Choose a shade</p>
                               ) : (
                                 <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
                               )}
                               <p className="font-playfair font-bold text-primary mt-1">{item.price_htg * item.quantity} HTG</p>
                             </div>
                             <div className="flex flex-col items-end gap-3">
-                              <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Supprimer ${item.name}`}>
+                              <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Remove ${item.name}`}>
                                 <Trash2 size={15} />
                               </button>
                               <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-1.5">
-                                <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Diminuer"><Minus size={13} /></button>
+                                <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Decrease"><Minus size={13} /></button>
                                 <span className="font-lato text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Augmenter"><Plus size={13} /></button>
+                                <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Increase"><Plus size={13} /></button>
                               </div>
                             </div>
                           </div>
@@ -265,7 +259,7 @@ export default function PanierPage() {
                           {/* Inline variant picker */}
                           {needsVariant && productData?.variants && (
                             <div className="mt-3 pt-3 border-t border-amber-100">
-                              <p className="font-lato text-xs text-gray-500 mb-2">Sélectionne une teinte :</p>
+                              <p className="font-lato text-xs text-gray-500 mb-2">Select a shade:</p>
                               <div className="flex flex-wrap gap-2">
                                 {productData.variants.map((v: ColorVariant) => (
                                   <button
@@ -292,7 +286,7 @@ export default function PanierPage() {
                     {/* Promo code */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
                       <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <Tag size={16} className="text-primary" />Code promo
+                        <Tag size={16} className="text-primary" />Promo code
                       </p>
                       {user ? (
                         <>
@@ -303,7 +297,7 @@ export default function PanierPage() {
                                 onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); setPromoInfo(null); }}
                                 className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer pr-9"
                               >
-                                <option value="">— Choisir un coupon —</option>
+                                <option value="">— Choose a coupon —</option>
                                 {(user.coupons ?? []).map((code) => (
                                   <option key={code} value={code}>{code}</option>
                                 ))}
@@ -315,31 +309,31 @@ export default function PanierPage() {
                               disabled={!promoCode || promoLoading}
                               className="bg-primary hover:bg-pink-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
                             >
-                              {promoLoading ? 'Vérification…' : 'Appliquer'}
+                              {promoLoading ? 'Checking…' : 'Apply'}
                             </button>
                           </div>
                           {(user.coupons ?? []).length === 0 && (
                             <p className="font-lato text-xs text-gray-400 mt-2">
-                              Aucun coupon enregistré.{' '}
-                              <Link href="/mon-compte" className="text-primary hover:underline">Ajouter dans Mon compte →</Link>
+                              No coupons saved.{' '}
+                              <Link href="/mon-compte" className="text-primary hover:underline">Add one in My Account →</Link>
                             </p>
                           )}
                         </>
                       ) : (
                         <div className="bg-pink-50 rounded-xl p-3 text-center border border-pink-100">
                           <p className="font-lato text-xs text-gray-500">
-                            <Link href="/connexion" className="text-primary font-semibold hover:underline">Connecte-toi</Link>{' '}
-                            pour utiliser tes coupons.
+                            <Link href="/connexion" className="text-primary font-semibold hover:underline">Sign in</Link>{' '}
+                            to use your coupons.
                           </p>
                         </div>
                       )}
                       {promoError && <p className="font-lato text-xs text-red-500 mt-2">{promoError}</p>}
                       {promoInfo && (
                         <p className="font-lato text-xs text-green-600 mt-2">
-                          ✓ Code {promoInfo.code} appliqué —{' '}
+                          ✓ Code {promoInfo.code} applied —{' '}
                           {promoInfo.type === 'pct'
-                            ? `${promoInfo.valeur * 100}% de réduction`
-                            : `${promoInfo.valeur} HTG déduits`} !
+                            ? `${promoInfo.valeur * 100}% discount`
+                            : `${promoInfo.valeur} HTG off`}!
                         </p>
                       )}
                     </div>
@@ -347,13 +341,13 @@ export default function PanierPage() {
                     {/* Delivery estimator */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
                       <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <MapPin size={16} className="text-primary" />Estimer la livraison
+                        <MapPin size={16} className="text-primary" />Estimate delivery
                       </p>
                       {savedAddresses.length === 0 ? (
                         <div className="bg-pink-50 rounded-xl p-4 text-center border border-pink-100">
-                          <p className="font-lato text-sm text-gray-500 mb-2">Aucune adresse enregistrée.</p>
+                          <p className="font-lato text-sm text-gray-500 mb-2">No saved address.</p>
                           <Link href="/mon-compte/informations" className="font-lato text-sm text-primary font-semibold hover:underline">
-                            Ajouter une adresse →
+                            Add an address →
                           </Link>
                         </div>
                       ) : (
@@ -365,9 +359,9 @@ export default function PanierPage() {
                               setSelectedAddr(addr);
                             }}
                             className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer"
-                            aria-label="Sélectionner une adresse pour estimer la livraison"
+                            aria-label="Select an address to estimate delivery"
                           >
-                            <option value="" disabled>Choisir une adresse…</option>
+                            <option value="" disabled>Choose an address…</option>
                             {savedAddresses.map((addr) => (
                               <option key={addr.id} value={addr.id}>
                                 {(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'} {addr.label} — {addr.adresse}, {addr.ville}
@@ -376,7 +370,7 @@ export default function PanierPage() {
                           </select>
                           {selectedAddr && (
                             <p className="font-lato text-xs text-primary font-semibold mt-2">
-                              Frais estimés : {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Livraison gratuite' : `${addrFee(selectedAddr, discountedSubtotal, zones)} HTG`}
+                              Estimated fee: {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Free delivery' : `${addrFee(selectedAddr, discountedSubtotal, zones)} HTG`}
                             </p>
                           )}
                         </>
@@ -387,32 +381,32 @@ export default function PanierPage() {
                   {/* Summary */}
                   <div className="lg:col-span-1">
                     <div className="bg-white rounded-2xl p-6 border border-pink-100 sticky top-24">
-                      <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">Récapitulatif</h2>
+                      <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">Summary</h2>
                       <div className="space-y-3 text-sm">
-                        <div className="flex justify-between font-lato text-gray-600"><span>Sous-total</span><span>{subtotal} HTG</span></div>
+                        <div className="flex justify-between font-lato text-gray-600"><span>Subtotal</span><span>{subtotal} HTG</span></div>
                         {promoInfo && (
                           <div className="flex justify-between font-lato text-green-600">
-                            <span>Réduction ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `${promoInfo.valeur} HTG`})</span>
+                            <span>Discount ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `${promoInfo.valeur} HTG`})</span>
                             <span>-{discountAmount} HTG</span>
                           </div>
                         )}
                         <div className="flex justify-between font-lato text-gray-600">
-                          <span>Livraison (estimation)</span>
+                          <span>Delivery (estimate)</span>
                           <span className={deliveryFee === 0 && selectedAddr ? 'text-green-600 font-semibold' : ''}>
-                            {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Gratuite' : `${deliveryFee} HTG`}
+                            {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Free' : `${deliveryFee} HTG`}
                           </span>
                         </div>
                         {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'hti') === 'hti')(selectedAddr) && (
-                          <p className="font-lato text-xs text-gray-400">Encore {2000 - discountedSubtotal} HTG pour la livraison gratuite</p>
+                          <p className="font-lato text-xs text-gray-400">{2000 - discountedSubtotal} HTG away from free delivery</p>
                         )}
                         <div className="border-t border-pink-100 pt-3 flex justify-between">
-                          <span className="font-playfair font-bold text-gray-800">Total estimé</span>
+                          <span className="font-playfair font-bold text-gray-800">Estimated total</span>
                           <span className="font-playfair font-bold text-primary text-xl">{total} HTG</span>
                         </div>
                       </div>
                       {hasUnselectedVariants && (
                         <p className="font-lato text-xs text-amber-600 text-center mt-4">
-                          ⚠ Choisis une teinte pour chaque produit avant de continuer.
+                          ⚠ Please choose a shade for each product before continuing.
                         </p>
                       )}
                       <button
@@ -424,10 +418,10 @@ export default function PanierPage() {
                             : 'bg-primary hover:bg-pink-400 text-white'
                         }`}
                       >
-                        Continuer → Livraison
+                        Continue → Delivery
                       </button>
                       <Link href="/boutique" className="block text-center font-lato text-xs text-gray-400 hover:text-primary transition-colors mt-3">
-                        ← Continuer mes achats
+                        ← Continue shopping
                       </Link>
                     </div>
                   </div>
@@ -439,14 +433,14 @@ export default function PanierPage() {
           {/* ===================== STEP 1 : DELIVERY ===================== */}
           {step === 1 && (
             <motion.div key="delivery" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">📦 Informations de livraison</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">📦 Delivery Information</h1>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-5">
 
-                  {/* Infos du profil (lecture seule) */}
+                  {/* Recipient */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
-                    <h3 className="font-playfair font-semibold text-gray-800">Destinataire</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800">Recipient</h3>
                     {user ? (
                       <div className="bg-pink-50 rounded-xl p-4 border border-pink-100 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
@@ -456,35 +450,35 @@ export default function PanierPage() {
                           <div className="min-w-0">
                             <p className="font-lato text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                             <p className="font-lato text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                              <Phone size={11} />{user.telephone ?? 'Aucun numéro enregistré'}
+                              <Phone size={11} />{user.telephone ?? 'No phone number saved'}
                             </p>
                           </div>
                         </div>
                         <Link href="/mon-compte/informations" className="font-lato text-xs text-primary hover:underline whitespace-nowrap flex-shrink-0">
-                          Modifier
+                          Edit
                         </Link>
                       </div>
                     ) : (
                       <div className="bg-pink-50 rounded-xl p-4 text-center border border-pink-100">
-                        <p className="font-lato text-sm text-gray-600 mb-3">Connecte-toi pour utiliser tes informations.</p>
+                        <p className="font-lato text-sm text-gray-600 mb-3">Sign in to use your saved information.</p>
                         <Link href="/connexion" className="inline-flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
-                          Se connecter
+                          Sign in
                         </Link>
                       </div>
                     )}
                   </div>
 
-                  {/* Sélecteur d'adresse */}
+                  {/* Address selector */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
-                      <MapPin size={16} className="text-primary" />Adresse de livraison
+                      <MapPin size={16} className="text-primary" />Delivery address
                     </h3>
 
                     {savedAddresses.length === 0 ? (
                       <div className="bg-pink-50 rounded-xl p-5 text-center border border-pink-100">
-                        <p className="font-lato text-sm text-gray-600 mb-3">Tu n&apos;as pas encore d&apos;adresse enregistrée.</p>
+                        <p className="font-lato text-sm text-gray-600 mb-3">You have no saved address yet.</p>
                         <Link href="/mon-compte/informations" className="inline-flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
-                          <Plus size={14} />Ajouter une adresse
+                          <Plus size={14} />Add an address
                         </Link>
                       </div>
                     ) : (
@@ -505,12 +499,12 @@ export default function PanierPage() {
                               <p className="font-lato text-sm font-semibold text-gray-800 flex items-center gap-2">
                                 {addr.label}
                                 {addr.est_principale && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">Principale</span>
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">Primary</span>
                                 )}
                               </p>
                               <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-xs text-primary font-semibold mt-1.5">
-                                Livraison : {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Gratuite' : `${addrFee(addr, discountedSubtotal, zones)} HTG`}
+                                Delivery: {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Free' : `${addrFee(addr, discountedSubtotal, zones)} HTG`}
                               </p>
                             </div>
                             {selectedAddr?.id === addr.id && (
@@ -520,7 +514,7 @@ export default function PanierPage() {
                         ))}
 
                         <Link href="/mon-compte/informations" className="inline-flex items-center gap-1.5 font-lato text-sm text-primary hover:underline">
-                          <Plus size={14} />Ajouter une nouvelle adresse
+                          <Plus size={14} />Add a new address
                         </Link>
                       </div>
                     )}
@@ -528,15 +522,15 @@ export default function PanierPage() {
                     {addrError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
                   </div>
 
-                  {/* E5 — Contacts & instructions livraison */}
+                  {/* Contact & delivery instructions */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
                       <Phone size={16} className="text-primary" />Contact &amp; instructions
                     </h3>
                     <div>
                       <label className={labelCls} htmlFor="tel-livraison">
-                        Numéro WhatsApp pour la livraison
-                        <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                        WhatsApp number for delivery
+                        <span className="text-gray-400 font-normal ml-1">(optional)</span>
                       </label>
                       <input
                         id="tel-livraison"
@@ -546,17 +540,17 @@ export default function PanierPage() {
                         onChange={(e) => setTelephoneLivraison(e.target.value)}
                         className={inputCls}
                       />
-                      <p className="font-lato text-xs text-gray-400 mt-1">Laisse vide pour utiliser le numéro de ton compte.</p>
+                      <p className="font-lato text-xs text-gray-400 mt-1">Leave blank to use your account phone number.</p>
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="instructions-livraison">
-                        Instructions de localisation
-                        <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                        Location instructions
+                        <span className="text-gray-400 font-normal ml-1">(optional)</span>
                       </label>
                       <textarea
                         id="instructions-livraison"
                         rows={3}
-                        placeholder="Ex. : maison blanche avec portail bleu, en face de l'église…"
+                        placeholder="e.g. white house with blue gate, across from the church…"
                         value={instructionsLivraison}
                         onChange={(e) => setInstructionsLivraison(e.target.value)}
                         className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
@@ -567,11 +561,11 @@ export default function PanierPage() {
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setStep(0)}
                       className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px]">
-                      ← Retour
+                      ← Back
                     </button>
                     <button type="button" onClick={handleDeliveryNext}
                       className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[44px]">
-                      Continuer → Paiement
+                      Continue → Payment
                     </button>
                   </div>
                 </div>
@@ -579,7 +573,7 @@ export default function PanierPage() {
                 {/* Mini summary */}
                 <div className="lg:col-span-1">
                   <div className="bg-white rounded-2xl p-5 border border-pink-100 sticky top-24">
-                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Récapitulatif</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Summary</h3>
                     {selectedAddr && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 flex items-start gap-2">
                         <span className="text-base">{(selectedAddr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
@@ -590,10 +584,10 @@ export default function PanierPage() {
                       </div>
                     )}
                     <div className="space-y-2 text-sm font-lato text-gray-600">
-                      <div className="flex justify-between"><span>Sous-total</span><span>{discountedSubtotal} HTG</span></div>
+                      <div className="flex justify-between"><span>Subtotal</span><span>{discountedSubtotal} HTG</span></div>
                       <div className="flex justify-between">
-                        <span>Livraison</span>
-                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? 'Gratuite 🎉' : `${deliveryFee} HTG`}</span>
+                        <span>Delivery</span>
+                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? 'Free 🎉' : `${deliveryFee} HTG`}</span>
                       </div>
                       <div className="border-t border-pink-100 pt-2 flex justify-between font-bold">
                         <span className="font-playfair text-gray-800">Total</span>
@@ -617,12 +611,12 @@ export default function PanierPage() {
           {/* ===================== STEP 2 : PAYMENT ===================== */}
           {step === 2 && (
             <motion.div key="payment" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">💳 Paiement</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">💳 Payment</h1>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                   <div>
-                    <p className="font-playfair font-semibold text-gray-800 mb-4">Choisis ton mode de paiement</p>
+                    <p className="font-playfair font-semibold text-gray-800 mb-4">Choose your payment method</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <button onClick={() => setPaymentMethod('moncash')}
                         className={`p-5 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'moncash' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
@@ -631,7 +625,7 @@ export default function PanierPage() {
                           <span className="font-playfair font-semibold text-gray-800">MonCash</span>
                           {paymentMethod === 'moncash' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Paiement via MonCash (Digicel)</p>
+                        <p className="font-lato text-xs text-gray-500">Payment via MonCash (Digicel)</p>
                       </button>
                       <button onClick={() => setPaymentMethod('zelle')}
                         className={`p-5 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'zelle' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
@@ -640,7 +634,7 @@ export default function PanierPage() {
                           <span className="font-playfair font-semibold text-gray-800">Zelle</span>
                           {paymentMethod === 'zelle' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Virement Zelle (États-Unis)</p>
+                        <p className="font-lato text-xs text-gray-500">Zelle transfer (United States)</p>
                       </button>
                     </div>
                   </div>
@@ -651,38 +645,38 @@ export default function PanierPage() {
                       {paymentMethod === 'moncash' ? (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>Instructions MonCash
+                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>MonCash Instructions
                           </h3>
                           <ol className="font-lato text-sm text-gray-600 space-y-3 list-none">
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Ouvre l&apos;application MonCash sur ton téléphone</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Choisis &ldquo;Payer un marchand&rdquo;</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>Envoie <span className="font-bold text-primary">{total} HTG</span> au numéro :</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Open the MonCash app on your phone</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Select &ldquo;Pay a merchant&rdquo;</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>Send <span className="font-bold text-primary">{total} HTG</span> to the number:</li>
                           </ol>
                           <div className="mt-4 bg-red-50 rounded-xl p-4 text-center border border-red-100">
-                            <p className="font-lato text-xs text-gray-500 mb-1">Numéro MonCash</p>
+                            <p className="font-lato text-xs text-gray-500 mb-1">MonCash number</p>
                             <p className="font-playfair font-bold text-xl text-red-600 tracking-wider">509-XX-XX-XXXX</p>
                             <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
                           </div>
                           <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Montant exact : <span className="font-bold text-primary text-lg">{total} HTG</span></p>
+                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">{total} HTG</span></p>
                           </div>
                         </>
                       ) : (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs font-lato">Z</span>Instructions Zelle
+                            <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs font-lato">Z</span>Zelle Instructions
                           </h3>
                           <ol className="font-lato text-sm text-gray-600 space-y-3 list-none">
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Ouvre ton application bancaire ou Zelle</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Envoie le paiement à l&apos;adresse email :</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Open your banking app or Zelle</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Send payment to the email address:</li>
                           </ol>
                           <div className="mt-4 bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
-                            <p className="font-lato text-xs text-gray-500 mb-1">Email Zelle</p>
+                            <p className="font-lato text-xs text-gray-500 mb-1">Zelle email</p>
                             <p className="font-playfair font-bold text-lg text-purple-700">bestielipgloss@gmail.com</p>
                             <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
                           </div>
                           <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Montant exact : <span className="font-bold text-primary text-lg">${(total / 130).toFixed(2)} USD</span> <span className="text-gray-500 text-xs">({total} HTG)</span></p>
+                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">${(total / 130).toFixed(2)} USD</span> <span className="text-gray-500 text-xs">({total} HTG)</span></p>
                           </div>
                         </>
                       )}
@@ -692,9 +686,9 @@ export default function PanierPage() {
                   {/* Screenshot upload */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <Upload size={16} className="text-primary" />Capture d&apos;écran de paiement
+                      <Upload size={16} className="text-primary" />Payment screenshot
                     </p>
-                    <p className="font-lato text-xs text-gray-500 mb-4">Envoie une capture d&apos;écran confirmant ton paiement pour accélérer la vérification.</p>
+                    <p className="font-lato text-xs text-gray-500 mb-4">Upload a screenshot confirming your payment to speed up verification.</p>
                     <label className="block">
                       <input type="file" accept="image/*" onChange={(e) => setPaymentFile(e.target.files?.[0] ?? null)} className="hidden" />
                       <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${paymentFile ? 'border-green-400 bg-green-50' : 'border-pink-200 hover:border-primary bg-pink-50/30'}`}>
@@ -702,12 +696,12 @@ export default function PanierPage() {
                           <div className="flex flex-col items-center gap-2">
                             <CheckCircle size={28} className="text-green-500" />
                             <p className="font-lato text-sm text-green-700 font-semibold">{paymentFile.name}</p>
-                            <p className="font-lato text-xs text-gray-400">Cliquer pour changer</p>
+                            <p className="font-lato text-xs text-gray-400">Click to change</p>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
                             <Upload size={28} className="text-primary/60" />
-                            <p className="font-lato text-sm text-gray-600">Cliquer pour uploader ta capture d&apos;écran</p>
+                            <p className="font-lato text-sm text-gray-600">Click to upload your screenshot</p>
                             <p className="font-lato text-xs text-gray-400">JPG, PNG, GIF</p>
                           </div>
                         )}
@@ -715,34 +709,34 @@ export default function PanierPage() {
                     </label>
                   </div>
 
-                  {/* E3 — Référence de transaction */}
+                  {/* Transaction reference */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <label className={labelCls} htmlFor="reference-transaction">
-                      Référence de transaction
-                      <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                      Transaction reference
+                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
                     </label>
                     <input
                       id="reference-transaction"
                       type="text"
-                      placeholder={paymentMethod === 'moncash' ? 'ID de confirmation MonCash' : 'Référence de confirmation Zelle'}
+                      placeholder={paymentMethod === 'moncash' ? 'MonCash confirmation ID' : 'Zelle confirmation reference'}
                       value={referenceTransaction}
                       onChange={(e) => setReferenceTransaction(e.target.value)}
                       className={inputCls}
                     />
-                    <p className="font-lato text-xs text-gray-400 mt-1">Disponible dans ton appli après le paiement.</p>
+                    <p className="font-lato text-xs text-gray-400 mt-1">Available in your app after payment.</p>
                   </div>
 
-                  {/* E2 — Note client */}
+                  {/* Client note */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <label className={labelCls} htmlFor="note-client">
                       <MessageSquare size={14} className="inline mr-1 text-primary" />
-                      Message pour Bestie
-                      <span className="text-gray-400 font-normal ml-1">(optionnel)</span>
+                      Message for Bestie
+                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
                     </label>
                     <textarea
                       id="note-client"
                       rows={3}
-                      placeholder="Un message, une demande spéciale…"
+                      placeholder="A message, a special request…"
                       value={noteClient}
                       onChange={(e) => setNoteClient(e.target.value)}
                       className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
@@ -757,16 +751,16 @@ export default function PanierPage() {
                   )}
 
                   <div className="flex gap-3">
-                    <button onClick={() => setStep(1)} disabled={paymentLoading} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px] disabled:opacity-50">← Retour</button>
+                    <button onClick={() => setStep(1)} disabled={paymentLoading} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px] disabled:opacity-50">← Back</button>
                     <button
                       onClick={onConfirmOrder}
                       disabled={paymentLoading}
                       className="flex-1 bg-primary hover:bg-pink-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-lato font-semibold py-3.5 rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2"
                     >
                       {paymentLoading ? (
-                        <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Envoi en cours…</>
+                        <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Submitting…</>
                       ) : (
-                        <><CheckCircle size={18} />Confirmer ma commande</>
+                        <><CheckCircle size={18} />Confirm my order</>
                       )}
                     </button>
                   </div>
@@ -775,10 +769,10 @@ export default function PanierPage() {
                 {/* Summary */}
                 <div className="lg:col-span-1">
                   <div className="bg-white rounded-2xl p-5 border border-pink-100 sticky top-24">
-                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Ta commande</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Your order</h3>
                     {deliveryData && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 text-xs font-lato text-gray-600 space-y-0.5">
-                        <p className="font-semibold text-gray-800">Livraison pour :</p>
+                        <p className="font-semibold text-gray-800">Delivering to:</p>
                         <p>{deliveryData.name}</p>
                         <p>{formatAddress(deliveryData.address)}</p>
                         {deliveryData.telephone && <p>📱 {deliveryData.telephone}</p>}
@@ -792,8 +786,8 @@ export default function PanierPage() {
                         </div>
                       ))}
                       <div className="border-t border-pink-100 pt-2 space-y-1">
-                        {promoInfo && <div className="flex justify-between text-green-600"><span>Réduction</span><span>-{discountAmount} HTG</span></div>}
-                        <div className="flex justify-between"><span>Livraison</span><span>{deliveryFee === 0 ? 'Gratuite' : `${deliveryFee} HTG`}</span></div>
+                        {promoInfo && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{discountAmount} HTG</span></div>}
+                        <div className="flex justify-between"><span>Delivery</span><span>{deliveryFee === 0 ? 'Free' : `${deliveryFee} HTG`}</span></div>
                         <div className="flex justify-between font-bold pt-1">
                           <span className="font-playfair text-gray-800">Total</span>
                           <span className="font-playfair text-primary text-lg">{total} HTG</span>

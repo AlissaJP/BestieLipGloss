@@ -37,7 +37,7 @@ export default function CartDrawer() {
             transition={{ type: 'tween', duration: 0.3 }}
             className="fixed right-0 top-0 h-full w-full sm:w-[400px] bg-white z-50 flex flex-col shadow-2xl"
             role="dialog"
-            aria-label="Panier"
+            aria-label="Cart"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-pink-100">
@@ -53,7 +53,7 @@ export default function CartDrawer() {
               <button
                 onClick={closeCart}
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-                aria-label="Fermer le panier"
+                aria-label="Close cart"
               >
                 <X size={20} />
               </button>
@@ -112,7 +112,7 @@ export default function CartDrawer() {
                         <button
                           onClick={() => removeItem(item.variantKey)}
                           className="text-gray-300 hover:text-red-400 transition-colors p-1"
-                          aria-label={`Supprimer ${item.name}`}
+                          aria-label={`Remove ${item.name}`}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -120,7 +120,7 @@ export default function CartDrawer() {
                           <button
                             onClick={() => updateQuantity(item.variantKey, item.quantity - 1)}
                             className="w-6 h-6 rounded-full border border-pink-200 flex items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors"
-                            aria-label="Diminuer la quantité"
+                            aria-label="Decrease quantity"
                           >
                             <Minus size={10} />
                           </button>
@@ -128,7 +128,7 @@ export default function CartDrawer() {
                           <button
                             onClick={() => updateQuantity(item.variantKey, item.quantity + 1)}
                             className="w-6 h-6 rounded-full border border-pink-200 flex items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors"
-                            aria-label="Augmenter la quantité"
+                            aria-label="Increase quantity"
                           >
                             <Plus size={10} />
                           </button>

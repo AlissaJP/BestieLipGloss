@@ -39,7 +39,7 @@ export default function AuthModal() {
             <button
               onClick={closeAuthModal}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-              aria-label="Fermer"
+              aria-label="Close"
             >
               <X size={18} />
             </button>
@@ -52,11 +52,10 @@ export default function AuthModal() {
                 id="auth-modal-title"
                 className="font-playfair font-bold text-xl text-gray-800 mb-2"
               >
-                Connecte-toi pour commander
+                Sign in to place an order
               </h2>
               <p className="font-lato text-sm text-gray-500 leading-relaxed mb-7">
-                Tu dois avoir un compte Bestie pour ajouter des produits au panier et passer
-                une commande. C&apos;est gratuit et rapide !
+                You need a Bestie account to add products to your cart and place an order. It&apos;s free and takes less than a minute!
               </p>
 
               <div className="flex flex-col gap-3">
@@ -65,18 +64,18 @@ export default function AuthModal() {
                   onClick={closeAuthModal}
                   className="w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm"
                 >
-                  Se connecter
+                  Sign In
                 </Link>
                 <Link
                   href="/inscription"
                   onClick={closeAuthModal}
                   className="w-full border-2 border-primary text-primary hover:bg-pink-50 font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm"
                 >
-                  Créer un compte gratuitement
+                  Create a free account
                 </Link>
               </div>
               <p className="font-lato text-xs text-gray-400 mt-5">
-                Moins d&apos;une minute pour rejoindre la famille Bestie 💕
+                Less than a minute to join the Bestie family 💕
               </p>
             </div>
           </motion.div>

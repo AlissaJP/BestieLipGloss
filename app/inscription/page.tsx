@@ -9,15 +9,15 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 
 const PAYS = [
-  { id: 'HT', code: '+509', drapeau: '🇭🇹', nom: 'Haïti' },
-  { id: 'US', code: '+1',   drapeau: '🇺🇸', nom: 'États-Unis' },
+  { id: 'HT', code: '+509', drapeau: '🇭🇹', nom: 'Haiti' },
+  { id: 'US', code: '+1',   drapeau: '🇺🇸', nom: 'United States' },
   { id: 'CA', code: '+1',   drapeau: '🇨🇦', nom: 'Canada' },
   { id: 'FR', code: '+33',  drapeau: '🇫🇷', nom: 'France' },
   { id: 'MQ', code: '+596', drapeau: '🇲🇶', nom: 'Martinique' },
   { id: 'GP', code: '+590', drapeau: '🇬🇵', nom: 'Guadeloupe' },
-  { id: 'DO', code: '+1',   drapeau: '🇩🇴', nom: 'Rép. Dominicaine' },
-  { id: 'BR', code: '+55',  drapeau: '🇧🇷', nom: 'Brésil' },
-  { id: 'GB', code: '+44',  drapeau: '🇬🇧', nom: 'Royaume-Uni' },
+  { id: 'DO', code: '+1',   drapeau: '🇩🇴', nom: 'Dominican Republic' },
+  { id: 'BR', code: '+55',  drapeau: '🇧🇷', nom: 'Brazil' },
+  { id: 'GB', code: '+44',  drapeau: '🇬🇧', nom: 'United Kingdom' },
 ];
 
 export default function InscriptionPage() {
@@ -43,15 +43,15 @@ export default function InscriptionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.prenom || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
-      setError('Veuillez remplir tous les champs obligatoires.');
+      setError('Please fill in all required fields.');
       return;
     }
     if (form.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.');
+      setError('Password must be at least 6 characters.');
       return;
     }
     if (form.password !== form.confirm) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError('Passwords do not match.');
       return;
     }
     setIsLoading(true);
@@ -81,10 +81,10 @@ export default function InscriptionPage() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            Rejoins la famille Bestie 💕
+            Join the Bestie family 💕
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Crée ton compte en moins d&apos;une minute
+            Create your account in under a minute
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function InscriptionPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Prénom <span className="text-primary">*</span>
+                    First Name <span className="text-primary">*</span>
                   </label>
                   <div className="relative">
                     <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -110,7 +110,7 @@ export default function InscriptionPage() {
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Nom
+                    Last Name
                   </label>
                   <input
                     type="text"
@@ -125,7 +125,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Adresse e-mail <span className="text-primary">*</span>
+                  Email address <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -133,7 +133,7 @@ export default function InscriptionPage() {
                     type="email"
                     value={form.email}
                     onChange={update('email')}
-                    placeholder="ton@email.com"
+                    placeholder="your@email.com"
                     className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
                   />
@@ -142,14 +142,14 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Numéro WhatsApp <span className="text-primary">*</span>
+                  WhatsApp Number <span className="text-primary">*</span>
                 </label>
                 <div className="flex border border-pink-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-primary transition-colors">
                   <select
                     value={selectedPaysId}
                     onChange={(e) => setSelectedPaysId(e.target.value)}
                     className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
-                    aria-label="Indicatif pays"
+                    aria-label="Country code"
                   >
                     {PAYS.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -170,7 +170,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Mot de passe <span className="text-primary">*</span>
+                  Password <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -178,7 +178,7 @@ export default function InscriptionPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={form.password}
                     onChange={update('password')}
-                    placeholder="Min. 6 caractères"
+                    placeholder="Min. 6 characters"
                     className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="new-password"
                   />
@@ -186,7 +186,7 @@ export default function InscriptionPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                    aria-label={showPassword ? 'Hide' : 'Show'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -195,7 +195,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Confirmer le mot de passe <span className="text-primary">*</span>
+                  Confirm password <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -229,19 +229,19 @@ export default function InscriptionPage() {
                 {isLoading ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Création du compte…
+                    Creating account…
                   </>
                 ) : (
-                  'Créer mon compte'
+                  'Create my account'
                 )}
               </motion.button>
             </div>
           </form>
 
           <p className="text-center font-lato text-sm text-gray-500 mt-6">
-            Déjà un compte ?{' '}
+            Already have an account?{' '}
             <Link href="/connexion" className="text-primary font-semibold hover:underline">
-              Se connecter
+              Sign in
             </Link>
           </p>
         </div>

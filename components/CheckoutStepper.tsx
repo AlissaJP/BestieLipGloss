@@ -2,7 +2,7 @@ interface CheckoutStepperProps {
   currentStep: number;
 }
 
-const steps = ['Panier', 'Livraison', 'Paiement'];
+const steps = ['Cart', 'Delivery', 'Payment'];
 
 export default function CheckoutStepper({ currentStep }: CheckoutStepperProps) {
   return (

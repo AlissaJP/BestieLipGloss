@@ -16,14 +16,14 @@ export default function FavorisPage() {
           className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft size={15} />
-          Retour à mon compte
+          Back to my account
         </Link>
 
         <div className="flex items-center gap-3 mb-8">
-          <h1 className="font-playfair font-bold text-3xl text-gray-800">Mes favoris</h1>
+          <h1 className="font-playfair font-bold text-3xl text-gray-800">My Favorites</h1>
           {items.length > 0 && (
             <span className="bg-primary/10 text-primary font-lato text-sm font-semibold px-3 py-1 rounded-full">
-              {items.length} produit{items.length > 1 ? 's' : ''}
+              {items.length} product{items.length > 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -34,16 +34,16 @@ export default function FavorisPage() {
               <Heart size={28} className="text-red-300" />
             </div>
             <p className="font-playfair font-semibold text-gray-700 text-lg mb-2">
-              Ta liste de favoris est vide
+              Your favorites list is empty
             </p>
             <p className="font-lato text-sm text-gray-400 max-w-xs mb-6">
-              Clique sur le ❤️ d&apos;un produit pour le sauvegarder ici et le retrouver facilement.
+              Click the ❤️ on any product to save it here for easy access.
             </p>
             <Link
               href="/boutique"
               className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3 rounded-full transition-colors text-sm"
             >
-              Découvrir les produits
+              Explore products
             </Link>
           </div>
         ) : (

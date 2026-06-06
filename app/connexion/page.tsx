@@ -17,7 +17,7 @@ function ConnexionForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(adminRedirect ? 'Accès réservé aux administrateurs.' : '');
+  const [error, setError] = useState(adminRedirect ? 'Access restricted to administrators.' : '');
   const { login } = useAuthStore();
   const { login: adminLogin } = useAdminStore();
   const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
@@ -26,14 +26,14 @@ function ConnexionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Veuillez remplir tous les champs.');
+      setError('Please fill in all fields.');
       return;
     }
     setIsLoading(true);
     setError('');
     await new Promise((r) => setTimeout(r, 700));
 
-    // Accès administrateur — via API pour poser le cookie httpOnly (vérification serveur)
+    // Admin access — via API to set httpOnly cookie (server-side check)
     if (email.trim().toLowerCase() === 'admin') {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
@@ -41,7 +41,7 @@ function ConnexionForm() {
         body: JSON.stringify({ username: 'admin', password: password.trim() }),
       });
       if (!res.ok) {
-        setError('Identifiants administrateur invalides.');
+        setError('Invalid administrator credentials.');
         setIsLoading(false);
         return;
       }
@@ -50,7 +50,7 @@ function ConnexionForm() {
       return;
     }
 
-    // Connexion utilisateur normal
+    // Regular user login
     const isEmail = email.includes('@');
     const name = isEmail
       ? (() => { const raw = email.split('@')[0].replace(/[._-]/g, ' '); return raw.charAt(0).toUpperCase() + raw.slice(1); })()
@@ -74,10 +74,10 @@ function ConnexionForm() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            Bon retour, Bestie 💕
+            Welcome back, Bestie 💕
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Connecte-toi à ton espace personnel
+            Sign in to your personal space
           </p>
         </div>
 
@@ -86,7 +86,7 @@ function ConnexionForm() {
             <div className="space-y-5">
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Pseudo ou adresse e-mail
+                  Username or email address
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -94,7 +94,7 @@ function ConnexionForm() {
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ton pseudo ou ton@email.com"
+                    placeholder="your username or your@email.com"
                     className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
                   />
@@ -104,10 +104,10 @@ function ConnexionForm() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="font-lato text-sm font-medium text-gray-700">
-                    Mot de passe
+                    Password
                   </label>
                   <Link href="/mot-de-passe-oublie" className="font-lato text-xs text-primary hover:underline">
-                    Mot de passe oublié ?
+                    Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
@@ -124,7 +124,7 @@ function ConnexionForm() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                    aria-label={showPassword ? 'Hide' : 'Show'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -150,10 +150,10 @@ function ConnexionForm() {
                 {isLoading ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Connexion en cours…
+                    Signing in…
                   </>
                 ) : (
-                  'Se connecter'
+                  'Sign In'
                 )}
               </motion.button>
             </div>
@@ -161,14 +161,14 @@ function ConnexionForm() {
 
           <div className="my-6 flex items-center gap-3">
             <div className="flex-1 h-px bg-pink-100" />
-            <span className="font-lato text-xs text-gray-400">ou</span>
+            <span className="font-lato text-xs text-gray-400">or</span>
             <div className="flex-1 h-px bg-pink-100" />
           </div>
 
           <p className="text-center font-lato text-sm text-gray-500">
-            Pas encore de compte ?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/inscription" className="text-primary font-semibold hover:underline">
-              S&apos;inscrire gratuitement
+              Sign up for free
             </Link>
           </p>
         </div>

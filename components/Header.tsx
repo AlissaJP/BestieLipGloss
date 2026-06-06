@@ -91,12 +91,12 @@ export default function Header() {
             <Link href="/" className="flex flex-col leading-none">
               <span className="font-greatvibes text-2xl lg:text-3xl text-primary">Bestie LipGloss</span>
               <span className="font-lato text-[10px] text-gray-400 tracking-[0.25em] uppercase hidden sm:block">
-                Beauté Haïtienne Naturelle
+                Natural Haitian Beauty
               </span>
             </Link>
 
             {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-8" aria-label="Navigation principale">
+            <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}
                   className="font-lato text-sm text-gray-700 hover:text-primary transition-colors tracking-wide">
@@ -117,13 +117,13 @@ export default function Header() {
                       exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                       type="text" placeholder={t.search.placeholder}
                       className="font-lato text-sm border border-pink-200 rounded-full px-4 py-1.5 outline-none focus:border-primary bg-white"
-                      autoFocus onBlur={() => setIsSearchOpen(false)} aria-label="Recherche"
+                      autoFocus onBlur={() => setIsSearchOpen(false)} aria-label="Search"
                     />
                   )}
                 </AnimatePresence>
                 <button onClick={() => setIsSearchOpen(!isSearchOpen)}
                   className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                  aria-label="Ouvrir la recherche">
+                  aria-label="Open search">
                   <Search size={19} />
                 </button>
               </div>
@@ -254,7 +254,7 @@ export default function Header() {
               {isLoggedIn && (
                 <button onClick={openCart}
                   className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                  aria-label={`Panier (${itemCount} articles)`}>
+                  aria-label={`Cart (${itemCount} items)`}>
                   <ShoppingBag size={22} />
                   <AnimatePresence>
                     {itemCount > 0 && (
@@ -271,7 +271,7 @@ export default function Header() {
               {/* Mobile hamburger */}
               <button onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="lg:hidden p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={isMenuOpen}>
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={isMenuOpen}>
                 {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
@@ -286,7 +286,7 @@ export default function Header() {
               exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}
               className="lg:hidden overflow-hidden bg-white border-t border-pink-100 shadow-lg"
             >
-              <nav className="px-5 py-4 flex flex-col gap-1" aria-label="Navigation mobile">
+              <nav className="px-5 py-4 flex flex-col gap-1" aria-label="Mobile navigation">
                 {navLinks.map((link) => (
                   <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)}
                     className="font-lato text-base text-gray-700 hover:text-primary transition-colors py-3 border-b border-gray-50 min-h-[44px] flex items-center">
@@ -336,7 +336,7 @@ export default function Header() {
                 <div className="pt-3 pb-1 border-t border-pink-100">
                   <input type="text" placeholder={t.search.placeholderMobile}
                     className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-2.5 outline-none focus:border-primary bg-gray-50"
-                    aria-label="Recherche mobile" />
+                    aria-label="Mobile search" />
                 </div>
               </nav>
             </motion.div>

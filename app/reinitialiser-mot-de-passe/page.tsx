@@ -32,11 +32,11 @@ function ResetForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.');
+      setError('Password must be at least 6 characters.');
       return;
     }
     if (form.password !== form.confirm) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError('Passwords do not match.');
       return;
     }
     setIsLoading(true);
@@ -51,7 +51,7 @@ function ResetForm() {
     setIsLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Une erreur est survenue.');
+      setError(data.error ?? 'An error occurred.');
       return;
     }
 
@@ -76,16 +76,16 @@ function ResetForm() {
           </div>
         </div>
         <h2 className="font-playfair font-bold text-xl text-gray-800 mb-3">
-          Lien invalide ou expiré
+          Invalid or expired link
         </h2>
         <p className="font-lato text-sm text-gray-500 mb-6">
-          Ce lien de réinitialisation n&apos;est plus valide. Il a peut-être expiré (1 heure) ou déjà été utilisé.
+          This reset link is no longer valid. It may have expired (1 hour) or already been used.
         </p>
         <Link
           href="/mot-de-passe-oublie"
           className="inline-block bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 px-6 rounded-xl transition-colors text-sm"
         >
-          Demander un nouveau lien
+          Request a new link
         </Link>
       </div>
     );
@@ -100,10 +100,10 @@ function ResetForm() {
           </div>
         </div>
         <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-3">
-          Mot de passe mis à jour !
+          Password updated!
         </h2>
         <p className="font-lato text-sm text-gray-500">
-          Tu vas être redirigée vers la page de connexion dans 3 secondes…
+          You will be redirected to the sign-in page in 3 seconds…
         </p>
       </div>
     );
@@ -115,7 +115,7 @@ function ResetForm() {
         <div className="space-y-4">
           <div>
             <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-              Nouveau mot de passe <span className="text-primary">*</span>
+              New password <span className="text-primary">*</span>
             </label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -123,7 +123,7 @@ function ResetForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={update('password')}
-                placeholder="Min. 6 caractères"
+                placeholder="Min. 6 characters"
                 className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                 autoComplete="new-password"
                 autoFocus
@@ -132,7 +132,7 @@ function ResetForm() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                aria-label={showPassword ? 'Hide' : 'Show'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -141,7 +141,7 @@ function ResetForm() {
 
           <div>
             <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-              Confirmer le mot de passe <span className="text-primary">*</span>
+              Confirm password <span className="text-primary">*</span>
             </label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -175,10 +175,10 @@ function ResetForm() {
             {isLoading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Mise à jour…
+                Updating…
               </>
             ) : (
-              'Mettre à jour le mot de passe'
+              'Update password'
             )}
           </motion.button>
         </div>
@@ -201,10 +201,10 @@ export default function ResetPasswordPage() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            Nouveau mot de passe
+            New password
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Choisis un nouveau mot de passe sécurisé
+            Choose a new secure password
           </p>
         </div>
         <Suspense fallback={<div className="flex justify-center py-20"><span className="w-8 h-8 border-4 border-pink-200 border-t-primary rounded-full animate-spin" /></div>}>

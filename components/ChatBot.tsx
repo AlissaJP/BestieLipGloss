@@ -8,45 +8,45 @@ type Message = { id: number; text: string; from: 'bot' | 'user'; streaming?: boo
 
 const FAQ = [
   {
-    q: '📦 Commander',
-    a: 'Choisis ton produit dans la boutique, ajoute-le au panier, puis clique sur "Commander". Tu recevras une confirmation par WhatsApp. 🛍️',
+    q: '📦 Ordering',
+    a: 'Choose your product in the shop, add it to your cart, then click "Order". You will receive a confirmation via WhatsApp. 🛍️',
   },
   {
-    q: '🚚 Livraison',
-    a: 'Livraison dans tout Haïti en 24 à 72h selon ta localisation. Tu seras contactée par WhatsApp pour confirmer. 📍',
+    q: '🚚 Delivery',
+    a: 'Delivery anywhere in Haiti in 24 to 72 hours depending on your location. You will be contacted by WhatsApp to confirm. 📍',
   },
   {
-    q: '💰 Paiement',
-    a: 'Nos glosses vont de 400 à 600 HTG. Paiement à la livraison (cash) ou par transfert MonCash / Natcash. 💳',
+    q: '💰 Payment',
+    a: 'Our glosses range from 400 to 600 HTG. Payment on delivery (cash) or by MonCash / Natcash transfer. 💳',
   },
   {
-    q: '🎨 Couleurs',
-    a: 'La Rosée Matinale existe en 4 teintes : Cherry, Honey Rose, Strawberry et Rouge Grenat. Visite la boutique ! ✨',
+    q: '🎨 Shades',
+    a: 'Rosée Matinale comes in 4 shades: Cherry, Honey Rose, Strawberry, and Rouge Grenat. Visit the shop! ✨',
   },
   {
-    q: '🌿 Ingrédients',
-    a: "Oui, 100% naturels ! Beurre de karité, huile d'argan, vitamine E. Aucun parabène. Ta peau mérite le meilleur. 💚",
+    q: '🌿 Ingredients',
+    a: 'Yes, 100% natural! Shea butter, argan oil, vitamin E. No parabens. Your skin deserves the best. 💚',
   },
   {
-    q: '📞 Nous contacter',
-    a: 'Écris-nous sur WhatsApp au +509 0000 0000. Nous répondons en moins de 2h ! 💬',
+    q: '📞 Contact us',
+    a: 'Message us on WhatsApp at +509 0000 0000. We reply within 2 hours! 💬',
   },
 ];
 
 const GREETING =
-  'Bonjour belle ! 💕 Je suis ton assistante Bestie. Clique sur une suggestion ou pose-moi ta question !';
+  'Hello beautiful! 💕 I\'m your Bestie assistant. Click on a suggestion or ask me a question!';
 
 const KEYWORDS: { words: string[]; faqIndex: number }[] = [
-  { words: ['commander', 'commande', 'acheter', 'achat', 'panier', 'order'], faqIndex: 0 },
-  { words: ['livraison', 'délai', 'livrer', 'délais', 'temps', 'attente'], faqIndex: 1 },
-  { words: ['prix', 'paiement', 'payer', 'coût', 'tarif', 'moncash', 'natcash', 'htg'], faqIndex: 2 },
-  { words: ['couleur', 'teinte', 'cherry', 'honey', 'strawberry', 'grenat', 'shade'], faqIndex: 3 },
-  { words: ['ingrédient', 'naturel', 'karité', 'argan', 'parabène', 'composition'], faqIndex: 4 },
-  { words: ['contact', 'whatsapp', 'téléphone', 'appeler', 'numéro', 'joindre'], faqIndex: 5 },
+  { words: ['order', 'ordering', 'buy', 'purchase', 'cart', 'commander', 'commande', 'acheter', 'panier'], faqIndex: 0 },
+  { words: ['delivery', 'shipping', 'ship', 'deliver', 'time', 'wait', 'livraison', 'délai', 'livrer'], faqIndex: 1 },
+  { words: ['price', 'payment', 'pay', 'cost', 'moncash', 'natcash', 'htg', 'prix', 'paiement'], faqIndex: 2 },
+  { words: ['color', 'shade', 'colour', 'cherry', 'honey', 'strawberry', 'grenat', 'couleur', 'teinte'], faqIndex: 3 },
+  { words: ['ingredient', 'natural', 'shea', 'argan', 'paraben', 'naturel', 'karité', 'ingrédient'], faqIndex: 4 },
+  { words: ['contact', 'whatsapp', 'phone', 'call', 'number', 'reach', 'téléphone', 'numéro'], faqIndex: 5 },
 ];
 
 const DEFAULT_REPLY =
-  "Je ne suis pas sûre de comprendre 😊 Essaie l'une des suggestions ci-dessous, ou contacte-nous directement sur WhatsApp au +509 0000 0000 💬";
+  "I'm not sure I understand 😊 Try one of the suggestions below, or contact us directly on WhatsApp at +509 0000 0000 💬";
 
 function getBotReply(input: string): string {
   const lower = input
@@ -123,7 +123,7 @@ export default function ChatBot() {
   const streamReply = (fullText: string, msgId: number) => {
     let i = 0;
     streamRef.current = setInterval(() => {
-      i += 2; // advance 2 chars per tick for a snappy feel
+      i += 2;
       setMessages((prev) =>
         prev.map((m) =>
           m.id === msgId ? { ...m, text: fullText.slice(0, i), streaming: i < fullText.length } : m
@@ -196,14 +196,14 @@ export default function ChatBot() {
                   </p>
                   <p className="font-lato text-white/85 text-[11px] flex items-center gap-1.5 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-300 inline-block animate-pulse" />
-                    En ligne maintenant
+                    Online now
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition-colors"
-                aria-label="Fermer"
+                aria-label="Close"
               >
                 <X size={14} className="text-white" />
               </button>
@@ -250,7 +250,7 @@ export default function ChatBot() {
                 </motion.div>
               ))}
 
-              {/* Dots typing indicator (shown before stream starts) */}
+              {/* Dots typing indicator */}
               <AnimatePresence>
                 {isTyping && (
                   <motion.div
@@ -314,7 +314,7 @@ export default function ChatBot() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') sendMessage(inputValue);
                 }}
-                placeholder="Écris ta question…"
+                placeholder="Ask a question…"
                 className="flex-1 font-lato text-sm bg-pink-50/70 border border-pink-100 rounded-full px-4 py-2.5 outline-none focus:border-primary/50 focus:bg-pink-50 transition-all placeholder-gray-300"
               />
               <motion.button
@@ -323,7 +323,7 @@ export default function ChatBot() {
                 disabled={!inputValue.trim() || isTyping}
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35"
                 style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
-                aria-label="Envoyer"
+                aria-label="Send"
               >
                 <Send size={14} className="text-white" />
               </motion.button>
@@ -351,7 +351,7 @@ export default function ChatBot() {
             background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
             boxShadow: '0 4px 20px rgba(242,167,187,0.55)',
           }}
-          aria-label={isOpen ? 'Fermer le chat' : 'Ouvrir le chat Bestie'}
+          aria-label={isOpen ? 'Close chat' : 'Open Bestie chat'}
         >
           <AnimatePresence mode="wait">
             {isOpen ? (

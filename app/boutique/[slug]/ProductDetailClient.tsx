@@ -26,12 +26,12 @@ interface AvisPublie {
 function relativeDate(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return 'Il y a 1 jour';
-  if (days < 7) return `Il y a ${days} jours`;
-  if (days < 14) return 'Il y a 1 semaine';
-  if (days < 30) return `Il y a ${Math.floor(days / 7)} semaines`;
-  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  if (days === 0) return 'Today';
+  if (days === 1) return '1 day ago';
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return '1 week ago';
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 }
 
 interface Props {
@@ -89,8 +89,8 @@ export default function ProductDetailClient({ product, related }: Props) {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoggedIn) { openAuthModal(); return; }
-    if (reviewNote < 1) { setReviewError('Choisis une note entre 1 et 5 étoiles.'); return; }
-    if (!reviewTexte.trim()) { setReviewError('Écris un avis avant d\'envoyer.'); return; }
+    if (reviewNote < 1) { setReviewError('Please choose a rating between 1 and 5 stars.'); return; }
+    if (!reviewTexte.trim()) { setReviewError('Please write a review before submitting.'); return; }
     setReviewSubmitting(true);
     setReviewError('');
     try {
@@ -106,19 +106,19 @@ export default function ProductDetailClient({ product, related }: Props) {
         }),
       });
       if (res.status === 409) {
-        setReviewError('Tu as déjà soumis un avis pour ce produit.');
+        setReviewError('You have already submitted a review for this product.');
         return;
       }
       if (!res.ok) {
         const d = await res.json();
-        setReviewError(d.error ?? 'Une erreur est survenue.');
+        setReviewError(d.error ?? 'An error occurred.');
         return;
       }
       setReviewSuccess(true);
       setReviewNote(0);
       setReviewTexte('');
     } catch {
-      setReviewError('Erreur de connexion. Réessaie.');
+      setReviewError('Connection error. Please try again.');
     } finally {
       setReviewSubmitting(false);
     }
@@ -141,7 +141,7 @@ export default function ProductDetailClient({ product, related }: Props) {
     setTimeout(() => setAdded(false), 2500);
 
     const btnRect = e.currentTarget.getBoundingClientRect();
-    const cartEl = document.querySelector('[aria-label^="Panier"]');
+    const cartEl = document.querySelector('[aria-label^="Cart"]');
     if (cartEl) {
       const cartRect = cartEl.getBoundingClientRect();
       const id = Date.now();
@@ -276,7 +276,7 @@ export default function ProductDetailClient({ product, related }: Props) {
             {/* Color variant selector */}
             {product.variants ? (
               <div className="mb-5">
-                <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">Teinte</p>
+                <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">Shade</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {sortedVariants.map((variant) => (
                     <button
@@ -342,11 +342,11 @@ export default function ProductDetailClient({ product, related }: Props) {
             {/* Desktop quantity + add to cart */}
             <div className="hidden lg:flex items-center gap-3">
               <div className="flex items-center gap-3 border border-pink-200 rounded-xl px-4 py-2.5 bg-white">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Diminuer">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Decrease">
                   <Minus size={16} />
                 </button>
                 <span className="font-lato font-semibold w-6 text-center">{quantity}</span>
-                <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Augmenter">
+                <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Increase">
                   <Plus size={16} />
                 </button>
               </div>
@@ -388,7 +388,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                       <Star key={i} size={14} className={i < Math.round(avgRating) ? 'fill-accent text-accent' : 'text-gray-200'} aria-hidden="true" />
                     ))}
                   </div>
-                  <p className="font-lato text-xs text-gray-400">{reviews.length} avis publiés</p>
+                  <p className="font-lato text-xs text-gray-400">{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</p>
                 </div>
               </div>
             )}
@@ -396,7 +396,7 @@ export default function ProductDetailClient({ product, related }: Props) {
 
           {reviews.length === 0 ? (
             <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center">
-              <p className="font-cormorant text-lg text-gray-400 italic">Aucun avis pour le moment — sois la première ! 💕</p>
+              <p className="font-cormorant text-lg text-gray-400 italic">No reviews yet — be the first! 💕</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -415,7 +415,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   </div>
                   {r.commande_verifiee && (
                     <span className="inline-block font-lato text-[10px] font-semibold text-green-600 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full mb-2">
-                      ✓ Achat vérifié
+                      ✓ Verified Purchase
                     </span>
                   )}
                   <p className="font-cormorant text-base text-gray-600 italic leading-relaxed">
@@ -428,30 +428,30 @@ export default function ProductDetailClient({ product, related }: Props) {
 
           {/* Review submission form */}
           <div className="mt-8 bg-white rounded-2xl border border-pink-100 p-6">
-            <h3 className="font-playfair font-semibold text-gray-800 mb-4">Laisser un avis</h3>
+            <h3 className="font-playfair font-semibold text-gray-800 mb-4">Leave a review</h3>
             {reviewSuccess ? (
               <div className="bg-green-50 border border-green-100 rounded-xl p-5 text-center">
-                <p className="font-lato text-sm text-green-700 font-semibold">Merci pour ton avis ! 💕</p>
-                <p className="font-lato text-xs text-green-600 mt-1">Il sera publié après vérification par notre équipe.</p>
+                <p className="font-lato text-sm text-green-700 font-semibold">Thank you for your review! 💕</p>
+                <p className="font-lato text-xs text-green-600 mt-1">It will be published after verification by our team.</p>
               </div>
             ) : !isLoggedIn ? (
               <div className="bg-pink-50 border border-pink-100 rounded-xl p-5 text-center">
-                <p className="font-lato text-sm text-gray-600 mb-3">Connecte-toi pour partager ton expérience.</p>
+                <p className="font-lato text-sm text-gray-600 mb-3">Sign in to share your experience.</p>
                 <button onClick={openAuthModal} className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-6 py-2.5 rounded-full transition-colors">
-                  Se connecter
+                  Sign in
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmitReview} className="space-y-4">
                 <div>
-                  <p className="font-lato text-sm text-gray-700 font-medium mb-2">Ta note</p>
+                  <p className="font-lato text-sm text-gray-700 font-medium mb-2">Your rating</p>
                   <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
                         key={n}
                         type="button"
                         onClick={() => { setReviewNote(n); setReviewError(''); }}
-                        aria-label={`${n} étoile${n > 1 ? 's' : ''}`}
+                        aria-label={`${n} star${n > 1 ? 's' : ''}`}
                         className="transition-transform hover:scale-110"
                       >
                         <Star
@@ -464,14 +464,14 @@ export default function ProductDetailClient({ product, related }: Props) {
                 </div>
                 <div>
                   <label className="font-lato text-sm text-gray-700 font-medium block mb-1.5" htmlFor="review-texte">
-                    Ton avis
+                    Your review
                   </label>
                   <textarea
                     id="review-texte"
                     rows={4}
                     value={reviewTexte}
                     onChange={(e) => { setReviewTexte(e.target.value); setReviewError(''); }}
-                    placeholder="Partage ton expérience avec ce gloss…"
+                    placeholder="Share your experience with this gloss…"
                     className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
                   />
                 </div>
@@ -483,7 +483,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   disabled={reviewSubmitting}
                   className="bg-primary hover:bg-pink-400 disabled:opacity-60 text-white font-lato font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
                 >
-                  {reviewSubmitting ? 'Envoi…' : 'Envoyer mon avis'}
+                  {reviewSubmitting ? 'Submitting…' : 'Submit my review'}
                 </button>
               </form>
             )}
@@ -504,11 +504,11 @@ export default function ProductDetailClient({ product, related }: Props) {
       {/* Mobile sticky add-to-cart */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 px-4 py-3 flex gap-2 z-30 shadow-lg">
         <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-2 bg-white flex-shrink-0">
-          <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Diminuer">
+          <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Decrease">
             <Minus size={15} />
           </button>
           <span className="font-lato font-semibold w-5 text-center text-sm">{quantity}</span>
-          <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Augmenter">
+          <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="text-gray-500 hover:text-primary transition-colors" aria-label="Increase">
             <Plus size={15} />
           </button>
         </div>

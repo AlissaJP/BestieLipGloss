@@ -72,7 +72,7 @@ export default function MonComptePage() {
           👩🏾
         </div>
         <h1 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-2">
-          {user?.name ? `${t.account.hello}, ${user.name.split(' ')[0]} 💕` : 'Mon Compte'}
+          {user?.name ? `${t.account.hello}, ${user.name.split(' ')[0]} 💕` : 'My Account'}
         </h1>
         <p className="font-cormorant text-xl text-gray-500 italic">{t.account.welcome}</p>
       </div>
@@ -90,7 +90,7 @@ export default function MonComptePage() {
               <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
                 <span className="text-base">🏷️</span>
               </div>
-              <h3 className="font-playfair font-semibold text-gray-800">Mes coupons</h3>
+              <h3 className="font-playfair font-semibold text-gray-800">My Coupons</h3>
             </div>
 
             {/* Saved coupons list */}
@@ -111,7 +111,7 @@ export default function MonComptePage() {
                       <button
                         onClick={() => removeCoupon(code)}
                         className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
-                        aria-label={`Supprimer ${code}`}
+                        aria-label={`Remove ${code}`}
                       >
                         <X size={13} />
                       </button>
@@ -135,7 +135,7 @@ export default function MonComptePage() {
                 onClick={handleAddCoupon}
                 className="bg-primary text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
-                <Plus size={14} />Enregistrer
+                <Plus size={14} />Save
               </button>
             </div>
             <AnimatePresence>
@@ -146,9 +146,9 @@ export default function MonComptePage() {
                   exit={{ opacity: 0 }}
                   className={`font-lato text-xs mt-2 font-medium ${couponStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}
                 >
-                  {couponStatus === 'valid' && '✓ Coupon enregistré dans ta liste !'}
-                  {couponStatus === 'invalid' && 'Code invalide. Essaie BESTIE10 ou BESTIE15.'}
-                  {couponStatus === 'duplicate' && 'Ce coupon est déjà dans ta liste.'}
+                  {couponStatus === 'valid' && '✓ Coupon saved to your list!'}
+                  {couponStatus === 'invalid' && 'Invalid code. Try BESTIE10 or BESTIE15.'}
+                  {couponStatus === 'duplicate' && 'This coupon is already in your list.'}
                 </motion.p>
               )}
             </AnimatePresence>

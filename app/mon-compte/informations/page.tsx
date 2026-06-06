@@ -117,7 +117,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 export default function InformationsPage() {
   const { user, updateUser, addAddress, removeAddress } = useAuthStore();
 
-  /* — Identité — */
+  /* — Identity — */
   const [editIdent, setEditIdent] = useState(false);
   const [identForm, setIdentForm] = useState({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' });
   const saveIdent = () => { updateUser({ name: identForm.name, pseudo: identForm.pseudo }); setEditIdent(false); };
@@ -127,39 +127,37 @@ export default function InformationsPage() {
   const [emailForm, setEmailForm] = useState({ email: user?.email ?? '', confirm: '' });
   const [emailError, setEmailError] = useState('');
   const saveEmail = () => {
-    if (!emailForm.email) { setEmailError("L'email ne peut pas être vide."); return; }
-    if (emailForm.email !== emailForm.confirm) { setEmailError('Les emails ne correspondent pas.'); return; }
+    if (!emailForm.email) { setEmailError('Email cannot be empty.'); return; }
+    if (emailForm.email !== emailForm.confirm) { setEmailError('Emails do not match.'); return; }
     updateUser({ email: emailForm.email });
     setEmailError('');
     setEditEmail(false);
   };
 
-  /* — Mot de passe — */
+  /* — Password — */
   const [editPwd, setEditPwd] = useState(false);
   const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [pwdError, setPwdError] = useState('');
   const [pwdSuccess, setPwdSuccess] = useState(false);
   const savePwd = () => {
-    if (!pwdForm.current) { setPwdError('Saisis ton mot de passe actuel.'); return; }
-    if (pwdForm.next.length < 6) { setPwdError('Le nouveau mot de passe doit faire au moins 6 caractères.'); return; }
-    if (pwdForm.next !== pwdForm.confirm) { setPwdError('Les mots de passe ne correspondent pas.'); return; }
+    if (!pwdForm.current) { setPwdError('Please enter your current password.'); return; }
+    if (pwdForm.next.length < 6) { setPwdError('New password must be at least 6 characters.'); return; }
+    if (pwdForm.next !== pwdForm.confirm) { setPwdError('Passwords do not match.'); return; }
     setPwdError('');
     setPwdSuccess(true);
     setTimeout(() => { setPwdSuccess(false); setEditPwd(false); setPwdForm({ current: '', next: '', confirm: '' }); }, 1800);
   };
 
-  /* — Adresses — */
+  /* — Addresses — */
   const [showAddAddr, setShowAddAddr] = useState(false);
   const [addrCountry, setAddrCountry] = useState<AddrCountry>('hti');
   const [addrForm, setAddrForm] = useState({
     label: '',
     adresse: '',
-    // Haiti
     departement: '',
     ville: '',
     quartier: '',
-    // USA
     usCity: '',
     state: '',
     zipCode: '',
@@ -173,13 +171,13 @@ export default function InformationsPage() {
   };
 
   const saveAddress = () => {
-    if (!addrForm.label || !addrForm.adresse) { setAddrError('Remplis les champs obligatoires (*).'); return; }
+    if (!addrForm.label || !addrForm.adresse) { setAddrError('Please fill in the required fields (*).'); return; }
     if (addrCountry === 'hti' && (!addrForm.departement || !addrForm.ville)) {
-      setAddrError('Sélectionne un département et une ville.');
+      setAddrError('Please select a department and a city.');
       return;
     }
     if (addrCountry === 'usa' && (!addrForm.usCity || !addrForm.state || !addrForm.zipCode)) {
-      setAddrError('Remplis tous les champs USA (ville, état, ZIP code).');
+      setAddrError('Please fill in all US fields (city, state, ZIP code).');
       return;
     }
     addAddress({
@@ -206,80 +204,80 @@ export default function InformationsPage() {
     <div className="min-h-screen bg-[#FAF9F7]">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Link href="/mon-compte" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-8">
-          <ArrowLeft size={15} />Retour à mon compte
+          <ArrowLeft size={15} />Back to my account
         </Link>
 
-        <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-8">Mes informations</h1>
+        <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-8">My Information</h1>
 
         <div className="space-y-4">
 
-          {/* — Identité — */}
-          <Section icon={<User size={17} className="text-primary" />} title="Identité">
+          {/* — Identity — */}
+          <Section icon={<User size={17} className="text-primary" />} title="Identity">
             {!editIdent ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-lato text-sm text-gray-700"><span className="text-gray-400 mr-2">Nom :</span>{user?.name || '—'}</p>
-                  <p className="font-lato text-sm text-gray-700 mt-1"><span className="text-gray-400 mr-2">Pseudo :</span>{user?.pseudo || <span className="text-gray-300 italic">Non défini</span>}</p>
+                  <p className="font-lato text-sm text-gray-700"><span className="text-gray-400 mr-2">Name:</span>{user?.name || '—'}</p>
+                  <p className="font-lato text-sm text-gray-700 mt-1"><span className="text-gray-400 mr-2">Username:</span>{user?.pseudo || <span className="text-gray-300 italic">Not set</span>}</p>
                 </div>
-                <button onClick={() => { setIdentForm({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-sm text-primary hover:underline">Modifier</button>
+                <button onClick={() => { setIdentForm({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-sm text-primary hover:underline">Edit</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 <div>
-                  <label className={labelCls}>Nom complet</label>
+                  <label className={labelCls}>Full name</label>
                   <input className={inputCls} value={identForm.name} onChange={e => setIdentForm(p => ({ ...p, name: e.target.value }))} />
                 </div>
                 <div>
-                  <label className={labelCls}>Pseudo</label>
-                  <input className={inputCls} placeholder="Ex. : BestieQueen" value={identForm.pseudo} onChange={e => setIdentForm(p => ({ ...p, pseudo: e.target.value }))} />
+                  <label className={labelCls}>Username</label>
+                  <input className={inputCls} placeholder="e.g. BestieQueen" value={identForm.pseudo} onChange={e => setIdentForm(p => ({ ...p, pseudo: e.target.value }))} />
                 </div>
                 <div className="flex items-center gap-3 pt-1">
-                  <button onClick={saveIdent} className={btnSave}><Check size={14} />Sauvegarder</button>
-                  <button onClick={() => setEditIdent(false)} className={btnCancel}>Annuler</button>
+                  <button onClick={saveIdent} className={btnSave}><Check size={14} />Save</button>
+                  <button onClick={() => setEditIdent(false)} className={btnCancel}>Cancel</button>
                 </div>
               </motion.div>
             )}
           </Section>
 
           {/* — Email — */}
-          <Section icon={<Mail size={17} className="text-primary" />} title="Adresse e-mail">
+          <Section icon={<Mail size={17} className="text-primary" />} title="Email address">
             {!editEmail ? (
               <div className="flex items-center justify-between">
                 <p className="font-lato text-sm text-gray-700">{user?.email || '—'}</p>
-                <button onClick={() => { setEmailForm({ email: user?.email ?? '', confirm: '' }); setEmailError(''); setEditEmail(true); }} className="font-lato text-sm text-primary hover:underline">Modifier</button>
+                <button onClick={() => { setEmailForm({ email: user?.email ?? '', confirm: '' }); setEmailError(''); setEditEmail(true); }} className="font-lato text-sm text-primary hover:underline">Edit</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 <div>
-                  <label className={labelCls}>Nouvel e-mail</label>
+                  <label className={labelCls}>New email</label>
                   <input type="email" className={inputCls} value={emailForm.email} onChange={e => setEmailForm(p => ({ ...p, email: e.target.value }))} />
                 </div>
                 <div>
-                  <label className={labelCls}>Confirmer l&apos;e-mail</label>
+                  <label className={labelCls}>Confirm email</label>
                   <input type="email" className={inputCls} value={emailForm.confirm} onChange={e => setEmailForm(p => ({ ...p, confirm: e.target.value }))} />
                 </div>
                 {emailError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{emailError}</p>}
                 <div className="flex items-center gap-3 pt-1">
-                  <button onClick={saveEmail} className={btnSave}><Check size={14} />Sauvegarder</button>
-                  <button onClick={() => setEditEmail(false)} className={btnCancel}>Annuler</button>
+                  <button onClick={saveEmail} className={btnSave}><Check size={14} />Save</button>
+                  <button onClick={() => setEditEmail(false)} className={btnCancel}>Cancel</button>
                 </div>
               </motion.div>
             )}
           </Section>
 
-          {/* — Mot de passe — */}
-          <Section icon={<Lock size={17} className="text-primary" />} title="Mot de passe">
+          {/* — Password — */}
+          <Section icon={<Lock size={17} className="text-primary" />} title="Password">
             {!editPwd ? (
               <div className="flex items-center justify-between">
                 <p className="font-lato text-sm text-gray-400 tracking-widest">••••••••</p>
-                <button onClick={() => { setPwdError(''); setPwdSuccess(false); setEditPwd(true); }} className="font-lato text-sm text-primary hover:underline">Modifier</button>
+                <button onClick={() => { setPwdError(''); setPwdSuccess(false); setEditPwd(true); }} className="font-lato text-sm text-primary hover:underline">Edit</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                 {(['current', 'next', 'confirm'] as const).map((field, i) => (
                   <div key={field}>
                     <label className={labelCls}>
-                      {field === 'current' ? 'Mot de passe actuel' : field === 'next' ? 'Nouveau mot de passe' : 'Confirmer le nouveau'}
+                      {field === 'current' ? 'Current password' : field === 'next' ? 'New password' : 'Confirm new password'}
                     </label>
                     <div className="relative">
                       <input type={showPwd ? 'text' : 'password'} className={inputCls + ' pr-11'}
@@ -293,22 +291,21 @@ export default function InformationsPage() {
                   </div>
                 ))}
                 {pwdError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{pwdError}</p>}
-                {pwdSuccess && <p className="font-lato text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">✓ Mot de passe mis à jour !</p>}
+                {pwdSuccess && <p className="font-lato text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">✓ Password updated!</p>}
                 <div className="flex items-center gap-3 pt-1">
-                  <button onClick={savePwd} className={btnSave}><Check size={14} />Sauvegarder</button>
-                  <button onClick={() => setEditPwd(false)} className={btnCancel}>Annuler</button>
+                  <button onClick={savePwd} className={btnSave}><Check size={14} />Save</button>
+                  <button onClick={() => setEditPwd(false)} className={btnCancel}>Cancel</button>
                 </div>
               </motion.div>
             )}
           </Section>
 
-          {/* — Adresses de livraison — */}
-          <Section icon={<MapPin size={17} className="text-primary" />} title="Adresses de livraison">
+          {/* — Delivery Addresses — */}
+          <Section icon={<MapPin size={17} className="text-primary" />} title="Delivery Addresses">
 
-            {/* Saved addresses list */}
             <div className="space-y-3 mb-4">
               {(user?.addresses ?? []).length === 0 && !showAddAddr && (
-                <p className="font-lato text-sm text-gray-400 italic">Aucune adresse enregistrée.</p>
+                <p className="font-lato text-sm text-gray-400 italic">No addresses saved yet.</p>
               )}
               {(user?.addresses ?? []).map((addr) => (
                 <div key={addr.id} className="flex items-start justify-between gap-3 p-4 bg-pink-50/60 rounded-xl border border-pink-100">
@@ -319,38 +316,35 @@ export default function InformationsPage() {
                       <p className="font-lato text-xs text-gray-500 mt-0.5">{addr.adresse}</p>
                       {(addr.country ?? 'hti') === 'hti' ? (
                         <p className="font-lato text-xs text-gray-500">
-                          {addr.departement ? `${addr.departement} · ` : ''}{addr.quartier ? `${addr.quartier}, ` : ''}{addr.ville}, Haïti
+                          {addr.departement ? `${addr.departement} · ` : ''}{addr.quartier ? `${addr.quartier}, ` : ''}{addr.ville}, Haiti
                         </p>
                       ) : (
                         <p className="font-lato text-xs text-gray-500">{addr.ville}{addr.state ? `, ${addr.state}` : ''} {addr.zipCode ?? ''}, USA</p>
                       )}
                     </div>
                   </div>
-                  <button onClick={() => removeAddress(addr.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5" aria-label="Supprimer l'adresse">
+                  <button onClick={() => removeAddress(addr.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5" aria-label="Remove address">
                     <Trash2 size={15} />
                   </button>
                 </div>
               ))}
             </div>
 
-            {/* Add address form */}
             <AnimatePresence>
               {showAddAddr && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className="space-y-4 mb-4 p-5 bg-gray-50 rounded-2xl border border-pink-100">
 
-                  {/* Label */}
                   <div>
-                    <label className={labelCls}>Libellé <span className="text-primary">*</span></label>
-                    <input className={inputCls} placeholder="Ex. : Maison, Travail, Famille…" value={addrForm.label}
+                    <label className={labelCls}>Label <span className="text-primary">*</span></label>
+                    <input className={inputCls} placeholder="e.g. Home, Work, Family…" value={addrForm.label}
                       onChange={e => setAddrForm(p => ({ ...p, label: e.target.value }))} />
                   </div>
 
-                  {/* Country selector */}
                   <div>
-                    <label className={labelCls}>Pays <span className="text-primary">*</span></label>
+                    <label className={labelCls}>Country <span className="text-primary">*</span></label>
                     <div className="flex gap-3">
-                      {([['hti', '🇭🇹', 'Haïti'], ['usa', '🇺🇸', 'États-Unis']] as [string, string, string][]).map(([code, flag, name]) => (
+                      {([['hti', '🇭🇹', 'Haiti'], ['usa', '🇺🇸', 'United States']] as [string, string, string][]).map(([code, flag, name]) => (
                         <button key={code} type="button" onClick={() => setAddrCountry(code)}
                           className={`flex items-center gap-2 flex-1 justify-center px-4 py-2.5 rounded-xl border-2 font-lato text-sm font-semibold transition-all ${
                             addrCountry === code ? 'border-primary bg-pink-50 text-primary' : 'border-pink-100 text-gray-500 hover:border-pink-200 bg-white'
@@ -361,42 +355,40 @@ export default function InformationsPage() {
                     </div>
                   </div>
 
-                  {/* Street address */}
                   <div>
-                    <label className={labelCls}>Adresse (rue, numéro) <span className="text-primary">*</span></label>
+                    <label className={labelCls}>Street address <span className="text-primary">*</span></label>
                     <input className={inputCls}
                       placeholder={addrCountry === 'usa' ? '123 Main Street, Apt 4B' : 'Rue Martin Luther King, #12'}
                       value={addrForm.adresse} onChange={e => setAddrForm(p => ({ ...p, adresse: e.target.value }))} />
                   </div>
 
-                  {/* Conditional fields */}
                   <AnimatePresence mode="wait">
                     {addrCountry === 'hti' && (
                       <motion.div key="ht" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={labelCls}>Département <span className="text-primary">*</span></label>
+                            <label className={labelCls}>Department <span className="text-primary">*</span></label>
                             <select className={inputCls + ' appearance-none cursor-pointer'} value={addrForm.departement}
                               onChange={e => setAddrForm(p => ({ ...p, departement: e.target.value, ville: '' }))}>
-                              <option value="">Choisir…</option>
+                              <option value="">Select…</option>
                               {Object.keys(HAITI_CITIES).map(dep => <option key={dep} value={dep}>{dep}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className={labelCls}>Ville <span className="text-primary">*</span></label>
+                            <label className={labelCls}>City <span className="text-primary">*</span></label>
                             <select
                               className={inputCls + ' appearance-none cursor-pointer'}
                               value={addrForm.ville}
                               onChange={e => setAddrForm(p => ({ ...p, ville: e.target.value }))}
                               disabled={!addrForm.departement}
                             >
-                              <option value="">{addrForm.departement ? 'Choisir…' : '— Sélectionne un départ. —'}</option>
+                              <option value="">{addrForm.departement ? 'Select…' : '— Select a department —'}</option>
                               {(HAITI_CITIES[addrForm.departement] ?? []).map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                           </div>
                         </div>
                         <div>
-                          <label className={labelCls}>Quartier</label>
+                          <label className={labelCls}>Neighborhood</label>
                           <input className={inputCls} placeholder="Delmas 33, Lalue…" value={addrForm.quartier}
                             onChange={e => setAddrForm(p => ({ ...p, quartier: e.target.value }))} />
                         </div>
@@ -407,22 +399,22 @@ export default function InformationsPage() {
                       <motion.div key="us" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={labelCls}>État <span className="text-primary">*</span></label>
+                            <label className={labelCls}>State <span className="text-primary">*</span></label>
                             <select className={inputCls + ' appearance-none cursor-pointer'} value={addrForm.state}
                               onChange={e => setAddrForm(p => ({ ...p, state: e.target.value, usCity: '' }))}>
-                              <option value="">Choisir…</option>
+                              <option value="">Select…</option>
                               {US_STATES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className={labelCls}>Ville <span className="text-primary">*</span></label>
+                            <label className={labelCls}>City <span className="text-primary">*</span></label>
                             <select
                               className={inputCls + ' appearance-none cursor-pointer'}
                               value={addrForm.usCity}
                               onChange={e => setAddrForm(p => ({ ...p, usCity: e.target.value }))}
                               disabled={!addrForm.state}
                             >
-                              <option value="">{addrForm.state ? 'Choisir…' : '— Sélectionne un état —'}</option>
+                              <option value="">{addrForm.state ? 'Select…' : '— Select a state —'}</option>
                               {(US_CITIES[addrForm.state] ?? []).map(city => (
                                 <option key={city} value={city}>{city}</option>
                               ))}
@@ -436,7 +428,7 @@ export default function InformationsPage() {
                               onChange={e => setAddrForm(p => ({ ...p, zipCode: e.target.value.replace(/[^0-9-]/g, '') }))} />
                           </div>
                           <div className="flex items-end pb-1">
-                            <p className="font-lato text-xs text-gray-400">Format : 12345 ou 12345-6789</p>
+                            <p className="font-lato text-xs text-gray-400">Format: 12345 or 12345-6789</p>
                           </div>
                         </div>
                       </motion.div>
@@ -446,8 +438,8 @@ export default function InformationsPage() {
                   {addrError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
 
                   <div className="flex items-center gap-3">
-                    <button onClick={saveAddress} className={btnSave}><Check size={14} />Enregistrer</button>
-                    <button onClick={() => { setShowAddAddr(false); resetAddrForm(); }} className={btnCancel}>Annuler</button>
+                    <button onClick={saveAddress} className={btnSave}><Check size={14} />Save</button>
+                    <button onClick={() => { setShowAddAddr(false); resetAddrForm(); }} className={btnCancel}>Cancel</button>
                   </div>
                 </motion.div>
               )}
@@ -455,7 +447,7 @@ export default function InformationsPage() {
 
             {!showAddAddr && (
               <button onClick={() => setShowAddAddr(true)} className="inline-flex items-center gap-2 font-lato text-sm text-primary hover:underline">
-                <Plus size={15} />Ajouter une adresse
+                <Plus size={15} />Add an address
               </button>
             )}
           </Section>

@@ -9,65 +9,65 @@ const steps = [
   {
     number: '01',
     icon: <ShoppingBag size={28} className="text-primary" />,
-    title: 'Choisis tes produits',
-    desc: 'Parcours notre boutique et ajoute tes teintes préférées au panier. Tu peux sélectionner plusieurs articles en une seule commande.',
+    title: 'Choose your products',
+    desc: 'Browse our shop and add your favorite shades to your cart. You can select multiple items in a single order.',
     color: 'bg-pink-50',
   },
   {
     number: '02',
     icon: <CreditCard size={28} className="text-purple-600" />,
-    title: 'Valide ta commande',
-    desc: 'Remplis tes informations de livraison (nom, adresse, quartier, ville et numéro WhatsApp), puis choisis ton mode de paiement.',
+    title: 'Confirm your order',
+    desc: 'Fill in your delivery information (name, address, neighborhood, city, and WhatsApp number), then choose your payment method.',
     color: 'bg-purple-50',
   },
   {
     number: '03',
     icon: <MessageCircle size={28} className="text-green-600" />,
-    title: 'Effectue le paiement',
-    desc: "Règle ta commande via MonCash ou Zelle selon les instructions affichées. Envoie ensuite la capture d'écran de confirmation.",
+    title: 'Make the payment',
+    desc: 'Pay your order via MonCash or Zelle according to the instructions displayed. Then send the confirmation screenshot.',
     color: 'bg-green-50',
   },
   {
     number: '04',
     icon: <Package size={28} className="text-accent" />,
-    title: 'Reçois ta livraison',
-    desc: "Notre équipe vérifie ton paiement et te contacte sur WhatsApp sous 2h. La livraison s'effectue en 24 à 72h selon ta ville.",
+    title: 'Receive your delivery',
+    desc: 'Our team verifies your payment and contacts you on WhatsApp within 2 hours. Delivery takes 24 to 72 hours depending on your city.',
     color: 'bg-amber-50',
   },
 ];
 
 const staticFaqs = [
   {
-    q: 'Quels sont les délais de livraison ?',
-    a: 'La livraison prend 24 à 72 heures après confirmation du paiement. Port-au-Prince et Pétion-Ville sont généralement livrés en 24h.',
+    q: 'What are the delivery times?',
+    a: 'Delivery takes 24 to 72 hours after payment confirmation. Port-au-Prince and Pétion-Ville are usually delivered within 24 hours.',
   },
   {
-    q: 'Comment puis-je payer ?',
-    a: "Nous acceptons MonCash (numéro haïtien) et Zelle (pour les clients en dehors d'Haïti). D'autres modes de paiement seront disponibles bientôt.",
+    q: 'How can I pay?',
+    a: 'We accept MonCash (Haitian number) and Zelle (for customers outside Haiti). Other payment methods will be available soon.',
   },
   {
-    q: 'Puis-je retourner un produit ?',
-    a: "Pour des raisons d'hygiène, nous n'acceptons pas les retours sur les produits cosmétiques ouverts. Si ton produit est endommagé à la réception, contacte-nous immédiatement sur WhatsApp avec une photo.",
+    q: 'Can I return a product?',
+    a: 'For hygiene reasons, we do not accept returns on opened cosmetic products. If your product is damaged upon receipt, contact us immediately on WhatsApp with a photo.',
   },
   {
-    q: "Est-ce que vous livrez en dehors d'Haïti ?",
-    a: "Pour l'instant, nous livrons uniquement en Haïti. Nous travaillons sur des options de livraison internationale — reste connectée !",
+    q: 'Do you deliver outside Haiti?',
+    a: 'Currently, we only deliver within Haiti. We are working on international shipping options — stay tuned!',
   },
 ];
 
 function buildDeliveryAnswer(zones: ZoneLivraison[]): string {
   if (zones.length === 0) {
-    return "Les frais varient selon la ville : 150 HTG (Port-au-Prince centre), 200 HTG (Pétion-Ville), 250 HTG (Zone métropolitaine), 350 HTG (Cap-Haïtien), 400 HTG (autres villes). La livraison est GRATUITE pour toute commande de 2 000 HTG ou plus.";
+    return 'Fees vary by city: 150 HTG (Port-au-Prince center), 200 HTG (Pétion-Ville), 250 HTG (Metro area), 350 HTG (Cap-Haïtien), 400 HTG (other cities). Delivery is FREE for any order of 2,000 HTG or more.';
   }
   const lines = zones.map((z) => {
-    const seuil = z.seuil_gratuit ? ` — gratuite dès ${z.seuil_gratuit} HTG` : '';
+    const seuil = z.seuil_gratuit ? ` — free from ${z.seuil_gratuit} HTG` : '';
     return `${z.frais_htg} HTG (${z.nom_zone})${seuil}`;
   });
   const uniqueSeuils = [...new Set(zones.map((z) => z.seuil_gratuit).filter(Boolean))];
   const freeNote = uniqueSeuils.length === 1
-    ? ` La livraison est GRATUITE pour toute commande de ${uniqueSeuils[0]} HTG ou plus.`
+    ? ` Delivery is FREE for any order of ${uniqueSeuils[0]} HTG or more.`
     : '';
-  return `Les frais varient selon la zone : ${lines.join(', ')}.${freeNote}`;
+  return `Fees vary by zone: ${lines.join(', ')}.${freeNote}`;
 }
 
 export default function CommentCommanderPage() {
@@ -81,7 +81,7 @@ export default function CommentCommanderPage() {
   }, []);
 
   const deliveryFaq = {
-    q: 'Quels sont les frais de livraison ?',
+    q: 'What are the shipping fees?',
     a: buildDeliveryAnswer(zones),
   };
 
@@ -98,10 +98,10 @@ export default function CommentCommanderPage() {
       >
         <p className="font-lato text-xs tracking-widest text-gray-500 uppercase mb-2">Guide</p>
         <h1 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-3">
-          Comment commander ? 💋
+          How to Order? 💋
         </h1>
         <p className="font-cormorant text-xl text-gray-600 italic max-w-xl mx-auto">
-          Commander chez Bestie est simple et rapide — on t&apos;explique tout en 4 étapes
+          Ordering from Bestie is simple and fast — we explain everything in 4 steps
         </p>
       </div>
 
@@ -124,7 +124,7 @@ export default function CommentCommanderPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-lato text-xs font-bold text-primary tracking-wider">
-                    ÉTAPE {step.number}
+                    STEP {step.number}
                   </span>
                 </div>
                 <h3 className="font-playfair font-bold text-xl text-gray-800 mb-2">{step.title}</h3>
@@ -138,7 +138,7 @@ export default function CommentCommanderPage() {
       {/* FAQ */}
       <section className="max-w-4xl mx-auto px-4 pb-16">
         <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-6">
-          ❓ Questions fréquentes
+          ❓ Frequently Asked Questions
         </h2>
         <div className="space-y-4">
           {faqs.map((faq) => (
@@ -156,14 +156,14 @@ export default function CommentCommanderPage() {
         style={{ background: 'linear-gradient(135deg, #F2A7BB, #E8D5C4)' }}
       >
         <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-white mb-4">
-          Prête à commander ? 💋
+          Ready to order? 💋
         </h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/boutique"
             className="bg-white text-primary font-lato font-bold px-8 py-3.5 rounded-full hover:bg-pink-50 transition-colors shadow-md min-h-[48px] flex items-center justify-center"
           >
-            Voir la boutique →
+            View the shop →
           </Link>
           <a
             href="https://wa.me/50900000000"
@@ -171,7 +171,7 @@ export default function CommentCommanderPage() {
             rel="noopener noreferrer"
             className="border-2 border-white text-white font-lato font-semibold px-8 py-3.5 rounded-full hover:bg-white/10 transition-colors min-h-[48px] flex items-center justify-center"
           >
-            💬 Nous contacter
+            💬 Contact us
           </a>
         </div>
       </section>
