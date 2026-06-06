@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,11 +13,25 @@ import { translations } from '@/lib/translations';
 import ProductCard from '@/components/ProductCard';
 import type { Product, ColorVariant } from '@/data/products';
 
-const reviews = [
-  { name: 'Jessica B.', rating: 5, text: "Absolument obsédée ! La texture est parfaite et la tenue dure longtemps.", date: 'Il y a 3 jours' },
-  { name: 'Marlène C.', rating: 5, text: "Le meilleur gloss que j'ai jamais utilisé. Sent bon et hydrate vraiment.", date: 'Il y a 1 semaine' },
-  { name: 'Sophonie T.', rating: 4, text: "Super produit ! Je vais en commander d'autres teintes.", date: 'Il y a 2 semaines' },
-];
+interface AvisPublie {
+  id: number;
+  nom_client: string;
+  note: number;
+  texte: string;
+  date_creation: string;
+  commande_verifiee: boolean;
+}
+
+function relativeDate(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "Aujourd'hui";
+  if (days === 1) return 'Il y a 1 jour';
+  if (days < 7) return `Il y a ${days} jours`;
+  if (days < 14) return 'Il y a 1 semaine';
+  if (days < 30) return `Il y a ${Math.floor(days / 7)} semaines`;
+  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
 
 interface Props {
   product: Product;
@@ -25,6 +39,7 @@ interface Props {
 }
 
 export default function ProductDetailClient({ product, related }: Props) {
+  const [reviews, setReviews] = useState<AvisPublie[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -32,6 +47,17 @@ export default function ProductDetailClient({ product, related }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
     product.variants?.[0] ?? null
   );
+  useEffect(() => {
+    fetch(`/api/avis?id_produit=${product.id}&statut=publie`)
+      .then((r) => r.json())
+      .then((d) => setReviews(d.avis ?? []))
+      .catch(() => {});
+  }, [product.id]);
+
+  const avgRating = reviews.length
+    ? reviews.reduce((sum, r) => sum + r.note, 0) / reviews.length
+    : 0;
+
   const { addItem } = useCartStore();
   const { isLoggedIn, openAuthModal } = useAuthStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
@@ -265,29 +291,56 @@ export default function ProductDetailClient({ product, related }: Props) {
 
         {/* Reviews */}
         <section className="mt-16">
-          <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-6">
-            {t.product.reviews} ({reviews.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {reviews.map((r) => (
-              <div key={r.name} className="bg-white rounded-2xl p-5 border border-pink-100">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-playfair font-semibold text-gray-800">{r.name}</p>
-                    <p className="font-lato text-xs text-gray-400">{r.date}</p>
-                  </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <h2 className="font-playfair font-bold text-2xl text-gray-800">
+              {t.product.reviews} ({reviews.length})
+            </h2>
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-3">
+                <span className="font-playfair font-bold text-3xl text-gray-800">{avgRating.toFixed(1)}</span>
+                <div>
                   <div className="flex gap-0.5">
-                    {Array.from({ length: r.rating }).map((_, i) => (
-                      <Star key={i} size={12} className="fill-accent text-accent" aria-hidden="true" />
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} size={14} className={i < Math.round(avgRating) ? 'fill-accent text-accent' : 'text-gray-200'} aria-hidden="true" />
                     ))}
                   </div>
+                  <p className="font-lato text-xs text-gray-400">{reviews.length} avis publiés</p>
                 </div>
-                <p className="font-cormorant text-base text-gray-600 italic leading-relaxed">
-                  &ldquo;{r.text}&rdquo;
-                </p>
               </div>
-            ))}
+            )}
           </div>
+
+          {reviews.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center">
+              <p className="font-cormorant text-lg text-gray-400 italic">Aucun avis pour le moment — sois la première ! 💕</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {reviews.map((r) => (
+                <div key={r.id} className="bg-white rounded-2xl p-5 border border-pink-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="font-playfair font-semibold text-gray-800">{r.nom_client}</p>
+                      <p className="font-lato text-xs text-gray-400">{relativeDate(r.date_creation)}</p>
+                    </div>
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={12} className={i < r.note ? 'fill-accent text-accent' : 'text-gray-200'} aria-hidden="true" />
+                      ))}
+                    </div>
+                  </div>
+                  {r.commande_verifiee && (
+                    <span className="inline-block font-lato text-[10px] font-semibold text-green-600 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full mb-2">
+                      ✓ Achat vérifié
+                    </span>
+                  )}
+                  <p className="font-cormorant text-base text-gray-600 italic leading-relaxed">
+                    &ldquo;{r.texte}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Related */}

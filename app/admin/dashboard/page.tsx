@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Clock, CreditCard, Truck, PackageCheck,
   LogOut, CheckCircle, ArrowRight, ArrowLeft, TrendingUp, ShoppingBag, X,
   Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
-  Package, Plus, Trash2, Edit3, Eye, EyeOff,
+  Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink,
 } from 'lucide-react';
 import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct } from '@/store/adminStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
@@ -138,6 +138,15 @@ function SidebarContent({
           </button>
         ))}
       </nav>
+      <div className="px-3 pb-3 border-t border-pink-50 pt-3">
+        <a
+          href="/admin/avis"
+          className="w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm text-gray-500 hover:text-gray-700 hover:bg-pink-50/60 transition-all"
+        >
+          <span className="flex items-center gap-2.5"><Star size={15} />Modération avis</span>
+          <ExternalLink size={11} className="text-gray-300" />
+        </a>
+      </div>
       <div className="px-5 py-4 border-t border-pink-50">
         <p className="font-lato text-[10px] text-gray-300">{t.connectedAs}</p>
       </div>
@@ -311,6 +320,17 @@ export default function AdminDashboard() {
     router.push('/');
   };
 
+  const handleStatusChange = async (id: string, status: OrderStatus) => {
+    const order = orders.find((o) => o.id === id);
+    updateOrderStatus(id, status);
+    // TODO (BDD): INSERT INTO HistoriqueStatutCommande + UPDATE Commande SET statut
+    await fetch(`/api/commandes/${id}/statut`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nouveau_statut: status, ancien_statut: order?.status ?? null }),
+    }).catch(() => null);
+  };
+
   const navItems: { id: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: 'overview',  label: t.nav.overview,  icon: <LayoutDashboard size={15} /> },
     { id: 'users',     label: t.nav.users,     icon: <Users size={15} />,        count: customers.length },
@@ -320,6 +340,8 @@ export default function AdminDashboard() {
     { id: 'delivered', label: t.nav.delivered, icon: <PackageCheck size={15} />, count: delivered.length },
     { id: 'products',  label: 'Produits',      icon: <Package size={15} />,       count: managedProducts.length },
   ];
+
+  const avisEnAttente = 0; // TODO (BDD): SELECT COUNT(*) FROM Avis WHERE statut = 'en_attente'
 
   const handleTabSelect = (id: Tab) => {
     setTab(id);
@@ -574,7 +596,7 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.approve} actionIcon={<CheckCircle size={13} />}
-                  nextStatus="paid" onAction={updateOrderStatus} statusLabels={t.status} />
+                  nextStatus="paid" onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'paid' && (
                 <OrdersSection title={t.sections.paid.title} subtitle={t.sections.paid.subtitle}
@@ -582,7 +604,7 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.ship} actionIcon={<Truck size={13} />}
-                  nextStatus="shipping" onAction={updateOrderStatus} statusLabels={t.status} />
+                  nextStatus="shipping" onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'shipping' && (
                 <OrdersSection title={t.sections.shipping.title} subtitle={t.sections.shipping.subtitle}
@@ -590,7 +612,7 @@ export default function AdminDashboard() {
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
                   actionLabel={t.orders.markDelivered} actionIcon={<PackageCheck size={13} />}
-                  nextStatus="delivered" onAction={updateOrderStatus} statusLabels={t.status} />
+                  nextStatus="delivered" onAction={handleStatusChange} statusLabels={t.status} />
               )}
               {tab === 'delivered' && (
                 <OrdersSection
@@ -599,7 +621,7 @@ export default function AdminDashboard() {
                   orders={filterOrders(delivered)} search={orderSearch} onSearch={setOrderSearch}
                   searchPlaceholder={t.orders.searchPlaceholder} noResultsLabel={t.orders.noResults}
                   emptyLabel={t.orders.noOrdersMsg} emptyDesc={t.orders.noOrdersDesc}
-                  onAction={updateOrderStatus} statusLabels={t.status} />
+                  onAction={handleStatusChange} statusLabels={t.status} />
               )}
 
               {tab === 'products' && (
@@ -636,6 +658,8 @@ function OrdersSection({
   nextStatus?: OrderStatus; onAction: (id: string, status: OrderStatus) => void;
   statusLabels: Record<OrderStatus, string>;
 }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const STATUS_FLOW: OrderStatus[] = ['pending', 'paid', 'shipping', 'delivered'];
   return (
     <div>
       <SectionHeader title={title} subtitle={subtitle} />
@@ -686,18 +710,62 @@ function OrdersSection({
                       <p className="font-playfair font-bold text-base md:text-lg text-gray-800">{order.total.toLocaleString()} HTG</p>
                       <p className="font-lato text-xs text-gray-400">{PAYMENT_LABEL[order.paymentMethod]}</p>
                     </div>
-                    {actionLabel && nextStatus && (
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => onAction(order.id, nextStatus)}
-                        className="flex items-center gap-1.5 font-lato text-xs font-bold text-white px-3 md:px-4 py-2 rounded-xl shadow-sm shrink-0"
-                        style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
+                    <div className="flex flex-col items-end gap-2">
+                      {actionLabel && nextStatus && (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => onAction(order.id, nextStatus)}
+                          className="flex items-center gap-1.5 font-lato text-xs font-bold text-white px-3 md:px-4 py-2 rounded-xl shadow-sm shrink-0"
+                          style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
+                        >
+                          {actionIcon}{actionLabel}<ArrowRight size={11} />
+                        </motion.button>
+                      )}
+                      <button
+                        onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
+                        className="flex items-center gap-1 font-lato text-[10px] text-gray-400 hover:text-primary transition-colors"
                       >
-                        {actionIcon}{actionLabel}<ArrowRight size={11} />
-                      </motion.button>
-                    )}
+                        <ArrowRight size={10} className={`transition-transform duration-200 ${expandedId === order.id ? 'rotate-90' : ''}`} />
+                        Historique
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Timeline statut */}
+                <AnimatePresence>
+                  {expandedId === order.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 pt-4 border-t border-pink-50">
+                        <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-3">Progression commande</p>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {STATUS_FLOW.map((s) => {
+                            const current = order.status === s;
+                            const passed = STATUS_FLOW.indexOf(order.status) > STATUS_FLOW.indexOf(s);
+                            return (
+                              <span key={s} className={`font-lato text-[10px] px-2.5 py-1 rounded-full border font-semibold ${
+                                current ? 'bg-primary text-white border-primary' :
+                                passed   ? 'bg-green-50 text-green-600 border-green-100' :
+                                           'bg-gray-50 text-gray-300 border-gray-100'
+                              }`}>
+                                {passed ? '✓ ' : ''}{statusLabels[s]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <p className="font-lato text-[10px] text-gray-300 mt-2 italic">
+                          Dates de transition disponibles après connexion base de données.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </AnimatePresence>

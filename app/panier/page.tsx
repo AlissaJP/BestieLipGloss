@@ -25,10 +25,7 @@ const CITY_FEES: Record<string, number> = {
 
 const USA_FEE = 3500;
 
-const PROMO_CODES: Record<string, number> = {
-  BESTIE10: 0.1,
-  BESTIE15: 0.15,
-};
+type PromoInfo = { code: string; valeur: number; type: 'pct' | 'fixe' };
 
 type SavedDelivery = { name: string; telephone: string; address: Address };
 
@@ -54,7 +51,8 @@ export default function PanierPage() {
   const [step, setStep] = useState(0);
   const [promoCode, setPromoCode] = useState('');
   const [promoError, setPromoError] = useState('');
-  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoInfo, setPromoInfo] = useState<PromoInfo | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
 
   // Selected address (shared between estimator in Step 0 and delivery form in Step 1)
   const savedAddresses = user?.addresses ?? [];
@@ -73,16 +71,37 @@ export default function PanierPage() {
   const hasUnselectedVariants = itemsNeedingVariant.length > 0;
 
   const subtotal = totalPrice();
-  const discountAmount = Math.round(subtotal * promoDiscount);
+  const discountAmount = promoInfo
+    ? promoInfo.type === 'pct'
+      ? Math.round(subtotal * promoInfo.valeur)
+      : Math.min(promoInfo.valeur, subtotal)
+    : 0;
   const discountedSubtotal = subtotal - discountAmount;
 
   const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal) : 0;
   const total = discountedSubtotal + deliveryFee;
 
-  const applyPromo = () => {
-    const code = promoCode.toUpperCase().trim();
-    if (PROMO_CODES[code] !== undefined) { setPromoDiscount(PROMO_CODES[code]); setPromoError(''); }
-    else { setPromoDiscount(0); setPromoError('Code promo invalide'); }
+  const applyPromo = async () => {
+    if (!promoCode) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      const res = await fetch(
+        `/api/promo/valider?code=${encodeURIComponent(promoCode.trim())}&montant=${subtotal}`
+      );
+      const data = await res.json();
+      if (data.valid) {
+        setPromoInfo({ code: data.code, valeur: data.reduction_pct, type: data.type_reduction });
+      } else {
+        setPromoInfo(null);
+        setPromoError(data.reason ?? 'Code promo invalide.');
+      }
+    } catch {
+      setPromoInfo(null);
+      setPromoError('Erreur lors de la validation. Réessaie.');
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleDeliveryNext = () => {
@@ -226,7 +245,7 @@ export default function PanierPage() {
                             <div className="relative flex-1">
                               <select
                                 value={promoCode}
-                                onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); setPromoDiscount(0); }}
+                                onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); setPromoInfo(null); }}
                                 className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer pr-9"
                               >
                                 <option value="">— Choisir un coupon —</option>
@@ -238,10 +257,10 @@ export default function PanierPage() {
                             </div>
                             <button
                               onClick={applyPromo}
-                              disabled={!promoCode}
+                              disabled={!promoCode || promoLoading}
                               className="bg-primary hover:bg-pink-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
                             >
-                              Appliquer
+                              {promoLoading ? 'Vérification…' : 'Appliquer'}
                             </button>
                           </div>
                           {(user.coupons ?? []).length === 0 && (
@@ -260,7 +279,14 @@ export default function PanierPage() {
                         </div>
                       )}
                       {promoError && <p className="font-lato text-xs text-red-500 mt-2">{promoError}</p>}
-                      {promoDiscount > 0 && <p className="font-lato text-xs text-green-600 mt-2">✓ Code appliqué — {promoDiscount * 100}% de réduction !</p>}
+                      {promoInfo && (
+                        <p className="font-lato text-xs text-green-600 mt-2">
+                          ✓ Code {promoInfo.code} appliqué —{' '}
+                          {promoInfo.type === 'pct'
+                            ? `${promoInfo.valeur * 100}% de réduction`
+                            : `${promoInfo.valeur} HTG déduits`} !
+                        </p>
+                      )}
                     </div>
 
                     {/* Delivery estimator */}
@@ -309,9 +335,10 @@ export default function PanierPage() {
                       <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">Récapitulatif</h2>
                       <div className="space-y-3 text-sm">
                         <div className="flex justify-between font-lato text-gray-600"><span>Sous-total</span><span>{subtotal} HTG</span></div>
-                        {promoDiscount > 0 && (
+                        {promoInfo && (
                           <div className="flex justify-between font-lato text-green-600">
-                            <span>Réduction ({promoDiscount * 100}%)</span><span>-{discountAmount} HTG</span>
+                            <span>Réduction ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `${promoInfo.valeur} HTG`})</span>
+                            <span>-{discountAmount} HTG</span>
                           </div>
                         )}
                         <div className="flex justify-between font-lato text-gray-600">
@@ -625,7 +652,7 @@ export default function PanierPage() {
                         </div>
                       ))}
                       <div className="border-t border-pink-100 pt-2 space-y-1">
-                        {promoDiscount > 0 && <div className="flex justify-between text-green-600"><span>Réduction</span><span>-{discountAmount} HTG</span></div>}
+                        {promoInfo && <div className="flex justify-between text-green-600"><span>Réduction</span><span>-{discountAmount} HTG</span></div>}
                         <div className="flex justify-between"><span>Livraison</span><span>{deliveryFee === 0 ? 'Gratuite' : `${deliveryFee} HTG`}</span></div>
                         <div className="flex justify-between font-bold pt-1">
                           <span className="font-playfair text-gray-800">Total</span>
