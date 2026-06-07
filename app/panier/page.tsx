@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, Upload, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, CreditCard, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare, Lock } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore, type Address } from '@/store/authStore';
 import CheckoutStepper from '@/components/CheckoutStepper';
@@ -67,8 +67,11 @@ export default function PanierPage() {
   const [telephoneLivraison, setTelephoneLivraison] = useState('');
   const [instructionsLivraison, setInstructionsLivraison] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState<'moncash' | 'zelle'>('moncash');
-  const [paymentFile, setPaymentFile] = useState<File | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'moncash' | 'zelle' | 'card'>('moncash');
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [referenceTransaction, setReferenceTransaction] = useState('');
@@ -143,7 +146,7 @@ export default function PanierPage() {
   const onConfirmOrder = async () => {
     setPaymentLoading(true);
     setPaymentError('');
-    const devise: 'HTG' | 'USD' = paymentMethod === 'zelle' ? 'USD' : 'HTG';
+    const devise: 'HTG' | 'USD' = paymentMethod === 'moncash' ? 'HTG' : 'USD';
     try {
       const res = await fetch('/api/paiement/soumettre', {
         method: 'POST',
@@ -151,7 +154,7 @@ export default function PanierPage() {
         body: JSON.stringify({
           id_commande: numeroCommande,
           mode_paiement: paymentMethod,
-          montant_paye: paymentMethod === 'zelle' ? parseFloat((total / 130).toFixed(2)) : total,
+          montant_paye: paymentMethod === 'moncash' ? total : parseFloat(totalUSD.toFixed(2)),
           devise_paiement: devise,
           reference_transaction: referenceTransaction || null,
           note_client: noteClient || null,
@@ -628,24 +631,35 @@ export default function PanierPage() {
                 <div className="lg:col-span-2 space-y-6">
                   <div>
                     <p className="font-playfair font-semibold text-gray-800 mb-4">Choose your payment method</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <button onClick={() => setPaymentMethod('moncash')}
-                        className={`p-5 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'moncash' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white font-bold text-sm font-lato">MC</div>
-                          <span className="font-playfair font-semibold text-gray-800">MonCash</span>
-                          {paymentMethod === 'moncash' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs">✓</span>}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'moncash' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center text-white font-bold text-xs font-lato flex-shrink-0">MC</div>
+                          <span className="font-playfair font-semibold text-gray-800 text-sm">MonCash</span>
+                          {paymentMethod === 'moncash' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Payment via MonCash (Digicel)</p>
+                        <p className="font-lato text-xs text-gray-500">Digicel mobile money</p>
                       </button>
                       <button onClick={() => setPaymentMethod('zelle')}
-                        className={`p-5 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'zelle' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-sm font-lato">Z</div>
-                          <span className="font-playfair font-semibold text-gray-800">Zelle</span>
-                          {paymentMethod === 'zelle' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs">✓</span>}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'zelle' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-9 h-9 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs font-lato flex-shrink-0">Z</div>
+                          <span className="font-playfair font-semibold text-gray-800 text-sm">Zelle</span>
+                          {paymentMethod === 'zelle' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Zelle transfer (United States)</p>
+                        <p className="font-lato text-xs text-gray-500">US bank transfer</p>
+                      </button>
+                      <button onClick={() => setPaymentMethod('card')}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'card' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-9 h-9 bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <CreditCard size={16} className="text-white" />
+                          </div>
+                          <span className="font-playfair font-semibold text-gray-800 text-sm">Card</span>
+                          {paymentMethod === 'card' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
+                        </div>
+                        <p className="font-lato text-xs text-gray-500">Debit or credit card</p>
                       </button>
                     </div>
                   </div>
@@ -672,7 +686,7 @@ export default function PanierPage() {
                             <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">{total} HTG</span></p>
                           </div>
                         </>
-                      ) : (
+                      ) : paymentMethod === 'zelle' ? (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs font-lato">Z</span>Zelle Instructions
@@ -690,35 +704,88 @@ export default function PanierPage() {
                             <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
                           </div>
                         </>
+                      ) : (
+                        <>
+                          <h3 className="font-playfair font-semibold text-gray-800 mb-5 flex items-center gap-2">
+                            <span className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <CreditCard size={15} className="text-gray-700" />
+                            </span>Card details
+                          </h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className={labelCls} htmlFor="card-name">Cardholder name</label>
+                              <input
+                                id="card-name"
+                                type="text"
+                                placeholder="Jane Doe"
+                                value={cardName}
+                                onChange={(e) => setCardName(e.target.value)}
+                                className={inputCls}
+                                autoComplete="cc-name"
+                              />
+                            </div>
+                            <div>
+                              <label className={labelCls} htmlFor="card-number">Card number</label>
+                              <input
+                                id="card-number"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="1234 5678 9012 3456"
+                                maxLength={19}
+                                value={cardNumber}
+                                onChange={(e) => {
+                                  const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                  setCardNumber(digits.replace(/(.{4})/g, '$1 ').trim());
+                                }}
+                                className={inputCls + ' tracking-widest'}
+                                autoComplete="cc-number"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className={labelCls} htmlFor="card-expiry">Expiry date</label>
+                                <input
+                                  id="card-expiry"
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="MM / YY"
+                                  maxLength={7}
+                                  value={cardExpiry}
+                                  onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                    setCardExpiry(digits.length > 2 ? digits.slice(0, 2) + ' / ' + digits.slice(2) : digits);
+                                  }}
+                                  className={inputCls}
+                                  autoComplete="cc-exp"
+                                />
+                              </div>
+                              <div>
+                                <label className={labelCls} htmlFor="card-cvv">CVV</label>
+                                <input
+                                  id="card-cvv"
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="123"
+                                  maxLength={4}
+                                  value={cardCvv}
+                                  onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                  className={inputCls}
+                                  autoComplete="cc-csc"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-5 flex items-center justify-center gap-2 text-gray-400">
+                            <Lock size={12} />
+                            <p className="font-lato text-xs">Secured payment · Visa · Mastercard · Amex</p>
+                          </div>
+                          <div className="mt-3 bg-primary/10 rounded-xl p-3 text-center">
+                            <p className="font-lato text-sm text-gray-700">Amount to charge: <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
+                          </div>
+                        </>
                       )}
                     </motion.div>
                   </AnimatePresence>
-
-                  {/* Screenshot upload */}
-                  <div className="bg-white rounded-2xl p-6 border border-pink-100">
-                    <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <Upload size={16} className="text-primary" />Payment screenshot
-                    </p>
-                    <p className="font-lato text-xs text-gray-500 mb-4">Upload a screenshot confirming your payment to speed up verification.</p>
-                    <label className="block">
-                      <input type="file" accept="image/*" onChange={(e) => setPaymentFile(e.target.files?.[0] ?? null)} className="hidden" />
-                      <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${paymentFile ? 'border-green-400 bg-green-50' : 'border-pink-200 hover:border-primary bg-pink-50/30'}`}>
-                        {paymentFile ? (
-                          <div className="flex flex-col items-center gap-2">
-                            <CheckCircle size={28} className="text-green-500" />
-                            <p className="font-lato text-sm text-green-700 font-semibold">{paymentFile.name}</p>
-                            <p className="font-lato text-xs text-gray-400">Click to change</p>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2">
-                            <Upload size={28} className="text-primary/60" />
-                            <p className="font-lato text-sm text-gray-600">Click to upload your screenshot</p>
-                            <p className="font-lato text-xs text-gray-400">JPG, PNG, GIF</p>
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  </div>
 
                   {/* Transaction reference */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
@@ -729,7 +796,7 @@ export default function PanierPage() {
                     <input
                       id="reference-transaction"
                       type="text"
-                      placeholder={paymentMethod === 'moncash' ? 'MonCash confirmation ID' : 'Zelle confirmation reference'}
+                      placeholder={paymentMethod === 'moncash' ? 'MonCash confirmation ID' : paymentMethod === 'zelle' ? 'Zelle confirmation reference' : 'Transaction ID'}
                       value={referenceTransaction}
                       onChange={(e) => setReferenceTransaction(e.target.value)}
                       className={inputCls}
