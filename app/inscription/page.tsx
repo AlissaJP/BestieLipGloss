@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 const PAYS = [
   { id: 'HT', code: '+509', drapeau: '🇭🇹', nom: 'Haiti' },
@@ -21,6 +23,9 @@ const PAYS = [
 ];
 
 export default function InscriptionPage() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.register;
+
   const [form, setForm] = useState({
     prenom: '',
     nom: '',
@@ -43,15 +48,15 @@ export default function InscriptionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.prenom || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
-      setError('Please fill in all required fields.');
+      setError(t.fillAll);
       return;
     }
     if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t.pwdTooShort);
       return;
     }
     if (form.password !== form.confirm) {
-      setError('Passwords do not match.');
+      setError(t.pwdMismatch);
       return;
     }
     setIsLoading(true);
@@ -81,10 +86,10 @@ export default function InscriptionPage() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            Join the Bestie family 💕
+            {t.heading}
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Create your account in under a minute
+            {t.sub}
           </p>
         </div>
 
@@ -94,7 +99,7 @@ export default function InscriptionPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    First Name <span className="text-primary">*</span>
+                    {t.firstName} <span className="text-primary">*</span>
                   </label>
                   <div className="relative">
                     <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -110,7 +115,7 @@ export default function InscriptionPage() {
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Last Name
+                    {t.lastName}
                   </label>
                   <input
                     type="text"
@@ -125,7 +130,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Email address <span className="text-primary">*</span>
+                  {t.email} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -142,14 +147,14 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  WhatsApp Number <span className="text-primary">*</span>
+                  {t.whatsapp} <span className="text-primary">*</span>
                 </label>
                 <div className="flex border border-pink-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-primary transition-colors">
                   <select
                     value={selectedPaysId}
                     onChange={(e) => setSelectedPaysId(e.target.value)}
                     className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
-                    aria-label="Country code"
+                    aria-label={t.countryCode}
                   >
                     {PAYS.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -170,7 +175,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Password <span className="text-primary">*</span>
+                  {t.pwd} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -178,7 +183,7 @@ export default function InscriptionPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={form.password}
                     onChange={update('password')}
-                    placeholder="Min. 6 characters"
+                    placeholder={t.pwdPlaceholder}
                     className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="new-password"
                   />
@@ -195,7 +200,7 @@ export default function InscriptionPage() {
 
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Confirm password <span className="text-primary">*</span>
+                  {t.confirm} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -229,19 +234,19 @@ export default function InscriptionPage() {
                 {isLoading ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Creating account…
+                    {t.creating}
                   </>
                 ) : (
-                  'Create my account'
+                  t.createBtn
                 )}
               </motion.button>
             </div>
           </form>
 
           <p className="text-center font-lato text-sm text-gray-500 mt-6">
-            Already have an account?{' '}
+            {t.haveAccount}{' '}
             <Link href="/connexion" className="text-primary font-semibold hover:underline">
-              Sign in
+              {t.signIn}
             </Link>
           </p>
         </div>

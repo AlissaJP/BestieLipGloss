@@ -35,6 +35,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       name: product.name,
       shade: product.shade,
       price_htg: product.price_htg,
+      price_usd: product.price_usd,
       bgColor: product.bgColor,
       image: product.introImage,
     });
@@ -101,8 +102,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             <p className="font-lato text-xs text-orange-500 mb-1">⚠️ {t.product.outOfStock} {product.stock} {t.product.inStock}</p>
           )}
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="font-playfair font-bold text-primary text-lg">{product.price_htg} HTG</span>
-            <span className="font-lato text-xs text-gray-400">(${product.price_usd})</span>
+            <span className="font-playfair font-bold text-primary text-lg">${product.price_usd}</span>
+            <span className="font-lato text-xs text-gray-400">({product.price_htg} HTG)</span>
           </div>
         </div>
       </Link>

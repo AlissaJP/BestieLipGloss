@@ -9,10 +9,11 @@ import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, items, removeItem, updateQuantity, totalPrice } = useCartStore();
+  const { isOpen, closeCart, items, removeItem, updateQuantity } = useCartStore();
   const { lang } = useLanguageStore();
   const t = translations[lang];
-  const total = totalPrice();
+  const totalUSD = items.reduce((acc, i) => acc + i.price_usd * i.quantity, 0);
+  const totalHTG = items.reduce((acc, i) => acc + i.price_htg * i.quantity, 0);
 
   return (
     <AnimatePresence>
@@ -104,7 +105,7 @@ export default function CartDrawer() {
                           {item.shade}
                         </span>
                         <p className="font-playfair font-bold text-primary text-sm mt-1">
-                          {item.price_htg * item.quantity} HTG
+                          ${(item.price_usd * item.quantity).toFixed(2)}
                         </p>
                       </div>
                       {/* Controls */}
@@ -145,10 +146,10 @@ export default function CartDrawer() {
               <div className="px-6 py-5 border-t border-pink-100 space-y-3 bg-white">
                 <div className="flex justify-between items-center">
                   <span className="font-lato text-gray-600 text-sm">{t.cart.subtotal}</span>
-                  <span className="font-playfair font-bold text-gray-800 text-xl">{total} HTG</span>
+                  <span className="font-playfair font-bold text-gray-800 text-xl">${totalUSD.toFixed(2)}</span>
                 </div>
                 <p className="font-lato text-xs text-gray-400">
-                  {total >= 2000 ? t.cart.freeShipping : t.cart.shippingLeft.replace('{n}', String(2000 - total))}
+                  {totalHTG >= 2000 ? t.cart.freeShipping : t.cart.shippingLeft.replace('{n}', `$${((2000 - totalHTG) / 130).toFixed(2)}`)}
                 </p>
                 <Link
                   href="/panier"

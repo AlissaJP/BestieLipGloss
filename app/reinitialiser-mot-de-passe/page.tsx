@@ -5,11 +5,16 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 function ResetForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token') ?? '';
+
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.resetPwd;
 
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const [form, setForm] = useState({ password: '', confirm: '' });
@@ -32,11 +37,11 @@ function ResetForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t.pwdTooShort);
       return;
     }
     if (form.password !== form.confirm) {
-      setError('Passwords do not match.');
+      setError(t.pwdMismatch);
       return;
     }
     setIsLoading(true);
@@ -51,7 +56,7 @@ function ResetForm() {
     setIsLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'An error occurred.');
+      setError(data.error ?? t.pwdTooShort);
       return;
     }
 
@@ -76,16 +81,16 @@ function ResetForm() {
           </div>
         </div>
         <h2 className="font-playfair font-bold text-xl text-gray-800 mb-3">
-          Invalid or expired link
+          {t.invalidHeading}
         </h2>
         <p className="font-lato text-sm text-gray-500 mb-6">
-          This reset link is no longer valid. It may have expired (1 hour) or already been used.
+          {t.invalidDesc}
         </p>
         <Link
           href="/mot-de-passe-oublie"
           className="inline-block bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 px-6 rounded-xl transition-colors text-sm"
         >
-          Request a new link
+          {t.requestNew}
         </Link>
       </div>
     );
@@ -100,10 +105,10 @@ function ResetForm() {
           </div>
         </div>
         <h2 className="font-playfair font-bold text-2xl text-gray-800 mb-3">
-          Password updated!
+          {t.successHeading}
         </h2>
         <p className="font-lato text-sm text-gray-500">
-          You will be redirected to the sign-in page in 3 seconds…
+          {t.successDesc}
         </p>
       </div>
     );
@@ -115,7 +120,7 @@ function ResetForm() {
         <div className="space-y-4">
           <div>
             <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-              New password <span className="text-primary">*</span>
+              {t.newPwd} <span className="text-primary">*</span>
             </label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -123,7 +128,7 @@ function ResetForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={update('password')}
-                placeholder="Min. 6 characters"
+                placeholder={t.pwdPlaceholder}
                 className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
                 autoComplete="new-password"
                 autoFocus
@@ -141,7 +146,7 @@ function ResetForm() {
 
           <div>
             <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-              Confirm password <span className="text-primary">*</span>
+              {t.confirm} <span className="text-primary">*</span>
             </label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -175,10 +180,10 @@ function ResetForm() {
             {isLoading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Updating…
+                {t.updating}
               </>
             ) : (
-              'Update password'
+              t.updateBtn
             )}
           </motion.button>
         </div>
@@ -188,6 +193,9 @@ function ResetForm() {
 }
 
 export default function ResetPasswordPage() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.resetPwd;
+
   return (
     <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4 py-16">
       <motion.div
@@ -201,10 +209,10 @@ export default function ResetPasswordPage() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            New password
+            {t.heading}
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Choose a new secure password
+            {t.sub}
           </p>
         </div>
         <Suspense fallback={<div className="flex justify-center py-20"><span className="w-8 h-8 border-4 border-pink-200 border-t-primary rounded-full animate-spin" /></div>}>

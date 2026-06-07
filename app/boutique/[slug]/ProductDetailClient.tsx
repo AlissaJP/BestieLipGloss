@@ -133,6 +133,7 @@ export default function ProductDetailClient({ product, related }: Props) {
         name: product.name,
         shade: selectedVariant?.name ?? product.shade,
         price_htg: product.price_htg,
+        price_usd: product.price_usd,
         bgColor: selectedVariant?.bgColor ?? product.bgColor,
         image: selectedVariant?.image ?? product.introImage,
       });
@@ -300,8 +301,8 @@ export default function ProductDetailClient({ product, related }: Props) {
             )}
 
             <div className="flex items-baseline gap-3 mb-6">
-              <span className="font-playfair font-bold text-3xl text-primary">{product.price_htg} HTG</span>
-              <span className="font-lato text-sm text-gray-400">(${product.price_usd} USD)</span>
+              <span className="font-playfair font-bold text-3xl text-primary">${product.price_usd}</span>
+              <span className="font-lato text-sm text-gray-400">({product.price_htg} HTG)</span>
             </div>
 
             <p className="font-lato text-gray-600 leading-relaxed mb-6 text-sm sm:text-base">
@@ -520,7 +521,7 @@ export default function ProductDetailClient({ product, related }: Props) {
           }`}
         >
           <ShoppingBag size={16} />
-          {added ? t.cart.added : `${t.cart.addWith} ${product.price_htg * quantity} HTG`}
+          {added ? t.cart.added : `${t.cart.addWith} $${(product.price_usd * quantity).toFixed(2)}`}
         </motion.button>
         <button
           onClick={handleToggleFavorite}

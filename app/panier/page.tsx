@@ -93,6 +93,17 @@ export default function PanierPage() {
   const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones) : 0;
   const total = discountedSubtotal + deliveryFee;
 
+  // USD calculations
+  const subtotalUSD = items.reduce((acc, i) => acc + i.price_usd * i.quantity, 0);
+  const discountAmountUSD = promoInfo
+    ? promoInfo.type === 'pct'
+      ? subtotalUSD * promoInfo.valeur
+      : promoInfo.valeur / 130
+    : 0;
+  const discountedSubtotalUSD = subtotalUSD - discountAmountUSD;
+  const deliveryFeeUSD = deliveryFee / 130;
+  const totalUSD = discountedSubtotalUSD + deliveryFeeUSD;
+
   const applyPromo = async () => {
     if (!promoCode) return;
     setPromoLoading(true);
@@ -242,7 +253,7 @@ export default function PanierPage() {
                               ) : (
                                 <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
                               )}
-                              <p className="font-playfair font-bold text-primary mt-1">{item.price_htg * item.quantity} HTG</p>
+                              <p className="font-playfair font-bold text-primary mt-1">${(item.price_usd * item.quantity).toFixed(2)}</p>
                             </div>
                             <div className="flex flex-col items-end gap-3">
                               <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Remove ${item.name}`}>
@@ -333,7 +344,7 @@ export default function PanierPage() {
                           ✓ Code {promoInfo.code} applied —{' '}
                           {promoInfo.type === 'pct'
                             ? `${promoInfo.valeur * 100}% discount`
-                            : `${promoInfo.valeur} HTG off`}!
+                            : `$${(promoInfo.valeur / 130).toFixed(2)} off`}!
                         </p>
                       )}
                     </div>
@@ -370,7 +381,7 @@ export default function PanierPage() {
                           </select>
                           {selectedAddr && (
                             <p className="font-lato text-xs text-primary font-semibold mt-2">
-                              Estimated fee: {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Free delivery' : `${addrFee(selectedAddr, discountedSubtotal, zones)} HTG`}
+                              Estimated fee: {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Free delivery' : `$${(addrFee(selectedAddr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                             </p>
                           )}
                         </>
@@ -383,25 +394,25 @@ export default function PanierPage() {
                     <div className="bg-white rounded-2xl p-6 border border-pink-100 sticky top-24">
                       <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">Summary</h2>
                       <div className="space-y-3 text-sm">
-                        <div className="flex justify-between font-lato text-gray-600"><span>Subtotal</span><span>{subtotal} HTG</span></div>
+                        <div className="flex justify-between font-lato text-gray-600"><span>Subtotal</span><span>${subtotalUSD.toFixed(2)}</span></div>
                         {promoInfo && (
                           <div className="flex justify-between font-lato text-green-600">
-                            <span>Discount ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `${promoInfo.valeur} HTG`})</span>
-                            <span>-{discountAmount} HTG</span>
+                            <span>Discount ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `$${(promoInfo.valeur / 130).toFixed(2)}`})</span>
+                            <span>-${discountAmountUSD.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between font-lato text-gray-600">
                           <span>Delivery (estimate)</span>
                           <span className={deliveryFee === 0 && selectedAddr ? 'text-green-600 font-semibold' : ''}>
-                            {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Free' : `${deliveryFee} HTG`}
+                            {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Free' : `$${deliveryFeeUSD.toFixed(2)}`}
                           </span>
                         </div>
                         {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'hti') === 'hti')(selectedAddr) && (
-                          <p className="font-lato text-xs text-gray-400">{2000 - discountedSubtotal} HTG away from free delivery</p>
+                          <p className="font-lato text-xs text-gray-400">${((2000 - discountedSubtotal) / 130).toFixed(2)} away from free delivery</p>
                         )}
                         <div className="border-t border-pink-100 pt-3 flex justify-between">
                           <span className="font-playfair font-bold text-gray-800">Estimated total</span>
-                          <span className="font-playfair font-bold text-primary text-xl">{total} HTG</span>
+                          <span className="font-playfair font-bold text-primary text-xl">${totalUSD.toFixed(2)}</span>
                         </div>
                       </div>
                       {hasUnselectedVariants && (
@@ -504,7 +515,7 @@ export default function PanierPage() {
                               </p>
                               <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-xs text-primary font-semibold mt-1.5">
-                                Delivery: {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Free' : `${addrFee(addr, discountedSubtotal, zones)} HTG`}
+                                Delivery: {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Free' : `$${(addrFee(addr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                               </p>
                             </div>
                             {selectedAddr?.id === addr.id && (
@@ -584,21 +595,21 @@ export default function PanierPage() {
                       </div>
                     )}
                     <div className="space-y-2 text-sm font-lato text-gray-600">
-                      <div className="flex justify-between"><span>Subtotal</span><span>{discountedSubtotal} HTG</span></div>
+                      <div className="flex justify-between"><span>Subtotal</span><span>${discountedSubtotalUSD.toFixed(2)}</span></div>
                       <div className="flex justify-between">
                         <span>Delivery</span>
-                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? 'Free 🎉' : `${deliveryFee} HTG`}</span>
+                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? 'Free 🎉' : `$${deliveryFeeUSD.toFixed(2)}`}</span>
                       </div>
                       <div className="border-t border-pink-100 pt-2 flex justify-between font-bold">
                         <span className="font-playfair text-gray-800">Total</span>
-                        <span className="font-playfair text-primary text-lg">{total} HTG</span>
+                        <span className="font-playfair text-primary text-lg">${totalUSD.toFixed(2)}</span>
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-pink-100 space-y-2">
                       {items.map((item) => (
                         <div key={item.variantKey} className="flex justify-between font-lato text-xs text-gray-500">
                           <span>{item.name} ×{item.quantity}</span>
-                          <span>{item.price_htg * item.quantity} HTG</span>
+                          <span>${(item.price_usd * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -676,7 +687,7 @@ export default function PanierPage() {
                             <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
                           </div>
                           <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">${(total / 130).toFixed(2)} USD</span> <span className="text-gray-500 text-xs">({total} HTG)</span></p>
+                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
                           </div>
                         </>
                       )}
@@ -782,15 +793,15 @@ export default function PanierPage() {
                       {items.map((item) => (
                         <div key={item.variantKey} className="flex justify-between text-xs">
                           <span className="truncate flex-1 mr-2">{item.name} ×{item.quantity}</span>
-                          <span>{item.price_htg * item.quantity} HTG</span>
+                          <span>${(item.price_usd * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                       <div className="border-t border-pink-100 pt-2 space-y-1">
-                        {promoInfo && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{discountAmount} HTG</span></div>}
-                        <div className="flex justify-between"><span>Delivery</span><span>{deliveryFee === 0 ? 'Free' : `${deliveryFee} HTG`}</span></div>
+                        {promoInfo && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discountAmountUSD.toFixed(2)}</span></div>}
+                        <div className="flex justify-between"><span>Delivery</span><span>{deliveryFee === 0 ? 'Free' : `$${deliveryFeeUSD.toFixed(2)}`}</span></div>
                         <div className="flex justify-between font-bold pt-1">
                           <span className="font-playfair text-gray-800">Total</span>
-                          <span className="font-playfair text-primary text-lg">{total} HTG</span>
+                          <span className="font-playfair text-primary text-lg">${totalUSD.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>

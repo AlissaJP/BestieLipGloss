@@ -7,6 +7,7 @@ export interface CartItem {
   name: string;
   shade: string;
   price_htg: number;
+  price_usd: number;
   quantity: number;
   bgColor: string;
   image?: string;

@@ -5,9 +5,13 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 export default function AuthModal() {
   const { showAuthModal, closeAuthModal } = useAuthStore();
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.authModal;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeAuthModal(); };
@@ -39,7 +43,7 @@ export default function AuthModal() {
             <button
               onClick={closeAuthModal}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-              aria-label="Close"
+              aria-label={t.close}
             >
               <X size={18} />
             </button>
@@ -52,10 +56,10 @@ export default function AuthModal() {
                 id="auth-modal-title"
                 className="font-playfair font-bold text-xl text-gray-800 mb-2"
               >
-                Sign in to place an order
+                {t.title}
               </h2>
               <p className="font-lato text-sm text-gray-500 leading-relaxed mb-7">
-                You need a Bestie account to add products to your cart and place an order. It&apos;s free and takes less than a minute!
+                {t.desc}
               </p>
 
               <div className="flex flex-col gap-3">
@@ -64,18 +68,18 @@ export default function AuthModal() {
                   onClick={closeAuthModal}
                   className="w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm"
                 >
-                  Sign In
+                  {t.signIn}
                 </Link>
                 <Link
                   href="/inscription"
                   onClick={closeAuthModal}
                   className="w-full border-2 border-primary text-primary hover:bg-pink-50 font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm"
                 >
-                  Create a free account
+                  {t.createAccount}
                 </Link>
               </div>
               <p className="font-lato text-xs text-gray-400 mt-5">
-                Less than a minute to join the Bestie family 💕
+                {t.footer}
               </p>
             </div>
           </motion.div>

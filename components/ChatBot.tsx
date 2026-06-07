@@ -3,61 +3,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 type Message = { id: number; text: string; from: 'bot' | 'user'; streaming?: boolean };
 
-const FAQ = [
-  {
-    q: '📦 Ordering',
-    a: 'Choose your product in the shop, add it to your cart, then click "Order". You will receive a confirmation via WhatsApp. 🛍️',
-  },
-  {
-    q: '🚚 Delivery',
-    a: 'Delivery anywhere in Haiti in 24 to 72 hours depending on your location. You will be contacted by WhatsApp to confirm. 📍',
-  },
-  {
-    q: '💰 Payment',
-    a: 'Our glosses range from 400 to 600 HTG. Payment on delivery (cash) or by MonCash / Natcash transfer. 💳',
-  },
-  {
-    q: '🎨 Shades',
-    a: 'Rosée Matinale comes in 4 shades: Cherry, Honey Rose, Strawberry, and Rouge Grenat. Visit the shop! ✨',
-  },
-  {
-    q: '🌿 Ingredients',
-    a: 'Yes, 100% natural! Shea butter, argan oil, vitamin E. No parabens. Your skin deserves the best. 💚',
-  },
-  {
-    q: '📞 Contact us',
-    a: 'Message us on WhatsApp at +509 0000 0000. We reply within 2 hours! 💬',
-  },
-];
-
-const GREETING =
-  'Hello beautiful! 💕 I\'m your Bestie assistant. Click on a suggestion or ask me a question!';
-
 const KEYWORDS: { words: string[]; faqIndex: number }[] = [
-  { words: ['order', 'ordering', 'buy', 'purchase', 'cart', 'commander', 'commande', 'acheter', 'panier'], faqIndex: 0 },
-  { words: ['delivery', 'shipping', 'ship', 'deliver', 'time', 'wait', 'livraison', 'délai', 'livrer'], faqIndex: 1 },
-  { words: ['price', 'payment', 'pay', 'cost', 'moncash', 'natcash', 'htg', 'prix', 'paiement'], faqIndex: 2 },
-  { words: ['color', 'shade', 'colour', 'cherry', 'honey', 'strawberry', 'grenat', 'couleur', 'teinte'], faqIndex: 3 },
-  { words: ['ingredient', 'natural', 'shea', 'argan', 'paraben', 'naturel', 'karité', 'ingrédient'], faqIndex: 4 },
-  { words: ['contact', 'whatsapp', 'phone', 'call', 'number', 'reach', 'téléphone', 'numéro'], faqIndex: 5 },
+  { words: ['order', 'ordering', 'buy', 'purchase', 'cart', 'commander', 'commande', 'acheter', 'panier', 'pedir', 'pedido', 'comprar'], faqIndex: 0 },
+  { words: ['delivery', 'shipping', 'ship', 'deliver', 'time', 'wait', 'livraison', 'délai', 'livrer', 'entrega', 'envío', 'entregar'], faqIndex: 1 },
+  { words: ['price', 'payment', 'pay', 'cost', 'moncash', 'natcash', 'htg', 'prix', 'paiement', 'zelle', 'precio', 'pago', 'pagar', 'costo'], faqIndex: 2 },
+  { words: ['color', 'shade', 'colour', 'cherry', 'honey', 'strawberry', 'grenat', 'couleur', 'teinte', 'tono'], faqIndex: 3 },
+  { words: ['ingredient', 'natural', 'shea', 'argan', 'paraben', 'naturel', 'karité', 'ingrédient', 'ingrediente'], faqIndex: 4 },
+  { words: ['contact', 'whatsapp', 'phone', 'call', 'number', 'reach', 'téléphone', 'numéro', 'teléfono', 'contacto'], faqIndex: 5 },
 ];
-
-const DEFAULT_REPLY =
-  "I'm not sure I understand 😊 Try one of the suggestions below, or contact us directly on WhatsApp at +509 0000 0000 💬";
-
-function getBotReply(input: string): string {
-  const lower = input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
-  for (const { words, faqIndex } of KEYWORDS) {
-    if (words.some((w) => lower.includes(w))) return FAQ[faqIndex].a;
-  }
-  return DEFAULT_REPLY;
-}
 
 function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   const [imgError, setImgError] = useState(false);
@@ -80,7 +38,7 @@ function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
             : {}
         }
       >
-        👧
+        💋
       </div>
     );
   }
@@ -97,9 +55,23 @@ function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
 }
 
 export default function ChatBot() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.chatbot;
+
+  const getBotReply = (input: string): string => {
+    const lower = input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '');
+    for (const { words, faqIndex } of KEYWORDS) {
+      if (words.some((w) => lower.includes(w))) return t.faqs[faqIndex].a;
+    }
+    return t.defaultReply;
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 0, text: GREETING, from: 'bot' },
+    { id: 0, text: t.greeting, from: 'bot' },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [counter, setCounter] = useState(1);
@@ -107,6 +79,13 @@ export default function ChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Reset chat when language changes
+  useEffect(() => {
+    setMessages([{ id: 0, text: t.greeting, from: 'bot' }]);
+    setCounter(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -196,14 +175,14 @@ export default function ChatBot() {
                   </p>
                   <p className="font-lato text-white/85 text-[11px] flex items-center gap-1.5 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-300 inline-block animate-pulse" />
-                    Online now
+                    {t.online}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition-colors"
-                aria-label="Close"
+                aria-label={t.closeChat}
               >
                 <X size={14} className="text-white" />
               </button>
@@ -286,13 +265,13 @@ export default function ChatBot() {
             {/* FAQ chips */}
             <div className="px-4 pt-2.5 pb-2 border-t border-pink-50 bg-white">
               <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">
-                Suggestions
+                {t.suggestions}
               </p>
               <div
                 className="flex gap-2 overflow-x-auto pb-1"
                 style={{ scrollbarWidth: 'none' }}
               >
-                {FAQ.map((faq) => (
+                {t.faqs.map((faq) => (
                   <button
                     key={faq.q}
                     onClick={() => handleFAQ(faq)}
@@ -314,7 +293,7 @@ export default function ChatBot() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') sendMessage(inputValue);
                 }}
-                placeholder="Ask a question…"
+                placeholder={t.placeholder}
                 className="flex-1 font-lato text-sm bg-pink-50/70 border border-pink-100 rounded-full px-4 py-2.5 outline-none focus:border-primary/50 focus:bg-pink-50 transition-all placeholder-gray-300"
               />
               <motion.button
@@ -323,7 +302,7 @@ export default function ChatBot() {
                 disabled={!inputValue.trim() || isTyping}
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35"
                 style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
-                aria-label="Send"
+                aria-label={t.sendAria}
               >
                 <Send size={14} className="text-white" />
               </motion.button>
@@ -351,7 +330,7 @@ export default function ChatBot() {
             background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
             boxShadow: '0 4px 20px rgba(242,167,187,0.55)',
           }}
-          aria-label={isOpen ? 'Close chat' : 'Open Bestie chat'}
+          aria-label={isOpen ? t.closeChat : t.openChat}
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -371,28 +350,14 @@ export default function ChatBot() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="w-full h-full flex items-center justify-center"
+                className="text-2xl"
               >
-                <BotAvatarButton />
+                💋
               </motion.span>
             )}
           </AnimatePresence>
         </motion.button>
       </div>
     </div>
-  );
-}
-
-function BotAvatarButton() {
-  const [imgError, setImgError] = useState(false);
-  if (imgError) return <span className="text-2xl">👧</span>;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/avatar-bot.png"
-      alt="Bestie"
-      className="w-full h-full object-cover rounded-full"
-      onError={() => setImgError(true)}
-    />
   );
 }

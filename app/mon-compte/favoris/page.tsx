@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import ProductCard from '@/components/ProductCard';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 export default function FavorisPage() {
   const { items } = useFavoritesStore();
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.favorites;
 
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
@@ -16,14 +20,14 @@ export default function FavorisPage() {
           className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft size={15} />
-          Back to my account
+          {t.back}
         </Link>
 
         <div className="flex items-center gap-3 mb-8">
-          <h1 className="font-playfair font-bold text-3xl text-gray-800">My Favorites</h1>
+          <h1 className="font-playfair font-bold text-3xl text-gray-800">{t.heading}</h1>
           {items.length > 0 && (
             <span className="bg-primary/10 text-primary font-lato text-sm font-semibold px-3 py-1 rounded-full">
-              {items.length} product{items.length > 1 ? 's' : ''}
+              {items.length} {items.length > 1 ? t.products : t.product}
             </span>
           )}
         </div>
@@ -34,16 +38,16 @@ export default function FavorisPage() {
               <Heart size={28} className="text-red-300" />
             </div>
             <p className="font-playfair font-semibold text-gray-700 text-lg mb-2">
-              Your favorites list is empty
+              {t.emptyHeading}
             </p>
             <p className="font-lato text-sm text-gray-400 max-w-xs mb-6">
-              Click the ❤️ on any product to save it here for easy access.
+              {t.emptyDesc}
             </p>
             <Link
               href="/boutique"
               className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3 rounded-full transition-colors text-sm"
             >
-              Explore products
+              {t.explore}
             </Link>
           </div>
         ) : (

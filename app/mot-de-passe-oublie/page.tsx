@@ -4,8 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 export default function MotDePasseOubliePage() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].pages.forgotPwd;
+
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -15,7 +20,7 @@ export default function MotDePasseOubliePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address.');
+      setError(t.emailInvalid);
       return;
     }
     setIsLoading(true);
@@ -30,7 +35,7 @@ export default function MotDePasseOubliePage() {
     setIsLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'An error occurred.');
+      setError(data.error ?? t.emailInvalid);
       return;
     }
 
@@ -53,16 +58,16 @@ export default function MotDePasseOubliePage() {
               </div>
             </div>
             <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-3">
-              Email sent!
+              {t.sentHeading}
             </h1>
             <p className="font-lato text-sm text-gray-500 mb-6">
-              If an account exists for <strong>{email}</strong>, you will receive a reset link in a few minutes. Remember to check your spam folder.
+              {t.sentDesc1} <strong>{email}</strong>, {t.sentDesc2}
             </p>
 
             {devToken && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
                 <p className="font-lato text-xs font-semibold text-amber-700 mb-2">
-                  Development mode — test link:
+                  {t.devMode}
                 </p>
                 <Link
                   href={`/reinitialiser-mot-de-passe?token=${devToken}`}
@@ -78,7 +83,7 @@ export default function MotDePasseOubliePage() {
               className="inline-flex items-center gap-2 font-lato text-sm text-primary font-semibold hover:underline"
             >
               <ArrowLeft size={14} />
-              Back to sign in
+              {t.backToSignIn}
             </Link>
           </div>
         </motion.div>
@@ -99,10 +104,10 @@ export default function MotDePasseOubliePage() {
             Bestie LipGloss
           </Link>
           <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
-            Forgot your password?
+            {t.heading}
           </h1>
           <p className="font-lato text-sm text-gray-500">
-            Enter your email address and we&apos;ll send you a reset link.
+            {t.sub}
           </p>
         </div>
 
@@ -111,7 +116,7 @@ export default function MotDePasseOubliePage() {
             <div className="space-y-5">
               <div>
                 <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                  Email address <span className="text-primary">*</span>
+                  {t.emailLabel} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -146,10 +151,10 @@ export default function MotDePasseOubliePage() {
                 {isLoading ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Sending…
+                    {t.sending}
                   </>
                 ) : (
-                  'Send reset link'
+                  t.sendBtn
                 )}
               </motion.button>
             </div>
@@ -158,7 +163,7 @@ export default function MotDePasseOubliePage() {
           <p className="text-center font-lato text-sm text-gray-500 mt-6">
             <Link href="/connexion" className="inline-flex items-center gap-1.5 text-primary font-semibold hover:underline">
               <ArrowLeft size={13} />
-              Back to sign in
+              {t.backToSignIn}
             </Link>
           </p>
         </div>

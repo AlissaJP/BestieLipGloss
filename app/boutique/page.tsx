@@ -63,7 +63,7 @@ export default function BoutiquePage() {
           transition={{ delay: 0.2 }}
           className="font-cormorant text-xl text-gray-600 italic"
         >
-          {catalog.length} {t.shop.subtitle}
+          {t.shop.subtitle}
         </motion.p>
       </div>
 
@@ -83,9 +83,6 @@ export default function BoutiquePage() {
               {label}
             </button>
           ))}
-          <span className="font-lato text-sm text-gray-400 flex items-center ml-2">
-            {filtered.length} {t.shop.productCount}{filtered.length > 1 ? 's' : ''}
-          </span>
         </div>
       </div>
 

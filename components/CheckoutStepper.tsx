@@ -1,10 +1,16 @@
+'use client';
+
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
+
 interface CheckoutStepperProps {
   currentStep: number;
 }
 
-const steps = ['Cart', 'Delivery', 'Payment'];
-
 export default function CheckoutStepper({ currentStep }: CheckoutStepperProps) {
+  const { lang } = useLanguageStore();
+  const steps = translations[lang].pages.stepper.steps;
+
   return (
     <div className="flex items-center justify-center mb-10">
       {steps.map((step, i) => (
