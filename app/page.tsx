@@ -49,7 +49,7 @@ export default function HomePage() {
       {/* ——— Hero ——— */}
       <section
         className="min-h-screen flex items-center justify-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #F2A7BB 0%, #EDBECC 40%, #E8D5C4 75%, #DFC9B8 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #D45F85 0%, #D47898 40%, #C9A47A 75%, #C9A47A 100%)' }}
       >
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-white/15 rounded-full blur-2xl pointer-events-none" />
@@ -191,7 +191,7 @@ export default function HomePage() {
       </section>
 
       {/* ——— Why Bestie ——— */}
-      <section className="py-20 px-4 bg-[#FAF9F7]">
+      <section className="py-20 px-4 bg-[#F2E9E1]">
         <div className="max-w-5xl mx-auto">
           <FadeIn className="text-center mb-14">
             <p className="font-lato text-xs tracking-widest text-accent uppercase mb-2">{t.home.why.eyebrow}</p>
@@ -220,7 +220,7 @@ export default function HomePage() {
       </section>
 
       {/* ——— CTA Banner ——— */}
-      <section className="py-16 px-4 text-center" style={{ background: 'linear-gradient(135deg, #F2A7BB, #E8D5C4)' }}>
+      <section className="py-16 px-4 text-center" style={{ background: 'linear-gradient(135deg, #D45F85, #C9A47A)' }}>
         <FadeIn>
           <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-white mb-4">{t.home.cta.title}</h2>
           <p className="font-cormorant text-xl text-white/90 italic mb-8 max-w-xl mx-auto">{t.home.cta.subtitle}</p>

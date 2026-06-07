@@ -34,7 +34,7 @@ function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
         }
         style={
           size === 'sm'
-            ? { background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }
+            ? { background: 'linear-gradient(135deg, #D45F85, #D4835A)' }
             : {}
         }
       >
@@ -164,7 +164,7 @@ export default function ChatBot() {
             <div
               className="px-5 py-4 flex items-center justify-between"
               style={{
-                background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
+                background: 'linear-gradient(135deg, #D45F85 0%, #D4835A 100%)',
               }}
             >
               <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export default function ChatBot() {
                     }`}
                     style={
                       msg.from === 'user'
-                        ? { background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }
+                        ? { background: 'linear-gradient(135deg, #D45F85, #D4835A)' }
                         : {}
                     }
                   >
@@ -222,7 +222,7 @@ export default function ChatBot() {
                     {msg.streaming && (
                       <span
                         className="inline-block w-0.5 h-3.5 ml-0.5 rounded-full align-middle animate-pulse"
-                        style={{ background: '#F2A7BB', verticalAlign: 'middle' }}
+                        style={{ background: '#D45F85', verticalAlign: 'middle' }}
                       />
                     )}
                   </div>
@@ -244,7 +244,7 @@ export default function ChatBot() {
                         <motion.div
                           key={i}
                           className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: '#F2A7BB' }}
+                          style={{ background: '#D45F85' }}
                           animate={{ y: [0, -5, 0] }}
                           transition={{
                             duration: 0.55,
@@ -301,7 +301,7 @@ export default function ChatBot() {
                 onClick={() => sendMessage(inputValue)}
                 disabled={!inputValue.trim() || isTyping}
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35"
-                style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
+                style={{ background: 'linear-gradient(135deg, #D45F85, #D4835A)' }}
                 aria-label={t.sendAria}
               >
                 <Send size={14} className="text-white" />
@@ -327,7 +327,7 @@ export default function ChatBot() {
           onClick={() => setIsOpen((o) => !o)}
           className="relative w-14 h-14 rounded-full shadow-xl flex items-center justify-center overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #F2A7BB 0%, #EFBBA6 100%)',
+            background: 'linear-gradient(135deg, #D45F85 0%, #D4835A 100%)',
             boxShadow: '0 4px 20px rgba(242,167,187,0.55)',
           }}
           aria-label={isOpen ? t.closeChat : t.openChat}

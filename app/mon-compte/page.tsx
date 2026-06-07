@@ -62,7 +62,7 @@ export default function MonComptePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       {/* Header */}
       <div
         className="py-16 px-4 text-center"

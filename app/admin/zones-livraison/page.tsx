@@ -67,7 +67,7 @@ export default function AdminZonesLivraisonPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] p-6">
+    <div className="min-h-screen bg-[#F2E9E1] p-6">
       <div className="max-w-3xl mx-auto">
         <Link href="/admin/dashboard" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-6">
           <ArrowLeft size={15} />Retour au dashboard

@@ -80,10 +80,10 @@ export default function AdminAvisPage() {
     .filter((a) => !search || a.nom_client.toLowerCase().includes(search.toLowerCase()) || a.texte.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       {/* Header */}
       <div className="bg-white border-b border-pink-100 px-6 py-4 flex items-center gap-4"
-        style={{ boxShadow: '0 1px 8px rgba(242,167,187,0.10)' }}>
+        style={{ boxShadow: '0 1px 8px rgba(212,95,133,0.10)' }}>
         <Link href="/admin/dashboard"
           className="flex items-center gap-1.5 font-lato text-sm text-gray-400 hover:text-gray-700 transition-colors">
           <ArrowLeft size={15} /> Dashboard

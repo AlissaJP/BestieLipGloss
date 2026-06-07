@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #F2A7BB;
-  --secondary: #E8D5C4;
-  --accent: #C9A96E;
+  --primary: #D45F85;
+  --secondary: #C9A47A;
+  --accent: #A87B35;
   --text: #2D2D2D;
-  --bg: #FAF9F7;
+  --bg: #F2E9E1;
   --font-greatvibes-family: 'Great Vibes', cursive;
 }
 
 @theme inline {
-  --color-primary: #F2A7BB;
-  --color-secondary: #E8D5C4;
-  --color-accent: #C9A96E;
+  --color-primary: #D45F85;
+  --color-secondary: #C9A47A;
+  --color-accent: #A87B35;
   --font-playfair: var(--font-playfair-family), 'Playfair Display', serif;
   --font-cormorant: var(--font-cormorant-family), 'Cormorant Garamond', serif;
   --font-lato: var(--font-lato-family), 'Lato', sans-serif;
@@ -40,7 +40,7 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #faf9f7;
+  background: #F2E9E1;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--primary);

@@ -34,12 +34,12 @@ export default function BoutiquePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       {/* Page header */}
       <div
         className="py-16 px-4 text-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(242,167,187,0.25) 0%, rgba(232,213,196,0.40) 100%)',
+          background: 'linear-gradient(135deg, rgba(212,95,133,0.30) 0%, rgba(201,164,122,0.50) 100%)',
         }}
       >
         <motion.p

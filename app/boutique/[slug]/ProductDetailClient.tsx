@@ -157,7 +157,7 @@ export default function ProductDetailClient({ product, related }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
         {/* Back link */}
         <Link href="/boutique"

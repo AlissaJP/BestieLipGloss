@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
+            style={{ background: 'linear-gradient(135deg, #D45F85, #D4835A)' }}
           >
             <span className="text-3xl">💋</span>
           </div>
@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
             onClick={handleLogin}
             disabled={loading}
             className="w-full py-3 rounded-xl font-lato font-bold text-sm text-white transition-all disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #F2A7BB, #EFBBA6)' }}
+            style={{ background: 'linear-gradient(135deg, #D45F85, #D4835A)' }}
           >
             {loading ? 'Connexion en cours…' : 'Se connecter →'}
           </button>

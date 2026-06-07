@@ -177,7 +177,7 @@ export default function PanierPage() {
   /* ——— STEP 3 : Success ——— */
   if (step === 3) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4 py-20">
+      <div className="min-h-screen bg-[#F2E9E1] flex items-center justify-center px-4 py-20">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
           className="bg-white rounded-3xl p-8 sm:p-12 max-w-lg w-full text-center shadow-xl border border-pink-100">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
@@ -211,7 +211,7 @@ export default function PanierPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       <div className="max-w-4xl mx-auto px-4 py-10">
         <CheckoutStepper currentStep={step} />
 

@@ -205,7 +205,7 @@ export default function InformationsPage() {
   const btnCancel = 'font-lato text-sm text-gray-400 hover:text-gray-600 transition-colors px-4 py-2.5';
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Link href="/mon-compte" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-8">
           <ArrowLeft size={15} />{t.back}

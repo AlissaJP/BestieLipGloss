@@ -65,7 +65,7 @@ function ConnexionForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-[#F2E9E1] flex items-center justify-center px-4 py-16">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

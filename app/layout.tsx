@@ -48,7 +48,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Great+Vibes:wght@400&display=swap" rel="stylesheet" />
       </head>
-      <body className="bg-[#FAF9F7] text-[#2D2D2D] min-h-screen antialiased">
+      <body className="bg-[#F2E9E1] text-[#2D2D2D] min-h-screen antialiased">
         <SiteShell>{children}</SiteShell>
       </body>
     </html>

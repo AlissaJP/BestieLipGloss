@@ -13,7 +13,7 @@ export default function FavorisPage() {
   const t = translations[lang].pages.favorites;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#F2E9E1]">
       <div className="max-w-5xl mx-auto px-4 py-10">
         <Link
           href="/mon-compte"

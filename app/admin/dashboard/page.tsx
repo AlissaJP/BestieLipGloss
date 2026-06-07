@@ -27,7 +27,7 @@ const STATUS_BAR: Record<OrderStatus, string> = {
   pending:   'linear-gradient(180deg,#F59E0B,#FBBF24)',
   paid:      'linear-gradient(180deg,#22C55E,#4ADE80)',
   shipping:  'linear-gradient(180deg,#3B82F6,#60A5FA)',
-  delivered: 'linear-gradient(180deg,#F2A7BB,#EFBBA6)',
+  delivered: 'linear-gradient(180deg,#D45F85,#D4835A)',
   cancelled: 'linear-gradient(180deg,#9CA3AF,#D1D5DB)',
 };
 
@@ -79,7 +79,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
     <div className="mb-5 md:mb-6">
       <h2 className="font-playfair font-bold text-xl md:text-2xl text-gray-800">{title}</h2>
       <p className="font-lato text-sm text-gray-400 mt-0.5">{subtitle}</p>
-      <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#F2A7BB,#EFBBA6)' }} />
+      <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#D45F85,#D4835A)' }} />
     </div>
   );
 }
@@ -174,14 +174,14 @@ function UserDrawer({ customer, orders, onClose }: {
         <motion.aside
           initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-          className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-[#FAF9F7] z-40 overflow-y-auto flex flex-col"
+          className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-[#F2E9E1] z-40 overflow-y-auto flex flex-col"
           style={{ boxShadow: '-4px 0 40px rgba(242,167,187,0.18)' }}
         >
           <div className="px-5 md:px-6 py-5 flex items-center justify-between border-b border-pink-100 bg-white sticky top-0 z-10"
             style={{ boxShadow: '0 1px 12px rgba(242,167,187,0.10)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
-                style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+                style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
                 <span className="font-playfair font-bold text-white text-base">{customer.name.charAt(0)}</span>
               </div>
               <div>
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
     : t.allUpToDate;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] flex flex-col">
+    <div className="min-h-screen bg-[#F2E9E1] flex flex-col">
 
       {/* ── Top bar ── */}
       <header className="bg-white border-b border-pink-100 px-4 md:px-6 py-3.5 flex items-center justify-between sticky top-0 z-20"
@@ -463,7 +463,7 @@ export default function AdminDashboard() {
                   <div className="rounded-3xl p-5 md:p-6 relative overflow-hidden"
                     style={{ background: 'linear-gradient(135deg,rgba(242,167,187,0.22) 0%,rgba(239,187,166,0.28) 100%)' }}>
                     <div className="absolute right-0 top-0 w-40 h-40 rounded-full opacity-20 pointer-events-none"
-                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)', transform: 'translate(30%,-30%)' }} />
+                      style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)', transform: 'translate(30%,-30%)' }} />
                     <p className="font-cormorant italic text-lg md:text-xl text-gray-600">{t.welcome}</p>
                     <p className="font-playfair font-bold text-xl md:text-2xl text-gray-800 mt-0.5">{t.welcomeSub}</p>
                     <p className="font-lato text-sm text-gray-500 mt-1.5">{pendingAlert}</p>
@@ -473,13 +473,13 @@ export default function AdminDashboard() {
                     <StatCard icon={<Users size={16} className="text-white" />} label={t.stats.clients} value={customers.length} sub={t.stats.registered} gradient="linear-gradient(135deg,#A78BFA,#C4B5FD)" />
                     <StatCard icon={<Clock size={16} className="text-white" />} label={t.stats.pending} value={pending.length} sub={t.stats.toApprove} gradient="linear-gradient(135deg,#F59E0B,#FCD34D)" />
                     <StatCard icon={<Truck size={16} className="text-white" />} label={t.stats.shipping} value={shipping.length} sub={t.stats.onTheWay} gradient="linear-gradient(135deg,#3B82F6,#93C5FD)" />
-                    <StatCard icon={<TrendingUp size={16} className="text-white" />} label={t.stats.revenue} value={revenue.toLocaleString()} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#F2A7BB,#EFBBA6)" />
+                    <StatCard icon={<TrendingUp size={16} className="text-white" />} label={t.stats.revenue} value={revenue.toLocaleString()} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#D45F85,#D4835A)" />
                   </div>
 
                   <div className="bg-white rounded-3xl border border-pink-100 overflow-hidden"
                     style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.10)' }}>
                     <div className="px-5 md:px-6 py-4 border-b border-pink-50 flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
                         <ShoppingBag size={13} className="text-white" />
                       </div>
                       <h3 className="font-playfair font-semibold text-gray-800">{t.recentOrders}</h3>
@@ -526,7 +526,7 @@ export default function AdminDashboard() {
                         style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                            style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+                            style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
                             <span className="font-lato font-bold text-xs text-white">{c.name.charAt(0)}</span>
                           </div>
                           <div className="min-w-0">
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
                                 <td className="pl-6 pr-4 py-4">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm"
-                                      style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+                                      style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
                                       <span className="font-lato font-bold text-xs text-white">{c.name.charAt(0)}</span>
                                     </div>
                                     <span className="font-lato text-sm font-medium text-gray-700">{c.name}</span>
@@ -733,7 +733,7 @@ function OrdersSection({
                           whileTap={{ scale: 0.95 }}
                           onClick={() => onAction(order.id, nextStatus)}
                           className="flex items-center gap-1.5 font-lato text-xs font-bold text-white px-3 md:px-4 py-2 rounded-xl shadow-sm shrink-0"
-                          style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}
+                          style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}
                         >
                           {actionIcon}{actionLabel}<ArrowRight size={11} />
                         </motion.button>
@@ -1147,7 +1147,7 @@ function ProductForm({ initial, onSave, onCancel }: {
           </button>
           <button type="button" onClick={handleSubmit} disabled={!form.name.trim() || !form.price_htg}
             className="font-lato text-sm font-semibold text-white px-6 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+            style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
             {initial ? 'Enregistrer les modifications' : 'Enregistrer le produit'}
           </button>
         </div>
@@ -1253,11 +1253,11 @@ function ProductsTab({
               <p className="font-lato text-sm text-gray-400 mt-0.5">
                 {products.length} enregistré{products.length !== 1 ? 's' : ''} · {publishedCount} publié{publishedCount !== 1 ? 's' : ''}
               </p>
-              <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#F2A7BB,#EFBBA6)' }} />
+              <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#D45F85,#D4835A)' }} />
             </div>
             <button onClick={() => openForm()}
               className="flex items-center gap-2 font-lato text-sm font-semibold text-white px-5 py-2.5 rounded-xl shadow-sm hover:opacity-90 transition-opacity whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg,#F2A7BB,#EFBBA6)' }}>
+              style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
               <Plus size={14} /> Nouveau produit
             </button>
           </div>

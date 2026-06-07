@@ -22,7 +22,7 @@ export default function ProductPage() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F2E9E1] flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-4 border-pink-200 border-t-primary animate-spin" />
       </div>
     );
