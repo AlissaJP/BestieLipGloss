@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, CheckCircle, XCircle, Clock, ArrowLeft, Search, X } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 type Statut = 'en_attente' | 'publie' | 'refuse';
 
@@ -17,12 +19,6 @@ interface Avis {
   statut: Statut;
   commande_verifiee: boolean;
 }
-
-const STATUT_CFG: Record<Statut, { label: string; color: string; icon: React.ReactNode }> = {
-  en_attente: { label: 'En attente', color: 'bg-amber-50 text-amber-600 border border-amber-100', icon: <Clock size={11} /> },
-  publie:     { label: 'Publié',     color: 'bg-green-50 text-green-600 border border-green-100', icon: <CheckCircle size={11} /> },
-  refuse:     { label: 'Refusé',     color: 'bg-red-50 text-red-500 border border-red-100',       icon: <XCircle size={11} /> },
-};
 
 function Stars({ note }: { note: number }) {
   return (
@@ -39,6 +35,15 @@ function formatDate(iso: string) {
 }
 
 export default function AdminAvisPage() {
+  const { lang } = useLanguageStore();
+  const ta = translations[lang].admin.avis;
+
+  const STATUT_CFG: Record<Statut, { label: string; color: string; icon: React.ReactNode }> = {
+    en_attente: { label: ta.statusPending,   color: 'bg-amber-50 text-amber-600 border border-amber-100', icon: <Clock size={11} /> },
+    publie:     { label: ta.statusPublished, color: 'bg-green-50 text-green-600 border border-green-100', icon: <CheckCircle size={11} /> },
+    refuse:     { label: ta.statusRefused,   color: 'bg-red-50 text-red-500 border border-red-100',       icon: <XCircle size={11} /> },
+  };
+
   const [avis, setAvis] = useState<Avis[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatut, setFilterStatut] = useState<Statut | 'tous'>('en_attente');
@@ -69,7 +74,7 @@ export default function AdminAvisPage() {
   };
 
   const counts: Record<Statut | 'tous', number> = {
-    tous: avis.length,
+    tous:       avis.length,
     en_attente: avis.filter((a) => a.statut === 'en_attente').length,
     publie:     avis.filter((a) => a.statut === 'publie').length,
     refuse:     avis.filter((a) => a.statut === 'refuse').length,
@@ -78,6 +83,13 @@ export default function AdminAvisPage() {
   const filtered = avis
     .filter((a) => filterStatut === 'tous' || a.statut === filterStatut)
     .filter((a) => !search || a.nom_client.toLowerCase().includes(search.toLowerCase()) || a.texte.toLowerCase().includes(search.toLowerCase()));
+
+  const FILTER_TABS: { key: Statut | 'tous'; label: string }[] = [
+    { key: 'en_attente', label: ta.filterPending },
+    { key: 'publie',     label: ta.filterPublished },
+    { key: 'refuse',     label: ta.filterRefused },
+    { key: 'tous',       label: ta.filterAll },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F2E9E1]">
@@ -90,8 +102,8 @@ export default function AdminAvisPage() {
         </Link>
         <div className="h-4 w-px bg-pink-100" />
         <div>
-          <p className="font-playfair font-bold text-gray-800 text-lg leading-tight">Modération des avis</p>
-          <p className="font-lato text-xs text-gray-400">{counts.en_attente} avis en attente de validation</p>
+          <p className="font-playfair font-bold text-gray-800 text-lg leading-tight">{ta.title}</p>
+          <p className="font-lato text-xs text-gray-400">{ta.pendingCount.replace('{n}', String(counts.en_attente)).replace('{s}', counts.en_attente !== 1 ? 's' : '')}</p>
         </div>
       </div>
 
@@ -99,12 +111,7 @@ export default function AdminAvisPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-2 flex-wrap mb-6">
-          {([
-            { key: 'en_attente', label: 'En attente' },
-            { key: 'publie',     label: 'Publiés' },
-            { key: 'refuse',     label: 'Refusés' },
-            { key: 'tous',       label: 'Tous' },
-          ] as const).map((tab) => (
+          {FILTER_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilterStatut(tab.key)}
@@ -127,7 +134,7 @@ export default function AdminAvisPage() {
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par client ou texte…"
+            placeholder={ta.searchPlaceholder}
             className="w-full pl-10 pr-4 py-2.5 border border-pink-100 rounded-xl font-lato text-sm outline-none focus:border-primary bg-white transition-colors"
           />
           {search && (
@@ -145,7 +152,7 @@ export default function AdminAvisPage() {
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-3xl border border-pink-100 p-12 text-center">
             <div className="text-4xl mb-3">💕</div>
-            <p className="font-playfair text-gray-400 text-lg">Aucun avis ici</p>
+            <p className="font-playfair text-gray-400 text-lg">{ta.empty}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -172,7 +179,7 @@ export default function AdminAvisPage() {
                           <Stars note={a.note} />
                           {a.commande_verifiee && (
                             <span className="font-lato text-[10px] font-semibold text-green-600 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
-                              ✓ Achat vérifié
+                              {ta.verifiedBuyer}
                             </span>
                           )}
                           <span className={`inline-flex items-center gap-1 font-lato text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
@@ -195,7 +202,7 @@ export default function AdminAvisPage() {
                             className="flex items-center gap-1.5 font-lato text-xs font-semibold text-white px-3.5 py-2 rounded-xl disabled:opacity-50 transition-colors"
                             style={{ background: 'linear-gradient(135deg,#22c55e,#4ade80)' }}
                           >
-                            <CheckCircle size={12} />Publier
+                            <CheckCircle size={12} />{ta.publish}
                           </motion.button>
                         )}
                         {a.statut !== 'refuse' && (
@@ -206,7 +213,7 @@ export default function AdminAvisPage() {
                             className="flex items-center gap-1.5 font-lato text-xs font-semibold text-white px-3.5 py-2 rounded-xl disabled:opacity-50 transition-colors"
                             style={{ background: 'linear-gradient(135deg,#ef4444,#f87171)' }}
                           >
-                            <XCircle size={12} />Refuser
+                            <XCircle size={12} />{ta.refuse}
                           </motion.button>
                         )}
                         {a.statut !== 'en_attente' && (
@@ -215,7 +222,7 @@ export default function AdminAvisPage() {
                             disabled={isPending}
                             className="font-lato text-[10px] text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors disabled:opacity-50"
                           >
-                            Remettre en attente
+                            {ta.resetPending}
                           </button>
                         )}
                       </div>

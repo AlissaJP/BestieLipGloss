@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Clock, CreditCard, Truck, PackageCheck,
   LogOut, CheckCircle, ArrowRight, ArrowLeft, TrendingUp, ShoppingBag, X,
   Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
-  Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink, XCircle, Ban,
+  Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink, XCircle, Ban, Upload,
 } from 'lucide-react';
 import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct } from '@/store/adminStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
@@ -145,7 +145,7 @@ function SidebarContent({
           href="/admin/avis"
           className="w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm text-gray-500 hover:text-gray-700 hover:bg-pink-50/60 transition-all"
         >
-          <span className="flex items-center gap-2.5"><Star size={15} />Modération avis</span>
+          <span className="flex items-center gap-2.5"><Star size={15} />{t.avis.link}</span>
           <ExternalLink size={11} className="text-gray-300" />
         </a>
       </div>
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
     { id: 'shipping',  label: t.nav.shipping,  icon: <Truck size={15} />,        count: shipping.length },
     { id: 'delivered', label: t.nav.delivered, icon: <PackageCheck size={15} />, count: delivered.length },
     { id: 'cancelled', label: t.nav.cancelled, icon: <Ban size={15} />,          count: cancelled.length },
-    { id: 'products',  label: 'Produits',      icon: <Package size={15} />,       count: managedProducts.length },
+    { id: 'products',  label: t.nav.products,  icon: <Package size={15} />,       count: managedProducts.length },
   ];
 
   const avisEnAttente = 0; // TODO (BDD): SELECT COUNT(*) FROM Avis WHERE statut = 'en_attente'
@@ -922,11 +922,48 @@ function TagInput({ tags, placeholder, colorClass, onAdd, onRemove }: {
   );
 }
 
+function ImageUpload({ value, onChange, label, small }: {
+  value: string; onChange: (dataUrl: string) => void; label: string; small?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => { if (e.target?.result) onChange(e.target.result as string); };
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+      {value ? (
+        <div className="relative group cursor-pointer" onClick={() => inputRef.current?.click()}>
+          <img src={value} alt="aperçu"
+            className={`w-full ${small ? 'h-20' : 'h-32'} object-cover rounded-xl border border-pink-100`} />
+          <div className="absolute inset-0 bg-black/35 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-lato text-xs font-semibold">
+            <Upload size={13} />{label}
+          </div>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(''); }}
+            className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors">
+            <X size={11} className="text-white" />
+          </button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => inputRef.current?.click()}
+          className="w-full border-2 border-dashed border-pink-200 rounded-xl py-5 flex flex-col items-center gap-2 hover:border-primary hover:bg-pink-50/40 transition-all">
+          <Upload size={18} className="text-primary/50" />
+          <span className="font-lato text-xs text-gray-400">{label}</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ProductForm({ initial, onSave, onCancel }: {
   initial: ManagedProduct | null;
   onSave: (data: Omit<ManagedProduct, 'id' | 'published'>) => void;
   onCancel: () => void;
 }) {
+  const tp = useT().products;
   const [form, setForm] = useState<FormState>(initial ? productToForm(initial) : emptyForm());
   const [vForm, setVForm] = useState<FormVariant | null>(null);
   const [vIdx, setVIdx] = useState<number | null>(null);
@@ -976,35 +1013,35 @@ function ProductForm({ initial, onSave, onCancel }: {
           <ArrowLeft size={16} />
         </button>
         <div>
-          <h2 className="font-playfair font-bold text-xl text-gray-800">{initial ? 'Modifier le produit' : 'Nouveau produit'}</h2>
-          <p className="font-lato text-xs text-gray-400">Sera enregistré comme brouillon — publie-le manuellement</p>
+          <h2 className="font-playfair font-bold text-xl text-gray-800">{initial ? tp.formEditTitle : tp.formNewTitle}</h2>
+          <p className="font-lato text-xs text-gray-400">{tp.formDraft}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-24">
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Informations de base</p>
-            <FLabel label="Nom du produit" required>
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionBase}</p>
+            <FLabel label={tp.fieldName} required>
               <input value={form.name} onChange={(e) => upd('name', e.target.value)} placeholder="Ex : Rosée Matinale" className={INPUT_CLS} />
               {form.name && <p className="font-lato text-[10px] text-gray-400 mt-1">Slug : /{toSlug(form.name)}</p>}
             </FLabel>
-            <FLabel label="Teinte / sous-titre">
+            <FLabel label={tp.fieldShade}>
               <input value={form.shade} onChange={(e) => upd('shade', e.target.value)} placeholder="Ex : Rose cerise nacré" className={INPUT_CLS} />
             </FLabel>
             <div className="grid grid-cols-2 gap-3">
-              <FLabel label="Prix HTG" required>
+              <FLabel label={tp.fieldPriceHTG} required>
                 <input type="number" value={form.price_htg} onChange={(e) => upd('price_htg', e.target.value)} placeholder="450" className={INPUT_CLS} />
               </FLabel>
-              <FLabel label="Prix USD">
+              <FLabel label={tp.fieldPriceUSD}>
                 <input type="number" step="0.01" value={form.price_usd} onChange={(e) => upd('price_usd', e.target.value)} placeholder="3.50" className={INPUT_CLS} />
               </FLabel>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <FLabel label="Stock">
+              <FLabel label={tp.fieldStock}>
                 <input type="number" value={form.stock} onChange={(e) => upd('stock', e.target.value)} placeholder="10" className={INPUT_CLS} />
               </FLabel>
-              <FLabel label="Badge">
+              <FLabel label={tp.fieldBadge}>
                 <select value={form.badge} onChange={(e) => upd('badge', e.target.value)} className={INPUT_CLS}>
                   {BADGE_OPTS.map((b) => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -1013,43 +1050,41 @@ function ProductForm({ initial, onSave, onCancel }: {
           </div>
 
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visuel</p>
-            <FLabel label="Photo d'introduction (URL)">
-              <input value={form.introImage} onChange={(e) => upd('introImage', e.target.value)} placeholder="https://…" className={INPUT_CLS} />
-              {form.introImage && (
-                <img src={form.introImage} alt="aperçu" className="mt-2 w-full h-32 object-cover rounded-xl border border-pink-100"
-                  onError={(e) => (e.currentTarget.style.display = 'none')} />
-              )}
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionVisual}</p>
+            <FLabel label={tp.fieldPhoto}>
+              <ImageUpload value={form.introImage} onChange={(v) => upd('introImage', v)} label={tp.fieldPhotoBtnChange} />
             </FLabel>
-            <FLabel label="Couleur de fond">
+            <FLabel label={tp.fieldBgColor}>
               <ColorPicker value={form.bgColor} onChange={(v) => upd('bgColor', v)} />
             </FLabel>
           </div>
 
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Description</p>
-            <textarea value={form.description} onChange={(e) => upd('description', e.target.value)} rows={4} placeholder="Décris le produit…" className={INPUT_CLS + ' resize-none'} />
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionDesc}</p>
+            <textarea value={form.description} onChange={(e) => upd('description', e.target.value)} rows={4} placeholder={tp.fieldDescPlaceholder} className={INPUT_CLS + ' resize-none'} />
           </div>
         </div>
 
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
             <div className="flex items-center justify-between">
-              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variétés ({form.variants.length})</p>
+              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionVariants} ({form.variants.length})</p>
               <button type="button" onClick={() => openVariant()} className="flex items-center gap-1 font-lato text-xs font-semibold text-primary hover:text-pink-400 transition-colors">
-                <Plus size={12} /> Ajouter
+                <Plus size={12} /> {tp.variantAdd}
               </button>
             </div>
 
             {vForm && (
               <div className="border border-pink-200 rounded-xl p-4 space-y-3 bg-pink-50/40">
-                <p className="font-lato text-xs font-semibold text-gray-600">{vIdx !== null ? 'Modifier' : 'Nouvelle variété'}</p>
+                <p className="font-lato text-xs font-semibold text-gray-600">{vIdx !== null ? tp.variantEdit : tp.variantNew}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <input value={vForm.name} onChange={(e) => setVForm((v) => v ? { ...v, name: e.target.value } : v)} placeholder="Nom (ex : Cherry)" className={INPUT_CLS + ' text-xs py-2'} />
                   <input value={vForm.shade} onChange={(e) => setVForm((v) => v ? { ...v, shade: e.target.value } : v)} placeholder="Teinte courte" className={INPUT_CLS + ' text-xs py-2'} />
                 </div>
-                <div className="flex gap-2">
-                  <input value={vForm.image} onChange={(e) => setVForm((v) => v ? { ...v, image: e.target.value } : v)} placeholder="URL photo" className={INPUT_CLS + ' text-xs py-2 flex-1'} />
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <ImageUpload value={vForm.image} onChange={(v) => setVForm((vf) => vf ? { ...vf, image: v } : vf)} label={tp.variantPhotoBtn} small />
+                  </div>
                   <div className="flex-shrink-0 w-24">
                     <input
                       type="number" min={0}
@@ -1070,10 +1105,10 @@ function ProductForm({ initial, onSave, onCancel }: {
                   >
                     <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${vForm.is_active ? 'left-[calc(100%-18px)]' : 'left-0.5'}`} />
                   </button>
-                  <span className="font-lato text-xs text-gray-500">{vForm.is_active ? 'Variété active' : 'Variété inactive'}</span>
+                  <span className="font-lato text-xs text-gray-500">{vForm.is_active ? tp.variantActive : tp.variantInactive}</span>
                 </div>
                 <div>
-                  <p className="font-lato text-[10px] text-gray-400 mb-1.5">Couleur de fond</p>
+                  <p className="font-lato text-[10px] text-gray-400 mb-1.5">{tp.variantBgColor}</p>
                   <div className="flex items-center gap-2 mb-2">
                     <input type="color" value={resolveColor(vForm.bgColor)}
                       onChange={(e) => setVForm((v) => v ? { ...v, bgColor: e.target.value } : v)}
@@ -1090,8 +1125,8 @@ function ProductForm({ initial, onSave, onCancel }: {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={saveVariant} className="flex-1 bg-primary text-white font-lato text-xs font-semibold py-2 rounded-xl hover:bg-pink-400 transition-colors">Enregistrer</button>
-                  <button type="button" onClick={() => { setVForm(null); setVIdx(null); }} className="px-4 bg-gray-100 text-gray-500 font-lato text-xs py-2 rounded-xl hover:bg-gray-200 transition-colors">Annuler</button>
+                  <button type="button" onClick={saveVariant} className="flex-1 bg-primary text-white font-lato text-xs font-semibold py-2 rounded-xl hover:bg-pink-400 transition-colors">{tp.variantSave}</button>
+                  <button type="button" onClick={() => { setVForm(null); setVIdx(null); }} className="px-4 bg-gray-100 text-gray-500 font-lato text-xs py-2 rounded-xl hover:bg-gray-200 transition-colors">{tp.variantCancel}</button>
                 </div>
               </div>
             )}
@@ -1110,7 +1145,7 @@ function ProductForm({ initial, onSave, onCancel }: {
                       <p className="font-lato text-xs text-gray-400 truncate">{v.shade}</p>
                     </div>
                     {v.is_active === false && (
-                      <span className="font-lato text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">Inactive</span>
+                      <span className="font-lato text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">{tp.variantInactive}</span>
                     )}
                     <button type="button" onClick={() => openVariant(v, i)} className="text-gray-400 hover:text-primary transition-colors p-1"><Edit3 size={13} /></button>
                     <button type="button" onClick={() => upd('variants', form.variants.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
@@ -1121,16 +1156,16 @@ function ProductForm({ initial, onSave, onCancel }: {
           </div>
 
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingrédients</p>
-            <TagInput tags={form.ingredients} placeholder="Ex : Beurre de karité"
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionIngredients}</p>
+            <TagInput tags={form.ingredients} placeholder={tp.ingPlaceholder}
               colorClass="bg-green-50 border border-green-100 text-green-700"
               onAdd={(v) => upd('ingredients', [...form.ingredients, v])}
               onRemove={(i) => upd('ingredients', form.ingredients.filter((_, idx) => idx !== i))} />
           </div>
 
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bénéfices</p>
-            <TagInput tags={form.benefits} placeholder="Ex : Hydratation longue durée"
+            <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionBenefits}</p>
+            <TagInput tags={form.benefits} placeholder={tp.benPlaceholder}
               colorClass="bg-blue-50 border border-blue-100 text-blue-700"
               onAdd={(v) => upd('benefits', [...form.benefits, v])}
               onRemove={(i) => upd('benefits', form.benefits.filter((_, idx) => idx !== i))} />
@@ -1140,15 +1175,15 @@ function ProductForm({ initial, onSave, onCancel }: {
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 px-4 md:px-7 py-4 flex items-center justify-between gap-4 z-30"
         style={{ boxShadow: '0 -4px 20px rgba(242,167,187,0.12)' }}>
-        <p className="font-lato text-xs text-gray-400 hidden sm:block">Le produit sera enregistré comme brouillon</p>
+        <p className="font-lato text-xs text-gray-400 hidden sm:block">{tp.saveDraft}</p>
         <div className="flex gap-3 ml-auto">
           <button type="button" onClick={onCancel} className="font-lato text-sm text-gray-400 hover:text-gray-600 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
-            Annuler
+            {tp.cancelBtn}
           </button>
           <button type="button" onClick={handleSubmit} disabled={!form.name.trim() || !form.price_htg}
             className="font-lato text-sm font-semibold text-white px-6 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
-            {initial ? 'Enregistrer les modifications' : 'Enregistrer le produit'}
+            {initial ? tp.saveEditBtn : tp.saveBtn}
           </button>
         </div>
       </div>
@@ -1162,6 +1197,7 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
+  const tp = useT().products;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const bgColor = resolveColor(p.bgColor);
 
@@ -1176,7 +1212,7 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
         <span className={`absolute top-2.5 right-2.5 font-lato text-[10px] font-bold px-2 py-0.5 rounded-full ${
           p.published ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-600 border border-amber-100'
         }`}>
-          {p.published ? '✓ Publié' : '⏸ Brouillon'}
+          {p.published ? tp.statusPublished : tp.statusDraft}
         </span>
       </div>
 
@@ -1201,14 +1237,14 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
               p.published ? 'border-amber-200 text-amber-600 hover:bg-amber-50' : 'border-green-200 text-green-600 hover:bg-green-50'
             }`}
           >
-            {p.published ? <><EyeOff size={12} /> Retirer</> : <><Eye size={12} /> Publier</>}
+            {p.published ? <><EyeOff size={12} /> {tp.btnUnpublish}</> : <><Eye size={12} /> {tp.btnPublish}</>}
           </button>
           <button onClick={() => onEdit(p)} className="px-3 py-2 rounded-xl border-2 border-pink-100 text-primary hover:bg-pink-50 transition-colors" title="Modifier">
             <Edit3 size={13} />
           </button>
           {confirmDelete ? (
             <button onClick={() => onDelete(p.id)} className="px-3 py-2 rounded-xl bg-red-400 text-white font-lato text-xs font-bold hover:bg-red-500 transition-colors">
-              Sûr ?
+              {tp.confirmDelete}
             </button>
           ) : (
             <button onClick={() => setConfirmDelete(true)} onBlur={() => setTimeout(() => setConfirmDelete(false), 200)}
@@ -1231,6 +1267,7 @@ function ProductsTab({
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
+  const tp = useT().products;
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editing, setEditing] = useState<ManagedProduct | null>(null);
 
@@ -1249,24 +1286,24 @@ function ProductsTab({
         <motion.div key="prod-list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="font-playfair font-bold text-xl md:text-2xl text-gray-800">Produits</h2>
+              <h2 className="font-playfair font-bold text-xl md:text-2xl text-gray-800">{tp.title}</h2>
               <p className="font-lato text-sm text-gray-400 mt-0.5">
-                {products.length} enregistré{products.length !== 1 ? 's' : ''} · {publishedCount} publié{publishedCount !== 1 ? 's' : ''}
+                {products.length} · {publishedCount} {tp.statusPublished.replace('✓ ', '').toLowerCase()}
               </p>
               <div className="mt-3 h-px w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#D45F85,#D4835A)' }} />
             </div>
             <button onClick={() => openForm()}
               className="flex items-center gap-2 font-lato text-sm font-semibold text-white px-5 py-2.5 rounded-xl shadow-sm hover:opacity-90 transition-opacity whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg,#D45F85,#D4835A)' }}>
-              <Plus size={14} /> Nouveau produit
+              <Plus size={14} /> {tp.newBtn}
             </button>
           </div>
 
           {products.length === 0 ? (
             <div className="bg-white rounded-3xl border border-pink-100 p-16 text-center" style={{ boxShadow: '0 2px 20px rgba(242,167,187,0.08)' }}>
               <div className="text-4xl mb-3">🛍️</div>
-              <p className="font-playfair text-gray-400 text-lg">Aucun produit enregistré</p>
-              <p className="font-lato text-sm text-gray-300 mt-1">Clique sur "Nouveau produit" pour commencer</p>
+              <p className="font-playfair text-gray-400 text-lg">{tp.empty}</p>
+              <p className="font-lato text-sm text-gray-300 mt-1">{tp.emptyDesc}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

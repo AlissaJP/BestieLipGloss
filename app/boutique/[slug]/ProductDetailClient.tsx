@@ -23,15 +23,15 @@ interface AvisPublie {
   commande_verifiee: boolean;
 }
 
-function relativeDate(iso: string): string {
+function relativeDate(iso: string, tr: typeof import('@/lib/translations').translations['fr']['review']): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return '1 day ago';
-  if (days < 7) return `${days} days ago`;
-  if (days < 14) return '1 week ago';
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  if (days === 0) return tr.today;
+  if (days === 1) return tr.dayAgo;
+  if (days < 7) return tr.daysAgo.replace('{n}', String(days));
+  if (days < 14) return tr.weekAgo;
+  if (days < 30) return tr.weeksAgo.replace('{n}', String(Math.floor(days / 7)));
+  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
 interface Props {
@@ -51,12 +51,14 @@ export default function ProductDetailClient({ product, related }: Props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [flyBalls, setFlyBalls] = useState<Array<{ id: number; x: number; y: number; tx: number; ty: number }>>([]);
-  const sortedVariants = [...(product.variants ?? [])].sort(
-    (a, b) => (a.ordre_affichage ?? 0) - (b.ordre_affichage ?? 0)
-  );
-  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
-    sortedVariants[0] ?? null
-  );
+  const sortedVariants = [...(product.variants ?? [])].sort((a, b) => {
+    const aActive = a.is_active !== false ? 0 : 1;
+    const bActive = b.is_active !== false ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    return (a.ordre_affichage ?? 0) - (b.ordre_affichage ?? 0);
+  });
+  const firstActive = sortedVariants.find((v) => v.is_active !== false) ?? sortedVariants[0] ?? null;
+  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(firstActive);
   useEffect(() => {
     fetch(`/api/avis?id_produit=${product.id}&statut=publie`)
       .then((r) => r.json())
@@ -77,6 +79,7 @@ export default function ProductDetailClient({ product, related }: Props) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { lang } = useLanguageStore();
   const t = translations[lang];
+  const tr = translations[lang].review;
   const favorited = isFavorite(product.id);
 
   const handleToggleFavorite = () => {
@@ -89,8 +92,8 @@ export default function ProductDetailClient({ product, related }: Props) {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoggedIn) { openAuthModal(); return; }
-    if (reviewNote < 1) { setReviewError('Please choose a rating between 1 and 5 stars.'); return; }
-    if (!reviewTexte.trim()) { setReviewError('Please write a review before submitting.'); return; }
+    if (reviewNote < 1) { setReviewError(tr.errorRating); return; }
+    if (!reviewTexte.trim()) { setReviewError(tr.errorText); return; }
     setReviewSubmitting(true);
     setReviewError('');
     try {
@@ -106,19 +109,19 @@ export default function ProductDetailClient({ product, related }: Props) {
         }),
       });
       if (res.status === 409) {
-        setReviewError('You have already submitted a review for this product.');
+        setReviewError(tr.errorDuplicate);
         return;
       }
       if (!res.ok) {
         const d = await res.json();
-        setReviewError(d.error ?? 'An error occurred.');
+        setReviewError(d.error ?? tr.errorGeneric);
         return;
       }
       setReviewSuccess(true);
       setReviewNote(0);
       setReviewTexte('');
     } catch {
-      setReviewError('Connection error. Please try again.');
+      setReviewError(tr.errorConnection);
     } finally {
       setReviewSubmitting(false);
     }
@@ -188,20 +191,26 @@ export default function ProductDetailClient({ product, related }: Props) {
                   />
                 </motion.div>
                 <div className="flex gap-3 overflow-x-auto pb-1">
-                  {sortedVariants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
-                        selectedVariant?.id === variant.id
-                          ? 'border-primary scale-105 shadow-md'
-                          : 'border-transparent hover:border-pink-200'
-                      }`}
-                      aria-label={variant.name}
-                    >
-                      <Image src={variant.image} alt={variant.name} fill className="object-cover object-center" />
-                    </button>
-                  ))}
+                  {sortedVariants.map((variant) => {
+                    const inactive = variant.is_active === false;
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={() => !inactive && setSelectedVariant(variant)}
+                        disabled={inactive}
+                        className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                          inactive
+                            ? 'opacity-40 cursor-not-allowed border-transparent'
+                            : selectedVariant?.id === variant.id
+                              ? 'border-primary scale-105 shadow-md'
+                              : 'border-transparent hover:border-pink-200'
+                        }`}
+                        aria-label={variant.name}
+                      >
+                        <Image src={variant.image} alt={variant.name} fill className="object-cover object-center" />
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             ) : productImages.length > 0 ? (
@@ -277,22 +286,33 @@ export default function ProductDetailClient({ product, related }: Props) {
             {/* Color variant selector */}
             {product.variants ? (
               <div className="mb-5">
-                <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">Shade</p>
+                <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">{t.product.shade}</p>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {sortedVariants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-full font-lato text-sm transition-all border-2 ${
-                        selectedVariant?.id === variant.id
-                          ? 'border-primary bg-pink-50 text-primary font-semibold'
-                          : 'border-pink-100 text-gray-600 hover:border-primary hover:text-primary'
-                      }`}
-                    >
-                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${variant.bgColor}`} />
-                      {variant.name}
-                    </button>
-                  ))}
+                  {sortedVariants.map((variant) => {
+                    const inactive = variant.is_active === false;
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={() => !inactive && setSelectedVariant(variant)}
+                        disabled={inactive}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-full font-lato text-sm transition-all border-2 ${
+                          inactive
+                            ? 'border-gray-100 text-gray-300 cursor-not-allowed line-through'
+                            : selectedVariant?.id === variant.id
+                              ? 'border-primary bg-pink-50 text-primary font-semibold'
+                              : 'border-pink-100 text-gray-600 hover:border-primary hover:text-primary'
+                        }`}
+                      >
+                        <span className={`w-3 h-3 rounded-full flex-shrink-0 ${inactive ? 'bg-gray-200' : variant.bgColor}`} />
+                        {variant.name}
+                        {inactive && (
+                          <span className="font-lato text-[9px] font-semibold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full ml-0.5 no-underline" style={{ textDecoration: 'none' }}>
+                            {t.product.soldOut}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="font-cormorant text-lg text-gray-500 italic">{selectedVariant?.shade}</p>
               </div>
@@ -389,7 +409,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                       <Star key={i} size={14} className={i < Math.round(avgRating) ? 'fill-accent text-accent' : 'text-gray-200'} aria-hidden="true" />
                     ))}
                   </div>
-                  <p className="font-lato text-xs text-gray-400">{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</p>
+                  <p className="font-lato text-xs text-gray-400">{reviews.length} {tr.reviewCount}{reviews.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
             )}
@@ -397,7 +417,7 @@ export default function ProductDetailClient({ product, related }: Props) {
 
           {reviews.length === 0 ? (
             <div className="bg-white rounded-2xl border border-pink-100 p-8 text-center">
-              <p className="font-cormorant text-lg text-gray-400 italic">No reviews yet — be the first! 💕</p>
+              <p className="font-cormorant text-lg text-gray-400 italic">{tr.empty}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -406,7 +426,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-playfair font-semibold text-gray-800">{r.nom_client}</p>
-                      <p className="font-lato text-xs text-gray-400">{relativeDate(r.date_creation)}</p>
+                                <p className="font-lato text-xs text-gray-400">{relativeDate(r.date_creation, tr)}</p>
                     </div>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -416,7 +436,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   </div>
                   {r.commande_verifiee && (
                     <span className="inline-block font-lato text-[10px] font-semibold text-green-600 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full mb-2">
-                      ✓ Verified Purchase
+                      {tr.verifiedPurchase}
                     </span>
                   )}
                   <p className="font-cormorant text-base text-gray-600 italic leading-relaxed">
@@ -429,23 +449,23 @@ export default function ProductDetailClient({ product, related }: Props) {
 
           {/* Review submission form */}
           <div className="mt-8 bg-white rounded-2xl border border-pink-100 p-6">
-            <h3 className="font-playfair font-semibold text-gray-800 mb-4">Leave a review</h3>
+            <h3 className="font-playfair font-semibold text-gray-800 mb-4">{tr.leaveReview}</h3>
             {reviewSuccess ? (
               <div className="bg-green-50 border border-green-100 rounded-xl p-5 text-center">
-                <p className="font-lato text-sm text-green-700 font-semibold">Thank you for your review! 💕</p>
-                <p className="font-lato text-xs text-green-600 mt-1">It will be published after verification by our team.</p>
+                <p className="font-lato text-sm text-green-700 font-semibold">{tr.successMsg}</p>
+                <p className="font-lato text-xs text-green-600 mt-1">{tr.successSub}</p>
               </div>
             ) : !isLoggedIn ? (
               <div className="bg-pink-50 border border-pink-100 rounded-xl p-5 text-center">
-                <p className="font-lato text-sm text-gray-600 mb-3">Sign in to share your experience.</p>
+                <p className="font-lato text-sm text-gray-600 mb-3">{tr.signInPrompt}</p>
                 <button onClick={openAuthModal} className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-6 py-2.5 rounded-full transition-colors">
-                  Sign in
+                  {tr.signIn}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmitReview} className="space-y-4">
                 <div>
-                  <p className="font-lato text-sm text-gray-700 font-medium mb-2">Your rating</p>
+                  <p className="font-lato text-sm text-gray-700 font-medium mb-2">{tr.yourRating}</p>
                   <div className="flex gap-1.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
@@ -465,14 +485,14 @@ export default function ProductDetailClient({ product, related }: Props) {
                 </div>
                 <div>
                   <label className="font-lato text-sm text-gray-700 font-medium block mb-1.5" htmlFor="review-texte">
-                    Your review
+                    {tr.yourReview}
                   </label>
                   <textarea
                     id="review-texte"
                     rows={4}
                     value={reviewTexte}
                     onChange={(e) => { setReviewTexte(e.target.value); setReviewError(''); }}
-                    placeholder="Share your experience with this gloss…"
+                    placeholder={tr.placeholder}
                     className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
                   />
                 </div>
@@ -484,7 +504,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   disabled={reviewSubmitting}
                   className="bg-primary hover:bg-pink-400 disabled:opacity-60 text-white font-lato font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
                 >
-                  {reviewSubmitting ? 'Submitting…' : 'Submit my review'}
+                  {reviewSubmitting ? tr.submitting : tr.submit}
                 </button>
               </form>
             )}

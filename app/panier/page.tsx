@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Plus, Minus, ShoppingBag, Tag, CreditCard, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare, Lock } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore, type Address } from '@/store/authStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 import CheckoutStepper from '@/components/CheckoutStepper';
 import { products } from '@/data/products';
 import type { ColorVariant } from '@/data/products';
@@ -35,6 +37,24 @@ function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison
   return discountedSubtotal >= seuil ? 0 : frais;
 }
 
+// V5 — utilise frais_usd si défini pour la zone, sinon convertit le tarif HTG
+function addrFeeUSD(addr: Address, discountedSubtotalUSD: number, zones: ZoneLivraison[]): number {
+  if ((addr.country ?? 'hti') === 'usa') return parseFloat((USA_FEE / 130).toFixed(2));
+  const zone = zones.find((z) => z.nom_zone === addr.ville);
+  if (zone?.frais_usd != null) return zone.frais_usd;
+  const fraisHTG = zone?.frais_htg ?? 400;
+  const seuilHTG = zone?.seuil_gratuit ?? 2000;
+  if (discountedSubtotalUSD * 130 >= seuilHTG) return 0;
+  return parseFloat((fraisHTG / 130).toFixed(2));
+}
+
+// V6 — délai affiché pour une zone donnée ("24h" ou "24–48h")
+function zoneDelay(zone: ZoneLivraison | undefined): string | null {
+  if (!zone || zone.delai_min_heures == null || zone.delai_max_heures == null) return null;
+  if (zone.delai_min_heures === zone.delai_max_heures) return `${zone.delai_min_heures}h`;
+  return `${zone.delai_min_heures}–${zone.delai_max_heures}h`;
+}
+
 function formatAddress(addr: Address): string {
   if ((addr.country ?? 'hti') === 'usa') {
     return `${addr.adresse}, ${addr.ville}${addr.state ? `, ${addr.state}` : ''} ${addr.zipCode ?? ''}, USA`;
@@ -45,6 +65,9 @@ function formatAddress(addr: Address): string {
 export default function PanierPage() {
   const { items, removeItem, updateQuantity, updateItemVariant, clearCart, totalPrice } = useCartStore();
   const { user } = useAuthStore();
+  const { lang } = useLanguageStore();
+  const tc = translations[lang].checkout;
+  const tCart = translations[lang].cart;
 
   const [step, setStep] = useState(0);
   const [promoCode, setPromoCode] = useState('');
@@ -104,8 +127,12 @@ export default function PanierPage() {
       : promoInfo.valeur / 130
     : 0;
   const discountedSubtotalUSD = subtotalUSD - discountAmountUSD;
-  const deliveryFeeUSD = deliveryFee / 130;
+  const deliveryFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones) : 0; // V5
   const totalUSD = discountedSubtotalUSD + deliveryFeeUSD;
+
+  // V6 — délai estimé pour la zone sélectionnée
+  const selectedZone = selectedAddr ? zones.find((z) => z.nom_zone === selectedAddr.ville) : undefined;
+  const deliveryDelay = zoneDelay(selectedZone);
 
   const applyPromo = async () => {
     if (!promoCode) return;
@@ -120,18 +147,18 @@ export default function PanierPage() {
         setPromoInfo({ code: data.code, valeur: data.reduction_pct, type: data.type_reduction });
       } else {
         setPromoInfo(null);
-        setPromoError(data.reason ?? 'Invalid promo code.');
+        setPromoError(data.reason ?? tc.errorInvalidPromo);
       }
     } catch {
       setPromoInfo(null);
-      setPromoError('Validation error. Please try again.');
+      setPromoError(tc.errorValidation);
     } finally {
       setPromoLoading(false);
     }
   };
 
   const handleDeliveryNext = () => {
-    if (!selectedAddr) { setAddrError('Please select a delivery address.'); return; }
+    if (!selectedAddr) { setAddrError(tc.selectAddressError); return; }
     setAddrError('');
     setDeliveryData({
       name: user?.name ?? '',
@@ -162,13 +189,13 @@ export default function PanierPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setPaymentError(data.message ?? 'An error occurred. Please try again.');
+        setPaymentError(data.message ?? tc.errorOccurred);
         return;
       }
       clearCart();
       setStep(3);
     } catch {
-      setPaymentError('Connection error. Please check your connection and try again.');
+      setPaymentError(tc.errorConnection);
     } finally {
       setPaymentLoading(false);
     }
@@ -185,24 +212,30 @@ export default function PanierPage() {
             <CheckCircle size={40} className="text-green-500" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">Order confirmed! 🎉</h1>
-            <p className="font-lato text-gray-600 leading-relaxed mb-2">Thank you! Your order is being verified.</p>
+            <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">{tc.confirmed}</h1>
+            <p className="font-lato text-gray-600 leading-relaxed mb-2">{tc.confirmedSub}</p>
             {numeroCommande && (
               <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 border border-gray-200 inline-block">
-                <p className="font-lato text-xs text-gray-500 mb-0.5">Order number</p>
+                <p className="font-lato text-xs text-gray-500 mb-0.5">{tc.orderNumber}</p>
                 <p className="font-playfair font-bold text-gray-800 tracking-wider">{numeroCommande}</p>
               </div>
             )}
-            <p className="font-cormorant text-lg text-gray-500 italic mb-8">You will receive a WhatsApp confirmation within 2 hours. 💕</p>
+            <p className="font-cormorant text-lg text-gray-500 italic mb-4">{tc.whatsappConfirm}</p>
+            {deliveryData?.address && deliveryDelay && (
+              <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4 inline-block">
+                <p className="font-lato text-xs text-amber-600 font-semibold">📦 {tc.estimatedDelivery} {deliveryDelay}</p>
+                <p className="font-lato text-xs text-amber-500">{deliveryData.address.ville}</p>
+              </div>
+            )}
             <div className="bg-pink-50 rounded-2xl p-4 mb-8 text-left">
               <p className="font-lato text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">💬 Questions?</span><br />
-                Message us on WhatsApp at{' '}
+                <span className="font-semibold text-gray-800">{tc.questions}</span><br />
+                {tc.questionsMsg}{' '}
                 <a href="https://wa.me/50900000000" className="text-primary font-semibold">509-XX-XX-XXXX</a>
               </p>
             </div>
             <Link href="/boutique" className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3.5 rounded-full transition-colors w-full justify-center">
-              Continue shopping →
+              {tc.continueShopping}
             </Link>
           </motion.div>
         </motion.div>
@@ -220,15 +253,15 @@ export default function PanierPage() {
           {/* ===================== STEP 0 : CART ===================== */}
           {step === 0 && (
             <motion.div key="cart" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">🛍️ My Cart</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">{tc.cartTitle}</h1>
 
               {items.length === 0 ? (
                 <div className="text-center py-20">
                   <span className="text-6xl block mb-4" aria-hidden="true">💋</span>
-                  <p className="font-playfair text-gray-500 text-xl mb-2">Your cart is empty</p>
-                  <p className="font-lato text-sm text-gray-400 mb-8">Discover our glosses and add your favorite shades</p>
+                  <p className="font-playfair text-gray-500 text-xl mb-2">{tCart.empty}</p>
+                  <p className="font-lato text-sm text-gray-400 mb-8">{tc.emptyCartDesc}</p>
                   <Link href="/boutique" className="inline-flex items-center gap-2 bg-primary text-white font-lato font-semibold px-7 py-3 rounded-full hover:bg-pink-400 transition-colors">
-                    <ShoppingBag size={16} />View the shop
+                    <ShoppingBag size={16} />{tCart.viewShop}
                   </Link>
                 </div>
               ) : (
@@ -252,7 +285,7 @@ export default function PanierPage() {
                             <div className="flex-1 min-w-0">
                               <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
                               {needsVariant ? (
-                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">⚠ Choose a shade</p>
+                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">{tc.chooseShade}</p>
                               ) : (
                                 <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
                               )}
@@ -273,7 +306,7 @@ export default function PanierPage() {
                           {/* Inline variant picker */}
                           {needsVariant && productData?.variants && (
                             <div className="mt-3 pt-3 border-t border-amber-100">
-                              <p className="font-lato text-xs text-gray-500 mb-2">Select a shade:</p>
+                              <p className="font-lato text-xs text-gray-500 mb-2">{tc.selectShade}</p>
                               <div className="flex flex-wrap gap-2">
                                 {productData.variants.map((v: ColorVariant) => (
                                   <button
@@ -300,7 +333,7 @@ export default function PanierPage() {
                     {/* Promo code */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
                       <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <Tag size={16} className="text-primary" />Promo code
+                        <Tag size={16} className="text-primary" />{tc.promoCode}
                       </p>
                       {user ? (
                         <>
@@ -311,7 +344,7 @@ export default function PanierPage() {
                                 onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); setPromoInfo(null); }}
                                 className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer pr-9"
                               >
-                                <option value="">— Choose a coupon —</option>
+                                <option value="">{tc.chooseCoupon}</option>
                                 {(user.coupons ?? []).map((code) => (
                                   <option key={code} value={code}>{code}</option>
                                 ))}
@@ -323,31 +356,31 @@ export default function PanierPage() {
                               disabled={!promoCode || promoLoading}
                               className="bg-primary hover:bg-pink-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
                             >
-                              {promoLoading ? 'Checking…' : 'Apply'}
+                              {promoLoading ? tc.checking : tc.apply}
                             </button>
                           </div>
                           {(user.coupons ?? []).length === 0 && (
                             <p className="font-lato text-xs text-gray-400 mt-2">
-                              No coupons saved.{' '}
-                              <Link href="/mon-compte" className="text-primary hover:underline">Add one in My Account →</Link>
+                              {tc.noCoupons}{' '}
+                              <Link href="/mon-compte" className="text-primary hover:underline">{tc.addCoupon}</Link>
                             </p>
                           )}
                         </>
                       ) : (
                         <div className="bg-pink-50 rounded-xl p-3 text-center border border-pink-100">
                           <p className="font-lato text-xs text-gray-500">
-                            <Link href="/connexion" className="text-primary font-semibold hover:underline">Sign in</Link>{' '}
-                            to use your coupons.
+                            <Link href="/connexion" className="text-primary font-semibold hover:underline">{tc.signInCoupons}</Link>{' '}
+                            {tc.signInCouponsSuffix}
                           </p>
                         </div>
                       )}
                       {promoError && <p className="font-lato text-xs text-red-500 mt-2">{promoError}</p>}
                       {promoInfo && (
                         <p className="font-lato text-xs text-green-600 mt-2">
-                          ✓ Code {promoInfo.code} applied —{' '}
+                          {tc.promoApplied.replace('{code}', promoInfo.code)}{' '}
                           {promoInfo.type === 'pct'
-                            ? `${promoInfo.valeur * 100}% discount`
-                            : `$${(promoInfo.valeur / 130).toFixed(2)} off`}!
+                            ? tc.discountPct.replace('{n}', String(promoInfo.valeur * 100))
+                            : tc.discountFixed.replace('{n}', (promoInfo.valeur / 130).toFixed(2))}!
                         </p>
                       )}
                     </div>
@@ -355,13 +388,13 @@ export default function PanierPage() {
                     {/* Delivery estimator */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
                       <p className="font-playfair font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <MapPin size={16} className="text-primary" />Estimate delivery
+                        <MapPin size={16} className="text-primary" />{tc.estimateDelivery}
                       </p>
                       {savedAddresses.length === 0 ? (
                         <div className="bg-pink-50 rounded-xl p-4 text-center border border-pink-100">
-                          <p className="font-lato text-sm text-gray-500 mb-2">No saved address.</p>
+                          <p className="font-lato text-sm text-gray-500 mb-2">{tc.noAddress}</p>
                           <Link href="/mon-compte/informations" className="font-lato text-sm text-primary font-semibold hover:underline">
-                            Add an address →
+                            {tc.addAddress}
                           </Link>
                         </div>
                       ) : (
@@ -375,7 +408,7 @@ export default function PanierPage() {
                             className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white appearance-none cursor-pointer"
                             aria-label="Select an address to estimate delivery"
                           >
-                            <option value="" disabled>Choose an address…</option>
+                            <option value="" disabled>{tc.chooseAddress}</option>
                             {savedAddresses.map((addr) => (
                               <option key={addr.id} value={addr.id}>
                                 {(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'} {addr.label} — {addr.adresse}, {addr.ville}
@@ -384,7 +417,7 @@ export default function PanierPage() {
                           </select>
                           {selectedAddr && (
                             <p className="font-lato text-xs text-primary font-semibold mt-2">
-                              Estimated fee: {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? '🎉 Free delivery' : `$${(addrFee(selectedAddr, discountedSubtotal, zones) / 130).toFixed(2)}`}
+                              {tc.estimatedFee} {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? tc.freeDelivery : `$${(addrFee(selectedAddr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                             </p>
                           )}
                         </>
@@ -395,32 +428,32 @@ export default function PanierPage() {
                   {/* Summary */}
                   <div className="lg:col-span-1">
                     <div className="bg-white rounded-2xl p-6 border border-pink-100 sticky top-24">
-                      <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">Summary</h2>
+                      <h2 className="font-playfair font-semibold text-gray-800 text-lg mb-5">{tc.summary}</h2>
                       <div className="space-y-3 text-sm">
-                        <div className="flex justify-between font-lato text-gray-600"><span>Subtotal</span><span>${subtotalUSD.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-lato text-gray-600"><span>{tc.subtotal}</span><span>${subtotalUSD.toFixed(2)}</span></div>
                         {promoInfo && (
                           <div className="flex justify-between font-lato text-green-600">
-                            <span>Discount ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `$${(promoInfo.valeur / 130).toFixed(2)}`})</span>
+                            <span>{tc.discount} ({promoInfo.type === 'pct' ? `${promoInfo.valeur * 100}%` : `$${(promoInfo.valeur / 130).toFixed(2)}`})</span>
                             <span>-${discountAmountUSD.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between font-lato text-gray-600">
-                          <span>Delivery (estimate)</span>
+                          <span>{tc.deliveryEstimate}</span>
                           <span className={deliveryFee === 0 && selectedAddr ? 'text-green-600 font-semibold' : ''}>
-                            {!selectedAddr ? '—' : deliveryFee === 0 ? '🎉 Free' : `$${deliveryFeeUSD.toFixed(2)}`}
+                            {!selectedAddr ? '—' : deliveryFee === 0 ? tc.free : `$${deliveryFeeUSD.toFixed(2)}`}
                           </span>
                         </div>
                         {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'hti') === 'hti')(selectedAddr) && (
-                          <p className="font-lato text-xs text-gray-400">${((2000 - discountedSubtotal) / 130).toFixed(2)} away from free delivery</p>
+                          <p className="font-lato text-xs text-gray-400">{tc.awayFreeDelivery.replace('{n}', ((2000 - discountedSubtotal) / 130).toFixed(2))}</p>
                         )}
                         <div className="border-t border-pink-100 pt-3 flex justify-between">
-                          <span className="font-playfair font-bold text-gray-800">Estimated total</span>
+                          <span className="font-playfair font-bold text-gray-800">{tc.estimatedTotal}</span>
                           <span className="font-playfair font-bold text-primary text-xl">${totalUSD.toFixed(2)}</span>
                         </div>
                       </div>
                       {hasUnselectedVariants && (
                         <p className="font-lato text-xs text-amber-600 text-center mt-4">
-                          ⚠ Please choose a shade for each product before continuing.
+                          {tc.shadeWarning}
                         </p>
                       )}
                       <button
@@ -432,10 +465,10 @@ export default function PanierPage() {
                             : 'bg-primary hover:bg-pink-400 text-white'
                         }`}
                       >
-                        Continue → Delivery
+                        {tc.continueDelivery}
                       </button>
                       <Link href="/boutique" className="block text-center font-lato text-xs text-gray-400 hover:text-primary transition-colors mt-3">
-                        ← Continue shopping
+                        {tc.backShopping}
                       </Link>
                     </div>
                   </div>
@@ -447,14 +480,14 @@ export default function PanierPage() {
           {/* ===================== STEP 1 : DELIVERY ===================== */}
           {step === 1 && (
             <motion.div key="delivery" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">📦 Delivery Information</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">{tc.deliveryTitle}</h1>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-5">
 
                   {/* Recipient */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
-                    <h3 className="font-playfair font-semibold text-gray-800">Recipient</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800">{tc.recipient}</h3>
                     {user ? (
                       <div className="bg-pink-50 rounded-xl p-4 border border-pink-100 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
@@ -464,19 +497,19 @@ export default function PanierPage() {
                           <div className="min-w-0">
                             <p className="font-lato text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                             <p className="font-lato text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                              <Phone size={11} />{user.telephone ?? 'No phone number saved'}
+                              <Phone size={11} />{user.telephone ?? tc.noPhone}
                             </p>
                           </div>
                         </div>
                         <Link href="/mon-compte/informations" className="font-lato text-xs text-primary hover:underline whitespace-nowrap flex-shrink-0">
-                          Edit
+                          {tc.edit}
                         </Link>
                       </div>
                     ) : (
                       <div className="bg-pink-50 rounded-xl p-4 text-center border border-pink-100">
-                        <p className="font-lato text-sm text-gray-600 mb-3">Sign in to use your saved information.</p>
+                        <p className="font-lato text-sm text-gray-600 mb-3">{tc.signInSaved}</p>
                         <Link href="/connexion" className="inline-flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
-                          Sign in
+                          {tc.signIn}
                         </Link>
                       </div>
                     )}
@@ -485,14 +518,14 @@ export default function PanierPage() {
                   {/* Address selector */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
-                      <MapPin size={16} className="text-primary" />Delivery address
+                      <MapPin size={16} className="text-primary" />{tc.deliveryAddress}
                     </h3>
 
                     {savedAddresses.length === 0 ? (
                       <div className="bg-pink-50 rounded-xl p-5 text-center border border-pink-100">
-                        <p className="font-lato text-sm text-gray-600 mb-3">You have no saved address yet.</p>
+                        <p className="font-lato text-sm text-gray-600 mb-3">{tc.noSavedAddress}</p>
                         <Link href="/mon-compte/informations" className="inline-flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors">
-                          <Plus size={14} />Add an address
+                          <Plus size={14} />{tc.addAddressBtn}
                         </Link>
                       </div>
                     ) : (
@@ -513,12 +546,12 @@ export default function PanierPage() {
                               <p className="font-lato text-sm font-semibold text-gray-800 flex items-center gap-2">
                                 {addr.label}
                                 {addr.est_principale && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">Primary</span>
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">{tc.primary}</span>
                                 )}
                               </p>
                               <p className="font-lato text-xs text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-xs text-primary font-semibold mt-1.5">
-                                Delivery: {addrFee(addr, discountedSubtotal, zones) === 0 ? '🎉 Free' : `$${(addrFee(addr, discountedSubtotal, zones) / 130).toFixed(2)}`}
+                                {tc.deliveryFee} {addrFee(addr, discountedSubtotal, zones) === 0 ? tc.freeShort : `$${(addrFee(addr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                               </p>
                             </div>
                             {selectedAddr?.id === addr.id && (
@@ -528,7 +561,7 @@ export default function PanierPage() {
                         ))}
 
                         <Link href="/mon-compte/informations" className="inline-flex items-center gap-1.5 font-lato text-sm text-primary hover:underline">
-                          <Plus size={14} />Add a new address
+                          <Plus size={14} />{tc.addNewAddress}
                         </Link>
                       </div>
                     )}
@@ -539,12 +572,12 @@ export default function PanierPage() {
                   {/* Contact & delivery instructions */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
-                      <Phone size={16} className="text-primary" />Contact &amp; instructions
+                      <Phone size={16} className="text-primary" />{tc.contactTitle}
                     </h3>
                     <div>
                       <label className={labelCls} htmlFor="tel-livraison">
-                        WhatsApp number for delivery
-                        <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                        {tc.whatsappLabel}
+                        <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
                       </label>
                       <input
                         id="tel-livraison"
@@ -554,17 +587,17 @@ export default function PanierPage() {
                         onChange={(e) => setTelephoneLivraison(e.target.value)}
                         className={inputCls}
                       />
-                      <p className="font-lato text-xs text-gray-400 mt-1">Leave blank to use your account phone number.</p>
+                      <p className="font-lato text-xs text-gray-400 mt-1">{tc.whatsappHint}</p>
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="instructions-livraison">
-                        Location instructions
-                        <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                        {tc.instructionsLabel}
+                        <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
                       </label>
                       <textarea
                         id="instructions-livraison"
                         rows={3}
-                        placeholder="e.g. white house with blue gate, across from the church…"
+                        placeholder={tc.instructionsPlaceholder}
                         value={instructionsLivraison}
                         onChange={(e) => setInstructionsLivraison(e.target.value)}
                         className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
@@ -575,11 +608,11 @@ export default function PanierPage() {
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setStep(0)}
                       className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px]">
-                      ← Back
+                      {tc.back}
                     </button>
                     <button type="button" onClick={handleDeliveryNext}
                       className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[44px]">
-                      Continue → Payment
+                      {tc.continuePayment}
                     </button>
                   </div>
                 </div>
@@ -587,7 +620,7 @@ export default function PanierPage() {
                 {/* Mini summary */}
                 <div className="lg:col-span-1">
                   <div className="bg-white rounded-2xl p-5 border border-pink-100 sticky top-24">
-                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Summary</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">{tc.summary}</h3>
                     {selectedAddr && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 flex items-start gap-2">
                         <span className="text-base">{(selectedAddr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
@@ -598,13 +631,13 @@ export default function PanierPage() {
                       </div>
                     )}
                     <div className="space-y-2 text-sm font-lato text-gray-600">
-                      <div className="flex justify-between"><span>Subtotal</span><span>${discountedSubtotalUSD.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>{tc.subtotal}</span><span>${discountedSubtotalUSD.toFixed(2)}</span></div>
                       <div className="flex justify-between">
-                        <span>Delivery</span>
-                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? 'Free 🎉' : `$${deliveryFeeUSD.toFixed(2)}`}</span>
+                        <span>{tc.delivery}</span>
+                        <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : ''}>{deliveryFee === 0 ? `${tc.freeShort} 🎉` : `$${deliveryFeeUSD.toFixed(2)}`}</span>
                       </div>
                       <div className="border-t border-pink-100 pt-2 flex justify-between font-bold">
-                        <span className="font-playfair text-gray-800">Total</span>
+                        <span className="font-playfair text-gray-800">{tc.total}</span>
                         <span className="font-playfair text-primary text-lg">${totalUSD.toFixed(2)}</span>
                       </div>
                     </div>
@@ -625,12 +658,12 @@ export default function PanierPage() {
           {/* ===================== STEP 2 : PAYMENT ===================== */}
           {step === 2 && (
             <motion.div key="payment" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25 }}>
-              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">💳 Payment</h1>
+              <h1 className="font-playfair font-bold text-2xl sm:text-3xl text-gray-800 mb-8">{tc.paymentTitle}</h1>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                   <div>
-                    <p className="font-playfair font-semibold text-gray-800 mb-4">Choose your payment method</p>
+                    <p className="font-playfair font-semibold text-gray-800 mb-4">{tc.choosePayment}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <button onClick={() => setPaymentMethod('moncash')}
                         className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'moncash' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
@@ -639,7 +672,7 @@ export default function PanierPage() {
                           <span className="font-playfair font-semibold text-gray-800 text-sm">MonCash</span>
                           {paymentMethod === 'moncash' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Digicel mobile money</p>
+                        <p className="font-lato text-xs text-gray-500">{tc.moncashDesc}</p>
                       </button>
                       <button onClick={() => setPaymentMethod('zelle')}
                         className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'zelle' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
@@ -648,7 +681,7 @@ export default function PanierPage() {
                           <span className="font-playfair font-semibold text-gray-800 text-sm">Zelle</span>
                           {paymentMethod === 'zelle' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">US bank transfer</p>
+                        <p className="font-lato text-xs text-gray-500">{tc.zelleDesc}</p>
                       </button>
                       <button onClick={() => setPaymentMethod('card')}
                         className={`p-4 rounded-2xl border-2 text-left transition-all ${paymentMethod === 'card' ? 'border-primary bg-pink-50 shadow-sm' : 'border-gray-200 bg-white hover:border-pink-200'}`}>
@@ -659,7 +692,7 @@ export default function PanierPage() {
                           <span className="font-playfair font-semibold text-gray-800 text-sm">Card</span>
                           {paymentMethod === 'card' && <span className="ml-auto w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>}
                         </div>
-                        <p className="font-lato text-xs text-gray-500">Debit or credit card</p>
+                        <p className="font-lato text-xs text-gray-500">{tc.cardDesc}</p>
                       </button>
                     </div>
                   </div>
@@ -670,38 +703,38 @@ export default function PanierPage() {
                       {paymentMethod === 'moncash' ? (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>MonCash Instructions
+                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>{tc.moncashTitle}
                           </h3>
                           <ol className="font-lato text-sm text-gray-600 space-y-3 list-none">
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Open the MonCash app on your phone</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Select &ldquo;Pay a merchant&rdquo;</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>Send <span className="font-bold text-primary">{total} HTG</span> to the number:</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>{tc.moncashStep1}</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>{tc.moncashStep2prefix} &ldquo;{tc.moncashStep2}&rdquo;</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>{tc.moncashStep3prefix} <span className="font-bold text-primary mx-1">{total} {tc.moncashStep3suffix}</span></li>
                           </ol>
                           <div className="mt-4 bg-red-50 rounded-xl p-4 text-center border border-red-100">
-                            <p className="font-lato text-xs text-gray-500 mb-1">MonCash number</p>
+                            <p className="font-lato text-xs text-gray-500 mb-1">{tc.moncashNumber}</p>
                             <p className="font-playfair font-bold text-xl text-red-600 tracking-wider">509-XX-XX-XXXX</p>
                             <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
                           </div>
                           <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">{total} HTG</span></p>
+                            <p className="font-lato text-sm text-gray-700">{tc.exactAmount} <span className="font-bold text-primary text-lg">{total} HTG</span></p>
                           </div>
                         </>
                       ) : paymentMethod === 'zelle' ? (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs font-lato">Z</span>Zelle Instructions
+                            <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs font-lato">Z</span>{tc.zelleTitle}
                           </h3>
                           <ol className="font-lato text-sm text-gray-600 space-y-3 list-none">
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>Open your banking app or Zelle</li>
-                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>Send payment to the email address:</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>{tc.zelleStep1}</li>
+                            <li className="flex gap-3"><span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>{tc.zelleStep2}</li>
                           </ol>
                           <div className="mt-4 bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
-                            <p className="font-lato text-xs text-gray-500 mb-1">Zelle email</p>
+                            <p className="font-lato text-xs text-gray-500 mb-1">{tc.zelleEmail}</p>
                             <p className="font-playfair font-bold text-lg text-purple-700">bestielipgloss@gmail.com</p>
                             <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
                           </div>
                           <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Exact amount: <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
+                            <p className="font-lato text-sm text-gray-700">{tc.exactAmount} <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
                           </div>
                         </>
                       ) : (
@@ -709,15 +742,15 @@ export default function PanierPage() {
                           <h3 className="font-playfair font-semibold text-gray-800 mb-5 flex items-center gap-2">
                             <span className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                               <CreditCard size={15} className="text-gray-700" />
-                            </span>Card details
+                            </span>{tc.cardTitle}
                           </h3>
                           <div className="space-y-4">
                             <div>
-                              <label className={labelCls} htmlFor="card-name">Cardholder name</label>
+                              <label className={labelCls} htmlFor="card-name">{tc.cardName}</label>
                               <input
                                 id="card-name"
                                 type="text"
-                                placeholder="Jane Doe"
+                                placeholder={tc.cardNamePlaceholder}
                                 value={cardName}
                                 onChange={(e) => setCardName(e.target.value)}
                                 className={inputCls}
@@ -725,7 +758,7 @@ export default function PanierPage() {
                               />
                             </div>
                             <div>
-                              <label className={labelCls} htmlFor="card-number">Card number</label>
+                              <label className={labelCls} htmlFor="card-number">{tc.cardNumber}</label>
                               <input
                                 id="card-number"
                                 type="text"
@@ -743,7 +776,7 @@ export default function PanierPage() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <label className={labelCls} htmlFor="card-expiry">Expiry date</label>
+                                <label className={labelCls} htmlFor="card-expiry">{tc.cardExpiry}</label>
                                 <input
                                   id="card-expiry"
                                   type="text"
@@ -760,7 +793,7 @@ export default function PanierPage() {
                                 />
                               </div>
                               <div>
-                                <label className={labelCls} htmlFor="card-cvv">CVV</label>
+                                <label className={labelCls} htmlFor="card-cvv">{tc.cardCvv}</label>
                                 <input
                                   id="card-cvv"
                                   type="text"
@@ -777,10 +810,10 @@ export default function PanierPage() {
                           </div>
                           <div className="mt-5 flex items-center justify-center gap-2 text-gray-400">
                             <Lock size={12} />
-                            <p className="font-lato text-xs">Secured payment · Visa · Mastercard · Amex</p>
+                            <p className="font-lato text-xs">{tc.cardSecured}</p>
                           </div>
                           <div className="mt-3 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">Amount to charge: <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
+                            <p className="font-lato text-sm text-gray-700">{tc.amountCharge} <span className="font-bold text-primary text-lg">${totalUSD.toFixed(2)}</span></p>
                           </div>
                         </>
                       )}
@@ -790,31 +823,31 @@ export default function PanierPage() {
                   {/* Transaction reference */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <label className={labelCls} htmlFor="reference-transaction">
-                      Transaction reference
-                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                      {tc.refLabel}
+                      <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
                     </label>
                     <input
                       id="reference-transaction"
                       type="text"
-                      placeholder={paymentMethod === 'moncash' ? 'MonCash confirmation ID' : paymentMethod === 'zelle' ? 'Zelle confirmation reference' : 'Transaction ID'}
+                      placeholder={paymentMethod === 'moncash' ? tc.refMoncash : paymentMethod === 'zelle' ? tc.refZelle : tc.refCard}
                       value={referenceTransaction}
                       onChange={(e) => setReferenceTransaction(e.target.value)}
                       className={inputCls}
                     />
-                    <p className="font-lato text-xs text-gray-400 mt-1">Available in your app after payment.</p>
+                    <p className="font-lato text-xs text-gray-400 mt-1">{tc.refHint}</p>
                   </div>
 
                   {/* Client note */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <label className={labelCls} htmlFor="note-client">
                       <MessageSquare size={14} className="inline mr-1 text-primary" />
-                      Message for Bestie
-                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                      {tc.noteLabel}
+                      <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
                     </label>
                     <textarea
                       id="note-client"
                       rows={3}
-                      placeholder="A message, a special request…"
+                      placeholder={tc.notePlaceholder}
                       value={noteClient}
                       onChange={(e) => setNoteClient(e.target.value)}
                       className="w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white resize-none"
@@ -829,16 +862,16 @@ export default function PanierPage() {
                   )}
 
                   <div className="flex gap-3">
-                    <button onClick={() => setStep(1)} disabled={paymentLoading} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px] disabled:opacity-50">← Back</button>
+                    <button onClick={() => setStep(1)} disabled={paymentLoading} className="border border-pink-200 text-gray-600 font-lato text-sm px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[44px] disabled:opacity-50">{tc.back}</button>
                     <button
                       onClick={onConfirmOrder}
                       disabled={paymentLoading}
                       className="flex-1 bg-primary hover:bg-pink-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-lato font-semibold py-3.5 rounded-xl transition-colors min-h-[48px] flex items-center justify-center gap-2"
                     >
                       {paymentLoading ? (
-                        <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Submitting…</>
+                        <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />{tc.submitting}</>
                       ) : (
-                        <><CheckCircle size={18} />Confirm my order</>
+                        <><CheckCircle size={18} />{tc.confirm}</>
                       )}
                     </button>
                   </div>
@@ -847,10 +880,10 @@ export default function PanierPage() {
                 {/* Summary */}
                 <div className="lg:col-span-1">
                   <div className="bg-white rounded-2xl p-5 border border-pink-100 sticky top-24">
-                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">Your order</h3>
+                    <h3 className="font-playfair font-semibold text-gray-800 mb-4">{tc.yourOrder}</h3>
                     {deliveryData && (
                       <div className="bg-pink-50 rounded-xl p-3 mb-4 text-xs font-lato text-gray-600 space-y-0.5">
-                        <p className="font-semibold text-gray-800">Delivering to:</p>
+                        <p className="font-semibold text-gray-800">{tc.deliveringTo}</p>
                         <p>{deliveryData.name}</p>
                         <p>{formatAddress(deliveryData.address)}</p>
                         {deliveryData.telephone && <p>📱 {deliveryData.telephone}</p>}
@@ -864,10 +897,10 @@ export default function PanierPage() {
                         </div>
                       ))}
                       <div className="border-t border-pink-100 pt-2 space-y-1">
-                        {promoInfo && <div className="flex justify-between text-green-600"><span>Discount</span><span>-${discountAmountUSD.toFixed(2)}</span></div>}
-                        <div className="flex justify-between"><span>Delivery</span><span>{deliveryFee === 0 ? 'Free' : `$${deliveryFeeUSD.toFixed(2)}`}</span></div>
+                        {promoInfo && <div className="flex justify-between text-green-600"><span>{tc.discount}</span><span>-${discountAmountUSD.toFixed(2)}</span></div>}
+                        <div className="flex justify-between"><span>{tc.delivery}</span><span>{deliveryFee === 0 ? tc.freeShort : `$${deliveryFeeUSD.toFixed(2)}`}</span></div>
                         <div className="flex justify-between font-bold pt-1">
-                          <span className="font-playfair text-gray-800">Total</span>
+                          <span className="font-playfair text-gray-800">{tc.total}</span>
                           <span className="font-playfair text-primary text-lg">${totalUSD.toFixed(2)}</span>
                         </div>
                       </div>
