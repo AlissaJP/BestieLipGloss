@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, User, Mail, Lock, MapPin, Plus, Trash2, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, MapPin, Plus, Trash2, Check, Eye, EyeOff, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
@@ -104,6 +104,24 @@ const US_CITIES: Record<string, string[]> = {
 
 type AddrCountry = string;
 
+const PAYS = [
+  { id: 'HT', code: '+509', drapeau: '🇭🇹', nom: 'Haiti' },
+  { id: 'US', code: '+1',   drapeau: '🇺🇸', nom: 'United States' },
+  { id: 'CA', code: '+1',   drapeau: '🇨🇦', nom: 'Canada' },
+  { id: 'FR', code: '+33',  drapeau: '🇫🇷', nom: 'France' },
+  { id: 'MQ', code: '+596', drapeau: '🇲🇶', nom: 'Martinique' },
+  { id: 'GP', code: '+590', drapeau: '🇬🇵', nom: 'Guadeloupe' },
+  { id: 'DO', code: '+1',   drapeau: '🇩🇴', nom: 'Dominican Republic' },
+];
+
+function parseTelephone(full: string): { paysId: string; local: string } {
+  const sorted = [...PAYS].sort((a, b) => b.code.length - a.code.length);
+  for (const p of sorted) {
+    if (full.startsWith(p.code + ' ')) return { paysId: p.id, local: full.slice(p.code.length + 1) };
+  }
+  return { paysId: 'HT', local: full };
+}
+
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden">
@@ -120,6 +138,7 @@ export default function InformationsPage() {
   const { user, updateUser, addAddress, removeAddress } = useAuthStore();
   const { lang } = useLanguageStore();
   const t = translations[lang].pages.info;
+  const tp = t.phone;
 
   /* — Identity — */
   const [editIdent, setEditIdent] = useState(false);
@@ -136,6 +155,26 @@ export default function InformationsPage() {
     updateUser({ email: emailForm.email });
     setEmailError('');
     setEditEmail(false);
+  };
+
+  /* — Phone — */
+  const [editPhone, setEditPhone] = useState(false);
+  const [phonePaysId, setPhonePaysId] = useState(() => parseTelephone(user?.telephone ?? '').paysId);
+  const [phoneLocal, setPhoneLocal] = useState(() => parseTelephone(user?.telephone ?? '').local);
+  const [phoneSuccess, setPhoneSuccess] = useState(false);
+  const openEditPhone = () => {
+    const parsed = parseTelephone(user?.telephone ?? '');
+    setPhonePaysId(parsed.paysId);
+    setPhoneLocal(parsed.local);
+    setPhoneSuccess(false);
+    setEditPhone(true);
+  };
+  const savePhone = () => {
+    const pays = PAYS.find((p) => p.id === phonePaysId)!;
+    const full = phoneLocal.trim() ? `${pays.code} ${phoneLocal.trim()}` : '';
+    updateUser({ telephone: full });
+    setPhoneSuccess(true);
+    setTimeout(() => { setPhoneSuccess(false); setEditPhone(false); }, 1800);
   };
 
   /* — Password — */
@@ -264,6 +303,49 @@ export default function InformationsPage() {
                 <div className="flex items-center gap-3 pt-1">
                   <button onClick={saveEmail} className={btnSave}><Check size={14} />{t.save}</button>
                   <button onClick={() => setEditEmail(false)} className={btnCancel}>{t.cancel}</button>
+                </div>
+              </motion.div>
+            )}
+          </Section>
+
+          {/* — Phone — */}
+          <Section icon={<Phone size={17} className="text-primary" />} title={tp.title}>
+            {!editPhone ? (
+              <div className="flex items-center justify-between">
+                <p className="font-lato text-sm text-gray-700">{user?.telephone || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
+                <button onClick={openEditPhone} className="font-lato text-sm text-primary hover:underline">{t.edit}</button>
+              </div>
+            ) : (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                <div>
+                  <label className={labelCls}>{tp.label}</label>
+                  <div className="flex border border-pink-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-primary transition-colors">
+                    <select
+                      value={phonePaysId}
+                      onChange={(e) => setPhonePaysId(e.target.value)}
+                      className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
+                      aria-label={tp.countryCode}
+                    >
+                      {PAYS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.id} {p.code}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={phoneLocal}
+                      onChange={(e) => setPhoneLocal(e.target.value)}
+                      placeholder={tp.placeholder}
+                      className="flex-1 px-3 py-3 font-lato text-sm outline-none bg-transparent min-w-0"
+                      autoComplete="tel-national"
+                    />
+                  </div>
+                </div>
+                {phoneSuccess && <p className="font-lato text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">{tp.saved}</p>}
+                <div className="flex items-center gap-3 pt-1">
+                  <button onClick={savePhone} className={btnSave}><Check size={14} />{t.save}</button>
+                  <button onClick={() => setEditPhone(false)} className={btnCancel}>{t.cancel}</button>
                 </div>
               </motion.div>
             )}

@@ -87,7 +87,6 @@ export default function PanierPage() {
   const [selectedAddr, setSelectedAddr] = useState<Address | null>(savedAddresses[0] ?? null);
   const [addrError, setAddrError] = useState('');
 
-  const [telephoneLivraison, setTelephoneLivraison] = useState('');
   const [instructionsLivraison, setInstructionsLivraison] = useState('');
 
   const [paymentMethod, setPaymentMethod] = useState<'moncash' | 'zelle' | 'card'>('moncash');
@@ -162,7 +161,7 @@ export default function PanierPage() {
     setAddrError('');
     setDeliveryData({
       name: user?.name ?? '',
-      telephone: telephoneLivraison || (user?.telephone ?? ''),
+      telephone: user?.telephone ?? '',
       address: selectedAddr,
     });
     if (!numeroCommande) setNumeroCommande(generateNumeroCommande());
@@ -574,21 +573,6 @@ export default function PanierPage() {
                     <h3 className="font-playfair font-semibold text-gray-800 flex items-center gap-2">
                       <Phone size={16} className="text-primary" />{tc.contactTitle}
                     </h3>
-                    <div>
-                      <label className={labelCls} htmlFor="tel-livraison">
-                        {tc.whatsappLabel}
-                        <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
-                      </label>
-                      <input
-                        id="tel-livraison"
-                        type="tel"
-                        placeholder={user?.telephone ?? '509-XX-XX-XXXX'}
-                        value={telephoneLivraison}
-                        onChange={(e) => setTelephoneLivraison(e.target.value)}
-                        className={inputCls}
-                      />
-                      <p className="font-lato text-xs text-gray-400 mt-1">{tc.whatsappHint}</p>
-                    </div>
                     <div>
                       <label className={labelCls} htmlFor="instructions-livraison">
                         {tc.instructionsLabel}

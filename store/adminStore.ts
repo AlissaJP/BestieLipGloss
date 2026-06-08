@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { products as staticProducts, type Product } from '@/data/products';
 
 export type OrderStatus = 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled';
-export type PaymentMethod = 'moncash' | 'zelle' | 'cash';
+export type PaymentMethod = 'moncash' | 'zelle' | 'card';
 
 export interface ManagedProduct extends Product {
   published: boolean;
