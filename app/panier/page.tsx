@@ -13,6 +13,7 @@ import CheckoutStepper from '@/components/CheckoutStepper';
 import { products } from '@/data/products';
 import type { ColorVariant } from '@/data/products';
 import type { ZoneLivraison } from '@/app/api/zones-livraison/route';
+import { useOrdersStore } from '@/store/ordersStore';
 
 const USA_FEE = 3500;
 
@@ -65,6 +66,7 @@ function formatAddress(addr: Address): string {
 export default function PanierPage() {
   const { items, removeItem, updateQuantity, updateItemVariant, clearCart, totalPrice } = useCartStore();
   const { user } = useAuthStore();
+  const addOrder = useOrdersStore((s) => s.addOrder);
   const { lang } = useLanguageStore();
   const tc = translations[lang].checkout;
   const tCart = translations[lang].cart;
@@ -170,9 +172,34 @@ export default function PanierPage() {
   };
 
   const onConfirmOrder = async () => {
+    // Validation paiement obligatoire
+    if (paymentMethod === 'moncash' || paymentMethod === 'zelle') {
+      if (!referenceTransaction.trim()) {
+        setPaymentError(tc.errorPaymentRequired);
+        return;
+      }
+    } else if (paymentMethod === 'card') {
+      if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) {
+        setPaymentError(tc.errorCardRequired);
+        return;
+      }
+    }
+
     setPaymentLoading(true);
     setPaymentError('');
     const devise: 'HTG' | 'USD' = paymentMethod === 'moncash' ? 'HTG' : 'USD';
+
+    // Snapshot du panier avant clearCart
+    const orderItems = items.map((i) => ({
+      name: i.name,
+      shade: i.shade,
+      quantity: i.quantity,
+      price_htg: i.price_htg,
+      price_usd: i.price_usd,
+      image: i.image,
+      bgColor: i.bgColor,
+    }));
+
     try {
       const res = await fetch('/api/paiement/soumettre', {
         method: 'POST',
@@ -191,6 +218,17 @@ export default function PanierPage() {
         setPaymentError(data.message ?? tc.errorOccurred);
         return;
       }
+      addOrder({
+        id: numeroCommande,
+        date: new Date().toISOString(),
+        status: 'attente',
+        items: orderItems,
+        total,
+        totalUSD: parseFloat(totalUSD.toFixed(2)),
+        deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
+        paymentMethod,
+        devise,
+      });
       clearCart();
       setStep(3);
     } catch {
