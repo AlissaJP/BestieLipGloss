@@ -19,7 +19,7 @@ const USA_FEE = 3500;
 
 type PromoInfo = { code: string; valeur: number; type: 'pct' | 'fixe' };
 
-type SavedDelivery = { name: string; telephone: string; address: Address };
+type SavedDelivery = { name: string; telephone: string; address: Address; instructions: string };
 
 const inputCls = 'w-full font-lato text-sm border border-pink-200 rounded-xl px-4 py-3 outline-none focus:border-primary bg-white min-h-[44px]';
 const labelCls = 'font-lato text-sm text-gray-700 font-medium block mb-1.5';
@@ -86,7 +86,14 @@ export default function PanierPage() {
   }, []);
 
   const savedAddresses = user?.addresses ?? [];
-  const [selectedAddr, setSelectedAddr] = useState<Address | null>(savedAddresses[0] ?? null);
+  const [selectedAddr, setSelectedAddr] = useState<Address | null>(null);
+
+  useEffect(() => {
+    if (selectedAddr === null && savedAddresses.length > 0) {
+      setSelectedAddr(savedAddresses[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedAddresses.length]);
   const [addrError, setAddrError] = useState('');
 
   const [instructionsLivraison, setInstructionsLivraison] = useState('');
@@ -165,6 +172,7 @@ export default function PanierPage() {
       name: user?.name ?? '',
       telephone: user?.telephone ?? '',
       address: selectedAddr,
+      instructions: instructionsLivraison,
     });
     if (!numeroCommande) setNumeroCommande(generateNumeroCommande());
     setPaymentError('');
@@ -211,6 +219,8 @@ export default function PanierPage() {
           devise_paiement: devise,
           reference_transaction: referenceTransaction || null,
           note_client: noteClient || null,
+          instructions_livraison: deliveryData?.instructions || null,
+          code_promo: promoInfo?.code || null,
         }),
       });
       const data = await res.json();
@@ -226,6 +236,7 @@ export default function PanierPage() {
         total,
         totalUSD: parseFloat(totalUSD.toFixed(2)),
         deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
+        instructionsLivraison: deliveryData?.instructions || undefined,
         paymentMethod,
         devise,
       });
@@ -846,7 +857,9 @@ export default function PanierPage() {
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">
                     <label className={labelCls} htmlFor="reference-transaction">
                       {tc.refLabel}
-                      <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
+                      {paymentMethod === 'card' && (
+                        <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
+                      )}
                     </label>
                     <input
                       id="reference-transaction"

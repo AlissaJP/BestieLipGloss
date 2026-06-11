@@ -16,10 +16,12 @@ export default function BoutiquePage() {
   const t = translations[lang];
   const managedProducts = useAdminStore((s) => s.managedProducts);
 
-  const catalog = (managedProducts.length > 0
-    ? managedProducts.filter((p) => p.published)
-    : staticProducts
-  ).filter((p) => p.is_active !== false);
+  const publishedManaged = managedProducts.filter((p) => p.published);
+  const managedIds = new Set(publishedManaged.map((p) => p.id));
+  const catalog = [
+    ...publishedManaged,
+    ...staticProducts.filter((p) => !managedIds.has(p.id)),
+  ].filter((p) => p.is_active !== false);
 
   const filtered = catalog.filter((p) => {
     if (filter === 'artisanal') return p.badge_type === 'artisanal' || p.badge.includes('Artisanal');

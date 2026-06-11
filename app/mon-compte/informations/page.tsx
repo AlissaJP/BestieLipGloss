@@ -187,6 +187,7 @@ export default function InformationsPage() {
     if (!pwdForm.current) { setPwdError(t.password.empty); return; }
     if (pwdForm.next.length < 6) { setPwdError(t.password.tooShort); return; }
     if (pwdForm.next !== pwdForm.confirm) { setPwdError(t.password.mismatch); return; }
+    updateUser({ password: pwdForm.next });
     setPwdError('');
     setPwdSuccess(true);
     setTimeout(() => { setPwdSuccess(false); setEditPwd(false); setPwdForm({ current: '', next: '', confirm: '' }); }, 1800);

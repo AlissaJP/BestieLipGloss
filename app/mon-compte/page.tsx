@@ -90,7 +90,7 @@ export default function MonComptePage() {
               <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
                 <span className="text-base">🏷️</span>
               </div>
-              <h3 className="font-playfair font-semibold text-gray-800">My Coupons</h3>
+              <h3 className="font-playfair font-semibold text-gray-800">{t.account.coupons}</h3>
             </div>
 
             {/* Saved coupons list */}
@@ -135,7 +135,7 @@ export default function MonComptePage() {
                 onClick={handleAddCoupon}
                 className="bg-primary text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
-                <Plus size={14} />Save
+                <Plus size={14} />{t.account.couponsSave}
               </button>
             </div>
             <AnimatePresence>
@@ -146,9 +146,9 @@ export default function MonComptePage() {
                   exit={{ opacity: 0 }}
                   className={`font-lato text-xs mt-2 font-medium ${couponStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}
                 >
-                  {couponStatus === 'valid' && '✓ Coupon saved to your list!'}
-                  {couponStatus === 'invalid' && 'Invalid code. Try BESTIE10 or BESTIE15.'}
-                  {couponStatus === 'duplicate' && 'This coupon is already in your list.'}
+                  {couponStatus === 'valid' && t.account.couponsSaved}
+                  {couponStatus === 'invalid' && t.account.couponsInvalid}
+                  {couponStatus === 'duplicate' && t.account.couponsDuplicate}
                 </motion.p>
               )}
             </AnimatePresence>

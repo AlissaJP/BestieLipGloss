@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/adminAuth';
 
 type Decision = 'validé' | 'refusé';
 
@@ -16,6 +17,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value)) {
+    return NextResponse.json({ error: 'Non autorisé.' }, { status: 401 });
+  }
+
   const { id: idStr } = await params;
   const id = parseInt(idStr, 10);
   if (isNaN(id)) {

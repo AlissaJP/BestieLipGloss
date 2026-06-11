@@ -27,7 +27,12 @@ function formatDate(iso: string, lang: string): string {
 
 const PAY_LABEL: Record<string, string> = { moncash: 'MonCash', zelle: 'Zelle', card: 'Card' };
 
-type TOrders = typeof translations['fr']['pages']['orders'];
+type TOrders = {
+  back: string; heading: string; sub: string; shopBtn: string; empty: string;
+  cancelBtn: string; cancelConfirm: string; cancelYes: string; cancelNo: string;
+  orderDate: string; payVia: string;
+  statuses: { [K in OrderStatus]: { label: string; desc: string } };
+};
 
 function OrderCard({
   order, lang, t, cancellingId, setCancellingId, onCancel,

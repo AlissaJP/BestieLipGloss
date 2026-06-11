@@ -96,9 +96,15 @@ export const useCartStore = create<CartState>()(
         const res = await fetch('/api/panier').catch(() => null);
         if (!res?.ok) return;
         const data = await res.json();
-        // Remplace le local par le serveur seulement si la BDD renvoie des articles
-        if (data.items && data.items.length > 0) {
-          set({ items: data.items });
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          const valid = (data.items as unknown[]).filter(
+            (item): item is CartItem =>
+              typeof item === 'object' && item !== null &&
+              typeof (item as Record<string, unknown>).variantKey === 'string' &&
+              typeof (item as Record<string, unknown>).id === 'number' &&
+              typeof (item as Record<string, unknown>).quantity === 'number'
+          );
+          if (valid.length > 0) set({ items: valid });
         }
       },
     }),

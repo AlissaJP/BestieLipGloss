@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminToken, ADMIN_COOKIE } from '@/lib/adminAuth';
 
 type OrderStatus = 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled';
 
@@ -6,6 +7,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value)) {
+    return NextResponse.json({ error: 'Non autorisé.' }, { status: 401 });
+  }
+
   const { id } = await params;
   const { nouveau_statut, ancien_statut, id_admin, note } = await request.json() as {
     nouveau_statut: OrderStatus;

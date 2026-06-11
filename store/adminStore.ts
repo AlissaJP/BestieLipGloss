@@ -43,7 +43,7 @@ interface AdminState {
   orders: Order[];
   customers: AdminCustomer[];
   managedProducts: ManagedProduct[];
-  login: (username: string, password: string) => boolean;
+  login: () => void;
   logout: () => void;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   addProduct: (p: Omit<ManagedProduct, 'id' | 'published'>) => void;
@@ -59,12 +59,8 @@ export const useAdminStore = create<AdminState>()(
       orders: [],
       customers: [],
       managedProducts: staticProducts.map((p) => ({ ...p, published: true })),
-      login: (username, password) => {
-        if (username === 'admin' && password === 'bestie2024') {
-          set({ isLoggedIn: true });
-          return true;
-        }
-        return false;
+      login: () => {
+        set({ isLoggedIn: true });
       },
       logout: () => set({ isLoggedIn: false }),
       updateOrderStatus: (id, status) =>
@@ -104,6 +100,7 @@ export const useAdminStore = create<AdminState>()(
       partialize: (state) => ({
         isLoggedIn: state.isLoggedIn,
         orders: state.orders,
+        customers: state.customers,
         managedProducts: state.managedProducts,
       }),
     }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { incrementPromoUsage } from '@/lib/promoStore';
 
 type PaiementStatut = 'en_attente' | 'validé' | 'refusé';
 
@@ -24,9 +25,10 @@ export async function POST(request: NextRequest) {
     devise_paiement?: 'HTG' | 'USD';
     reference_transaction?: string | null;
     note_client?: string | null; // TODO (BDD): à écrire dans Commande.note_client via /api/commandes
+    code_promo?: string | null;
   };
 
-  const { id_commande, mode_paiement, montant_paye, devise_paiement, reference_transaction } = body;
+  const { id_commande, mode_paiement, montant_paye, devise_paiement, reference_transaction, code_promo } = body;
 
   if (!id_commande || !mode_paiement) {
     return NextResponse.json({ error: 'Données manquantes.' }, { status: 400 });
@@ -77,6 +79,8 @@ export async function POST(request: NextRequest) {
     reference_transaction: reference_transaction ?? null,
   };
   paiementStore.set(id_commande, paiement);
+
+  if (code_promo) incrementPromoUsage(code_promo);
 
   return NextResponse.json({ success: true, id_paiement: paiement.id, action: 'created' });
 }

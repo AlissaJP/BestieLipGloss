@@ -20,6 +20,7 @@ export interface User {
   email: string;
   telephone?: string;
   pseudo?: string;
+  password?: string;
   addresses: Address[];
   coupons: string[];
 }
@@ -32,7 +33,7 @@ interface AuthState {
   logout: () => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  updateUser: (updates: Partial<Pick<User, 'name' | 'email' | 'telephone' | 'pseudo'>>) => void;
+  updateUser: (updates: Partial<Pick<User, 'name' | 'email' | 'telephone' | 'pseudo' | 'password'>>) => void;
   addAddress: (address: Address) => void;
   removeAddress: (id: string) => void;
   addCoupon: (code: string) => void;

@@ -23,11 +23,18 @@ export default function AdminLoginPage() {
     if (!username || !password) { setError('Remplis les deux champs.'); return; }
     setLoading(true);
     setError('');
-    await new Promise((r) => setTimeout(r, 700));
-    const ok = login(username, password);
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
     setLoading(false);
-    if (ok) router.push('/admin/dashboard');
-    else setError("Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.");
+    if (res.ok) {
+      login();
+      router.push('/admin/dashboard');
+    } else {
+      setError("Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.");
+    }
   };
 
   return (

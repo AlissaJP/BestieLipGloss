@@ -23,7 +23,8 @@ interface AvisPublie {
   commande_verifiee: boolean;
 }
 
-function relativeDate(iso: string, tr: typeof import('@/lib/translations').translations['fr']['review']): string {
+type ReviewTr = { today: string; dayAgo: string; daysAgo: string; weekAgo: string; weeksAgo: string };
+function relativeDate(iso: string, tr: ReviewTr): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return tr.today;
@@ -60,6 +61,12 @@ export default function ProductDetailClient({ product, related }: Props) {
   const firstActive = sortedVariants.find((v) => v.is_active !== false) ?? sortedVariants[0] ?? null;
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(firstActive);
   useEffect(() => {
+    setSelectedImage(0);
+    setSelectedVariant(firstActive);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
+  useEffect(() => {
     fetch(`/api/avis?id_produit=${product.id}&statut=publie`)
       .then((r) => r.json())
       .then((d) => setReviews(d.avis ?? []))
@@ -75,7 +82,7 @@ export default function ProductDetailClient({ product, related }: Props) {
     : 0;
 
   const { addItem } = useCartStore();
-  const { isLoggedIn, openAuthModal } = useAuthStore();
+  const { isLoggedIn, openAuthModal, user } = useAuthStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { lang } = useLanguageStore();
   const t = translations[lang];
@@ -102,8 +109,8 @@ export default function ProductDetailClient({ product, related }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id_produit: product.id,
-          id_utilisateur: 0, // TODO (BDD): utiliser user.id depuis la session
-          nom_client: 'Moi', // TODO (BDD): utiliser user.prenom + user.nom
+          id_utilisateur: 0, // TODO (BDD): remplacer par user.id depuis la session
+          nom_client: user?.name ?? 'Anonyme',
           note: reviewNote,
           texte: reviewTexte.trim(),
         }),
@@ -183,7 +190,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   className="relative rounded-3xl overflow-hidden h-80 sm:h-[420px] bg-pink-50 shadow-inner"
                 >
                   <Image
-                    src={selectedVariant?.image ?? product.introImage!}
+                    src={selectedVariant?.image ?? product.introImage ?? ''}
                     alt={`${product.name}${selectedVariant ? ` – ${selectedVariant.name}` : ''}`}
                     fill
                     className="object-cover object-center"

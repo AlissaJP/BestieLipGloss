@@ -22,6 +22,7 @@ export interface StoredOrder {
   total: number;
   totalUSD: number;
   deliveryAddress: string;
+  instructionsLivraison?: string;
   paymentMethod: OrderPaymentMethod;
   devise: 'HTG' | 'USD';
 }

@@ -49,7 +49,7 @@ function ConnexionForm() {
         setIsLoading(false);
         return;
       }
-      adminLogin('admin', 'bestie2024');
+      adminLogin();
       router.push('/admin/dashboard');
       return;
     }
