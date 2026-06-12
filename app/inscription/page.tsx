@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
-import { useCartStore } from '@/store/cartStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
@@ -38,8 +36,6 @@ export default function InscriptionPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuthStore();
-  const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
   const router = useRouter();
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -49,6 +45,10 @@ export default function InscriptionPage() {
     e.preventDefault();
     if (!form.prenom || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
       setError(t.fillAll);
+      return;
+    }
+    if (!form.email.includes('@') || !form.email.includes('.')) {
+      setError(t.invalidEmail);
       return;
     }
     if (form.password.length < 6) {
@@ -63,14 +63,25 @@ export default function InscriptionPage() {
     setError('');
     const pays = PAYS.find((p) => p.id === selectedPaysId)!;
     const fullPhone = `${pays.code} ${phoneNumber.trim()}`;
-    await new Promise((r) => setTimeout(r, 900));
-    login({
-      name: form.prenom + (form.nom ? ' ' + form.nom : ''),
-      email: form.email,
-      telephone: fullPhone,
-    });
-    syncCartOnLogin();
-    router.push('/');
+    const name = form.prenom + (form.nom ? ' ' + form.nom : '');
+
+    try {
+      const res = await fetch('/api/otp/envoyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, name, telephone: fullPhone }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setError(data.error ?? t.fillAll);
+        setIsLoading(false);
+        return;
+      }
+      router.push(`/verification-email?email=${encodeURIComponent(form.email)}`);
+    } catch {
+      setError(t.fillAll);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -234,7 +245,7 @@ export default function InscriptionPage() {
                 {isLoading ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    {t.creating}
+                    {t.sending}
                   </>
                 ) : (
                   t.createBtn
