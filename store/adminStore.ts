@@ -98,7 +98,6 @@ export const useAdminStore = create<AdminState>()(
     {
       name: 'bestie-admin-v2',
       partialize: (state) => ({
-        isLoggedIn: state.isLoggedIn,
         orders: state.orders,
         customers: state.customers,
         managedProducts: state.managedProducts,

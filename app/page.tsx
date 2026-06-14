@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import { Sparkles, Droplets, Truck, Smile, Gift, Star } from 'lucide-react';
@@ -121,10 +122,15 @@ export default function HomePage() {
       {/* ——— Notre Histoire ——— */}
       <section id="notre-histoire" className="py-20 px-4" style={{ backgroundColor: 'var(--secondary)' }}>
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <FadeIn>
-              <div className="rounded-3xl overflow-hidden bg-rose-200 h-80 lg:h-96 flex items-center justify-center text-8xl shadow-inner">
-                👩🏾‍🎤
+              <div className="rounded-3xl overflow-hidden shadow-lg relative w-full aspect-[1600/983] lg:mt-44">
+                <Image
+                  src="/CEO2.png"
+                  alt="CEO Bestie LipGloss"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </FadeIn>
             <FadeIn delay={0.2}>

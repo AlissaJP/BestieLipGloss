@@ -112,7 +112,7 @@ export const products: Product[] = [
     id: 2,
     slug: 'nude-cherie',
     name: 'Nude Chérie',
-    shade: 'Beige miel doux',
+    shade: 'Collection Labubu · 2 teintes',
     price_htg: 400,
     price_usd: 3.00,
     description:
@@ -131,11 +131,37 @@ export const products: Product[] = [
     ],
     stock: 18,
     badge: 'Best-seller ✨',
-    bgColor: 'bg-amber-100',
-    bgColorMini: ['bg-yellow-100', 'bg-amber-200', 'bg-orange-100'],
+    bgColor: 'bg-pink-100',
+    bgColorMini: ['bg-pink-200', 'bg-red-400'],
+    introImage: '/products/labubu/introduction.jpg',
     is_active: true,
     is_bestseller: true,
     badge_type: 'bestseller',
+    collection: 'Collection Labubu',
+    variants: [
+      {
+        id: 'labubu-pink',
+        name: 'Pink',
+        ordre_affichage: 1,
+        shade: 'Rose doux nacré',
+        description:
+          'Un rose tendre et nacré qui enveloppe tes lèvres d\'une douceur lumineuse. Cette teinte délicate sublime toutes les carnations avec une légèreté féminine et naturelle.',
+        image: '/products/labubu/pink.jpg',
+        bgColor: 'bg-pink-200',
+        is_active: true,
+      },
+      {
+        id: 'labubu-red',
+        name: 'Red',
+        ordre_affichage: 2,
+        shade: 'Rouge intense brillant',
+        description:
+          'Un rouge intense et brillant qui affirme ton style avec audace. Cette teinte classique revisitée apporte une élégance intemporelle à tous tes looks.',
+        image: '/products/labubu/red.jpg',
+        bgColor: 'bg-red-400',
+        is_active: true,
+      },
+    ],
   },
   {
     id: 3,

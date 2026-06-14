@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_COOKIE } from '@/lib/adminAuth';
+import { ADMIN_COOKIE, verifyAdminToken } from '@/lib/adminAuth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protège /admin/dashboard et sous-routes — exclut /admin (page de connexion)
   if (pathname.startsWith('/admin') && pathname !== '/admin') {
     const token = request.cookies.get(ADMIN_COOKIE)?.value;
-    if (!token) {
+    if (!(await verifyAdminToken(token))) {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
   }

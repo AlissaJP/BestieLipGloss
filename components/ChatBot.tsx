@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send } from 'lucide-react';
+import { X, Send, MessageCircle } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
@@ -154,45 +154,48 @@ export default function ChatBot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className="absolute bottom-20 right-0 w-[350px] bg-white rounded-3xl overflow-hidden"
+            className="absolute bottom-20 right-0 w-[310px] bg-white rounded-3xl overflow-hidden border border-pink-100/60"
             style={{
               boxShadow:
-                '0 8px 40px rgba(242,167,187,0.35), 0 2px 12px rgba(0,0,0,0.10)',
+                '0 16px 60px rgba(212,95,133,0.22), 0 4px 20px rgba(0,0,0,0.08)',
             }}
           >
             {/* Header */}
             <div
               className="px-5 py-4 flex items-center justify-between"
               style={{
-                background: 'linear-gradient(135deg, #D45F85 0%, #D4835A 100%)',
+                background: 'linear-gradient(135deg, #C8426E 0%, #D4835A 100%)',
               }}
             >
               <div className="flex items-center gap-3">
-                <BotAvatar size="lg" />
+                <div className="relative">
+                  <BotAvatar size="lg" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-white block" />
+                </div>
                 <div>
-                  <p className="font-playfair font-bold text-white text-[17px] leading-tight">
+                  <p className="font-playfair font-bold text-white text-[17px] leading-tight tracking-wide">
                     Bestie
                   </p>
-                  <p className="font-lato text-white/85 text-[11px] flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-300 inline-block animate-pulse" />
+                  <p className="font-lato text-white/80 text-[11px] mt-0.5">
                     {t.online}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors"
                 aria-label={t.closeChat}
               >
-                <X size={14} className="text-white" />
+                <X size={15} className="text-white" />
               </button>
             </div>
 
             {/* Messages */}
             <div
-              className="h-60 overflow-y-auto px-4 py-4 space-y-3"
+              className="h-56 overflow-y-auto px-4 py-4 space-y-3 scroll-smooth"
               style={{
-                background: 'linear-gradient(180deg, #FFF5F8 0%, #FFFFFF 60%)',
+                background: 'linear-gradient(180deg, #FFF5F8 0%, #FAFAFA 100%)',
+                scrollbarWidth: 'none',
               }}
             >
               {messages.map((msg) => (
@@ -207,14 +210,14 @@ export default function ChatBot() {
                 >
                   {msg.from === 'bot' && <BotAvatar size="sm" />}
                   <div
-                    className={`max-w-[78%] px-3.5 py-2.5 font-lato text-[13px] leading-relaxed ${
+                    className={`max-w-[78%] px-4 py-2.5 font-lato text-[13px] leading-relaxed ${
                       msg.from === 'bot'
-                        ? 'bg-white text-gray-700 rounded-2xl rounded-bl-sm shadow-sm border border-pink-50'
-                        : 'text-white rounded-2xl rounded-br-sm shadow-sm'
+                        ? 'bg-white text-gray-700 rounded-2xl rounded-tl-none shadow-sm border border-pink-100/70'
+                        : 'text-white rounded-2xl rounded-tr-none shadow-sm'
                     }`}
                     style={
                       msg.from === 'user'
-                        ? { background: 'linear-gradient(135deg, #D45F85, #D4835A)' }
+                        ? { background: 'linear-gradient(135deg, #C8426E, #D4835A)' }
                         : {}
                     }
                   >
@@ -263,19 +266,19 @@ export default function ChatBot() {
             </div>
 
             {/* FAQ chips */}
-            <div className="px-4 pt-2.5 pb-2 border-t border-pink-50 bg-white">
+            <div className="px-4 pt-3 pb-2.5 border-t border-pink-100/60 bg-white/90">
               <p className="font-lato text-[10px] text-gray-400 uppercase tracking-widest mb-2">
                 {t.suggestions}
               </p>
               <div
-                className="flex gap-2 overflow-x-auto pb-1"
+                className="flex gap-1.5 overflow-x-auto pb-1"
                 style={{ scrollbarWidth: 'none' }}
               >
                 {t.faqs.map((faq) => (
                   <button
                     key={faq.q}
                     onClick={() => handleFAQ(faq)}
-                    className="font-lato text-[12px] text-primary bg-pink-50 hover:bg-pink-100 active:scale-95 px-3 py-1.5 rounded-full whitespace-nowrap border border-pink-100 hover:border-primary/40 transition-all shrink-0"
+                    className="font-lato text-[11.5px] text-primary bg-pink-50 hover:bg-pink-100 active:scale-95 px-3 py-1.5 rounded-full whitespace-nowrap border border-pink-100 hover:border-primary/50 transition-all shrink-0"
                   >
                     {faq.q}
                   </button>
@@ -284,7 +287,7 @@ export default function ChatBot() {
             </div>
 
             {/* Input */}
-            <div className="px-4 py-3 bg-white border-t border-pink-50 flex items-center gap-2.5">
+            <div className="px-4 py-3.5 bg-white border-t border-pink-100/60 flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -294,17 +297,17 @@ export default function ChatBot() {
                   if (e.key === 'Enter') sendMessage(inputValue);
                 }}
                 placeholder={t.placeholder}
-                className="flex-1 font-lato text-sm bg-pink-50/70 border border-pink-100 rounded-full px-4 py-2.5 outline-none focus:border-primary/50 focus:bg-pink-50 transition-all placeholder-gray-300"
+                className="flex-1 font-lato text-[13px] bg-[#FFF5F8] border border-pink-100 rounded-2xl px-4 py-2.5 outline-none focus:border-primary/60 focus:bg-white transition-all placeholder-gray-300"
               />
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={() => sendMessage(inputValue)}
                 disabled={!inputValue.trim() || isTyping}
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-35"
-                style={{ background: 'linear-gradient(135deg, #D45F85, #D4835A)' }}
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-30"
+                style={{ background: 'linear-gradient(135deg, #C8426E, #D4835A)' }}
                 aria-label={t.sendAria}
               >
-                <Send size={14} className="text-white" />
+                <Send size={15} className="text-white" />
               </motion.button>
             </div>
           </motion.div>
@@ -350,9 +353,8 @@ export default function ChatBot() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="text-2xl"
               >
-                💋
+                <MessageCircle size={24} className="text-white" fill="rgba(255,255,255,0.25)" />
               </motion.span>
             )}
           </AnimatePresence>

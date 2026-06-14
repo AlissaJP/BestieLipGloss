@@ -31,7 +31,3 @@ export function consumeResetToken(token: string): boolean {
   return true;
 }
 
-export function isValidToken(token: string): boolean {
-  const result = verifyResetToken(token);
-  return result.valid;
-}

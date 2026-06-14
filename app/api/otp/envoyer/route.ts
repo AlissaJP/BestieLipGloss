@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    if (message === 'RESEND_API_KEY manquant dans .env.local') {
+    if (message === 'BREVO_LOGIN_EMAIL ou BREVO_API_KEY manquant dans .env.local') {
       return NextResponse.json({ error: 'Configuration e-mail manquante.' }, { status: 503 });
     }
     return NextResponse.json({ error: "Impossible d'envoyer l'e-mail." }, { status: 500 });

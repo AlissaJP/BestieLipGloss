@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, RefreshCw, CheckCircle, PartyPopper } from 'lucide-react';
+import { Mail, RefreshCw, PartyPopper } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
@@ -102,17 +102,26 @@ function VerificationForm() {
     setErrorMsg('');
     setTimeLeft(OTP_DURATION);
     try {
-      await fetch('/api/otp/envoyer', {
+      const res = await fetch('/api/otp/envoyer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-    } catch { /* silent */ }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error ?? t.errorNetwork);
+        setStatus('error');
+        setTimeLeft(0);
+      }
+    } catch {
+      setErrorMsg(t.errorNetwork);
+      setStatus('error');
+      setTimeLeft(0);
+    }
     setTimeout(() => inputRefs.current[0]?.focus(), 50);
   };
 
   const borderCls = (i: number) => {
-    if (status === 'success') return 'border-green-400 bg-green-50 text-green-700';
     if (status === 'error') return 'border-red-400 bg-red-50 text-red-700';
     if (digits[i]) return 'border-primary bg-pink-50';
     return 'border-pink-200 bg-gray-50 focus:border-primary focus:bg-white';
@@ -184,18 +193,9 @@ function VerificationForm() {
         <div className="bg-white rounded-3xl shadow-sm border border-pink-100 p-8">
           {/* Icon */}
           <div className="flex justify-center mb-6">
-            <motion.div
-              animate={status === 'success' ? { scale: [1, 1.15, 1] } : {}}
-              transition={{ duration: 0.4 }}
-              className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors ${
-                status === 'success' ? 'bg-green-100' : 'bg-pink-50'
-              }`}
-            >
-              {status === 'success'
-                ? <CheckCircle size={32} className="text-green-500" />
-                : <Mail size={28} className="text-primary" />
-              }
-            </motion.div>
+            <div className="w-16 h-16 rounded-2xl bg-pink-50 flex items-center justify-center">
+              <Mail size={28} className="text-primary" />
+            </div>
           </div>
 
           {/* OTP digit inputs */}
@@ -236,65 +236,49 @@ function VerificationForm() {
                   {errorMsg}
                 </motion.p>
               )}
-              {status === 'success' && (
-                <motion.p
-                  key="success"
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="font-lato text-sm text-green-600 font-semibold"
-                >
-                  {t.successMsg}
-                </motion.p>
-              )}
             </AnimatePresence>
           </div>
 
           {/* Countdown */}
-          {status !== 'success' && (
-            <div className="text-center mb-5">
-              {timeLeft > 0 ? (
-                <p className="font-lato text-sm text-gray-500">
-                  {t.timerPrefix}{' '}
-                  <span className="font-semibold text-primary tabular-nums">
-                    {formatTime(timeLeft)}
-                  </span>
-                </p>
-              ) : (
-                <p className="font-lato text-sm text-amber-600 font-medium">{t.expired}</p>
-              )}
-            </div>
-          )}
+          <div className="text-center mb-5">
+            {timeLeft > 0 ? (
+              <p className="font-lato text-sm text-gray-500">
+                {t.timerPrefix}{' '}
+                <span className="font-semibold text-primary tabular-nums">
+                  {formatTime(timeLeft)}
+                </span>
+              </p>
+            ) : (
+              <p className="font-lato text-sm text-amber-600 font-medium">{t.expired}</p>
+            )}
+          </div>
 
           {/* Verify button */}
-          {status !== 'success' && (
-            <button
-              onClick={() => submitCode(digits.join(''))}
-              disabled={digits.join('').length !== OTP_LENGTH || status === 'loading'}
-              className="w-full bg-primary hover:bg-pink-400 disabled:opacity-50 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm min-h-[48px] flex items-center justify-center gap-2 mb-5"
-            >
-              {status === 'loading' ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  {t.verifying}
-                </>
-              ) : t.verifyBtn}
-            </button>
-          )}
+          <button
+            onClick={() => submitCode(digits.join(''))}
+            disabled={digits.join('').length !== OTP_LENGTH || status === 'loading'}
+            className="w-full bg-primary hover:bg-pink-400 disabled:opacity-50 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm min-h-[48px] flex items-center justify-center gap-2 mb-5"
+          >
+            {status === 'loading' ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                {t.verifying}
+              </>
+            ) : t.verifyBtn}
+          </button>
 
           {/* Resend */}
-          {status !== 'success' && (
-            <div className="text-center">
-              <p className="font-lato text-xs text-gray-400 mb-2">{t.noCode}</p>
-              <button
-                onClick={handleResend}
-                disabled={timeLeft > 0}
-                className="inline-flex items-center gap-1.5 font-lato text-sm font-semibold text-primary hover:underline disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw size={13} />
-                {t.resend}
-              </button>
-            </div>
-          )}
+          <div className="text-center">
+            <p className="font-lato text-xs text-gray-400 mb-2">{t.noCode}</p>
+            <button
+              onClick={handleResend}
+              disabled={timeLeft > 0}
+              className="inline-flex items-center gap-1.5 font-lato text-sm font-semibold text-primary hover:underline disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw size={13} />
+              {t.resend}
+            </button>
+          </div>
 
         </div>
       </motion.div>
