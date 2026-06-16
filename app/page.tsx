@@ -37,10 +37,10 @@ export default function HomePage() {
   const t = translations[lang];
 
   const trustBadges = [
-    { icon: <Truck size={20} className="text-primary" />, ...t.home.trust.shipping },
-    { icon: <Leaf size={20} className="text-primary" />,  ...t.home.trust.natural },
-    { icon: <Rabbit size={20} className="text-primary" />, ...t.home.trust.cruelty },
-    { icon: <ShieldCheck size={20} className="text-primary" />, ...t.home.trust.secure },
+    { icon: <Truck size={32} className="text-primary" />, ...t.home.trust.shipping },
+    { icon: <Leaf size={32} className="text-primary" />,  ...t.home.trust.natural },
+    { icon: <Rabbit size={32} className="text-primary" />, ...t.home.trust.cruelty },
+    { icon: <ShieldCheck size={32} className="text-primary" />, ...t.home.trust.secure },
   ];
 
   const whyItems = [
@@ -86,19 +86,6 @@ export default function HomePage() {
             className="w-full max-w-xs border-2 border-white text-white font-lato font-semibold px-6 py-3 rounded-full text-base hover:bg-white/15 transition-colors flex items-center justify-center min-h-[44px] [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
             {t.home.hero.howToBtn}
           </Link>
-
-          {/* Trust badges — mobile */}
-          <div className="w-full grid grid-cols-2 gap-x-3 gap-y-2 mt-2 pt-3 border-t border-white/25">
-            {trustBadges.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="shrink-0">{item.icon}</span>
-                <div className="text-left">
-                  <p className="font-lato font-semibold text-black text-[11px] leading-tight">{item.title}</p>
-                  <p className="font-lato text-black/70 text-[10px] leading-tight">{item.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* DESKTOP : positions calées sur les zones annotées */}
@@ -140,22 +127,45 @@ export default function HomePage() {
           </Link>
         </motion.div>
 
-        {/* Trust badges — desktop, bande en bas du hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }}
-          className="hidden lg:grid grid-cols-4 divide-x divide-white/20 absolute bottom-0 left-0 right-0 z-10"
-        >
-          {trustBadges.map((item, i) => (
-            <div key={i} className="flex items-center justify-center gap-3 py-4 px-6">
-              <span className="shrink-0">{item.icon}</span>
-              <div>
-                <p className="font-lato font-semibold text-black text-sm leading-tight">{item.title}</p>
-                <p className="font-lato text-black/70 text-xs leading-tight">{item.sub}</p>
-              </div>
-            </div>
-          ))}
+        {/* Indicateur de scroll */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}
+            className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-2 bg-white/70 rounded-full" />
+          </motion.div>
         </motion.div>
       </section>
+
+      {/* ——— Trust Badges ——— */}
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #fce7f3 0%, #fdf2f8 50%, #fce7f3 100%)' }}>
+        {/* Blurred decorative blobs */}
+        <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-pink-300/25 blur-3xl pointer-events-none" />
+        <div className="absolute right-16 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-rose-300/25 blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 top-0 w-24 h-24 rounded-full bg-pink-200/30 blur-2xl pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            {trustBadges.map((item, i) => (
+              <div
+                key={i}
+                className={[
+                  'flex items-center gap-3 px-5 py-5 sm:px-8',
+                  i === 0 ? 'border-r border-b border-pink-200 lg:border-b-0' : '',
+                  i === 1 ? 'border-b border-pink-200 lg:border-b-0 lg:border-r' : '',
+                  i === 2 ? 'border-r border-pink-200 lg:border-r' : '',
+                ].join(' ')}
+              >
+                <span className="shrink-0">{item.icon}</span>
+                <div>
+                  <p className="font-lato font-bold text-gray-900 text-sm sm:text-base leading-tight">{item.title}</p>
+                  <p className="font-lato text-gray-700 text-xs sm:text-sm leading-tight">{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ——— Featured Products ——— */}
       <section className="py-12 sm:py-20 lg:py-28 px-4">
