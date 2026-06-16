@@ -37,10 +37,10 @@ export default function HomePage() {
   const t = translations[lang];
 
   const trustBadges = [
-    { icon: <Truck size={32} className="text-primary" />, ...t.home.trust.shipping },
-    { icon: <Leaf size={32} className="text-primary" />,  ...t.home.trust.natural },
-    { icon: <Rabbit size={32} className="text-primary" />, ...t.home.trust.cruelty },
-    { icon: <ShieldCheck size={32} className="text-primary" />, ...t.home.trust.secure },
+    { icon: <Truck size={32} className="text-pink-600" />, ...t.home.trust.shipping },
+    { icon: <Leaf size={32} className="text-pink-600" />,  ...t.home.trust.natural },
+    { icon: <Rabbit size={32} className="text-pink-600" />, ...t.home.trust.cruelty },
+    { icon: <ShieldCheck size={32} className="text-pink-600" />, ...t.home.trust.secure },
   ];
 
   const whyItems = [
