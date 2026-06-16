@@ -215,7 +215,7 @@ function VerificationForm() {
                 value={digit}
                 onChange={(e) => handleDigitChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                disabled={status === 'loading' || status === 'success'}
+                disabled={status === 'loading'}
                 className={`w-11 h-14 text-center font-playfair font-bold text-xl border-2 rounded-xl outline-none transition-all ${borderCls(i)} disabled:opacity-60`}
                 aria-label={`Digit ${i + 1}`}
               />
