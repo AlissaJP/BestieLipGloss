@@ -107,6 +107,12 @@ export const translations = {
         subtitle: "Rejoins des centaines de personnes qui font confiance à Bestie",
         btn: 'Commander maintenant →',
       },
+      trust: {
+        shipping: { title: 'Livraison gratuite', sub: 'aux États-Unis' },
+        natural:  { title: 'Ingrédients naturels', sub: '& sûrs' },
+        cruelty:  { title: 'Sans cruauté', sub: '& adapté aux enfants' },
+        secure:   { title: 'Paiement sécurisé', sub: '100 % garanti' },
+      },
     },
     shop: {
       eyebrow: 'Nos créations',
@@ -784,6 +790,12 @@ export const translations = {
         subtitle: 'Join hundreds of people who trust Bestie',
         btn: 'Order now →',
       },
+      trust: {
+        shipping: { title: 'Free Shipping', sub: 'in USA' },
+        natural:  { title: 'Natural & Safe', sub: 'Ingredients' },
+        cruelty:  { title: 'Cruelty Free', sub: '& Kid Friendly' },
+        secure:   { title: '100% Secure', sub: 'Checkout' },
+      },
     },
     shop: {
       eyebrow: 'Our Creations',
@@ -1460,6 +1472,12 @@ export const translations = {
         title: '¿Lista para realzar tus labios? 💋',
         subtitle: 'Únete a cientos de personas que confían en Bestie',
         btn: 'Pedir ahora →',
+      },
+      trust: {
+        shipping: { title: 'Envío gratis', sub: 'en EE. UU.' },
+        natural:  { title: 'Ingredientes naturales', sub: '& seguros' },
+        cruelty:  { title: 'Sin crueldad', sub: '& apto para niños' },
+        secure:   { title: 'Pago seguro', sub: '100 % garantizado' },
       },
     },
     shop: {

@@ -259,7 +259,7 @@ export default function Header() {
                         <button
                           key={code}
                           onClick={() => handleLang(code)}
-                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 font-lato text-sm transition-colors ${
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 font-lato text-base transition-colors ${
                             lang === code
                               ? 'bg-pink-50 text-primary font-semibold'
                               : 'text-gray-600 hover:bg-pink-50'
@@ -280,13 +280,13 @@ export default function Header() {
                 <div className="hidden sm:block relative" ref={userMenuRef}>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
                       isUserMenuOpen ? 'bg-pink-100 text-primary' : 'text-gray-600 hover:text-primary hover:bg-pink-50'
                     }`}
                     aria-label={t.auth.myAccount} aria-expanded={isUserMenuOpen}
                   >
-                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-sm select-none">👩🏾</div>
-                    <span className="font-lato text-base font-medium hidden md:block max-w-[80px] truncate">
+                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-lg select-none">👩🏾</div>
+                    <span className="font-lato text-lg font-medium hidden sm:block max-w-[120px] truncate">
                       {user?.name?.split(' ')[0]}
                     </span>
                   </button>
