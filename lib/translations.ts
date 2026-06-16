@@ -19,6 +19,8 @@ export const translations = {
     search: {
       placeholder: 'Rechercher…',
       placeholderMobile: 'Rechercher un produit…',
+      noResults: 'Aucun produit trouvé',
+      viewAll: 'Voir tous les résultats',
     },
     lang: {
       label: 'Langue',
@@ -694,6 +696,8 @@ export const translations = {
     search: {
       placeholder: 'Search…',
       placeholderMobile: 'Search a product…',
+      noResults: 'No product found',
+      viewAll: 'View all results',
     },
     lang: {
       label: 'Language',
@@ -1369,6 +1373,8 @@ export const translations = {
     search: {
       placeholder: 'Buscar…',
       placeholderMobile: 'Buscar un producto…',
+      noResults: 'Ningún producto encontrado',
+      viewAll: 'Ver todos los resultados',
     },
     lang: {
       label: 'Idioma',

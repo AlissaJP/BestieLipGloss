@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, MapPin, CreditCard, XCircle } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
-import { useOrdersStore, type StoredOrder, type OrderStatus } from '@/store/ordersStore';
+import { useOrdersStore, type StoredOrder, type CustomerOrderStatus } from '@/store/ordersStore';
 import { translations } from '@/lib/translations';
 
-const STATUS_STYLES: Record<OrderStatus, { emoji: string; pill: string; active: string; dot: string }> = {
+const STATUS_STYLES: Record<CustomerOrderStatus, { emoji: string; pill: string; active: string; dot: string }> = {
   attente:   { emoji: '⏳', pill: 'bg-orange-100 text-orange-700',  active: 'bg-orange-500 text-white shadow-sm shadow-orange-200',  dot: 'bg-orange-400' },
   valide:    { emoji: '✅', pill: 'bg-blue-100 text-blue-700',      active: 'bg-blue-500 text-white shadow-sm shadow-blue-200',      dot: 'bg-blue-400' },
   livraison: { emoji: '🛵', pill: 'bg-purple-100 text-purple-700',  active: 'bg-purple-500 text-white shadow-sm shadow-purple-200',  dot: 'bg-purple-400' },
@@ -16,7 +16,7 @@ const STATUS_STYLES: Record<OrderStatus, { emoji: string; pill: string; active: 
   annule:    { emoji: '🚫', pill: 'bg-gray-100 text-gray-500',      active: 'bg-gray-500 text-white shadow-sm shadow-gray-200',      dot: 'bg-gray-400' },
 };
 
-const STATUS_KEYS: OrderStatus[] = ['attente', 'valide', 'livraison', 'livre', 'annule'];
+const STATUS_KEYS: CustomerOrderStatus[] = ['attente', 'valide', 'livraison', 'livre', 'annule'];
 
 function formatDate(iso: string, lang: string): string {
   return new Date(iso).toLocaleDateString(
@@ -31,7 +31,7 @@ type TOrders = {
   back: string; heading: string; sub: string; shopBtn: string; empty: string;
   cancelBtn: string; cancelConfirm: string; cancelYes: string; cancelNo: string;
   orderDate: string; payVia: string;
-  statuses: { [K in OrderStatus]: { label: string; desc: string } };
+  statuses: { [K in CustomerOrderStatus]: { label: string; desc: string } };
 };
 
 function OrderCard({
@@ -141,7 +141,7 @@ export default function CommandesPage() {
   const t = translations[lang].pages.orders;
   const { orders, cancelOrder } = useOrdersStore();
 
-  const [activeTab, setActiveTab] = useState<OrderStatus>('attente');
+  const [activeTab, setActiveTab] = useState<CustomerOrderStatus>('attente');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const filteredOrders = orders.filter((o) => o.status === activeTab);

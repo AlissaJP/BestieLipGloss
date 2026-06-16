@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, MessageCircle } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
@@ -44,10 +45,11 @@ function BotAvatar({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src="/avatar-bot.png"
       alt="Bestie"
+      width={size === 'lg' ? 44 : 24}
+      height={size === 'lg' ? 44 : 24}
       className={cls}
       onError={() => setImgError(true)}
     />

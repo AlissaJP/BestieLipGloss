@@ -4,7 +4,8 @@ import { createResetToken, verifyResetToken } from '@/lib/resetTokens';
 export async function POST(request: NextRequest) {
   const { email } = await request.json();
 
-  if (!email || !email.includes('@')) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!email || !emailRegex.test(email)) {
     return NextResponse.json({ error: 'Adresse e-mail invalide.' }, { status: 400 });
   }
 
@@ -14,9 +15,11 @@ export async function POST(request: NextRequest) {
   // TODO (Email): envoyer le lien via Resend / SendGrid
   // await sendResetEmail(email, `${BASE_URL}/reinitialiser-mot-de-passe?token=${token}`);
 
-  // En dev, on retourne le token pour tester le flux sans email
-  const isDev = process.env.NODE_ENV !== 'production';
-  return NextResponse.json({ success: true, ...(isDev && { devToken: token }) });
+  // En dev local uniquement (pas staging/preview), affiche le token dans les logs serveur
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[DEV] Reset token pour ${email}: ${token}`);
+  }
+  return NextResponse.json({ success: true });
 }
 
 export async function GET(request: NextRequest) {

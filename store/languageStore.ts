@@ -17,6 +17,7 @@ export const useLanguageStore = create<LanguageState>()(
     {
       name: 'bestie-lang',
       version: 1,
+      skipHydration: true,
       migrate: (_state: unknown, _fromVersion: number) => ({ lang: 'en' as Lang }),
     }
   )

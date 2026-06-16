@@ -22,6 +22,6 @@ export const useFavoritesStore = create<FavoritesState>()(
       },
       isFavorite: (id) => !!get().items.find((p) => p.id === id),
     }),
-    { name: 'bestie-favorites' }
+    { name: 'bestie-favorites', skipHydration: true }
   )
 );

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShoppingBag, MessageCircle, CreditCard, Package } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
+import { WHATSAPP_URL } from '@/lib/contact';
 
 export default function CommentCommanderPage() {
   const { lang } = useLanguageStore();
@@ -104,7 +105,7 @@ export default function CommentCommanderPage() {
             {t.ctaShop}
           </Link>
           <a
-            href="https://wa.me/50900000000"
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="border-2 border-white text-white font-lato font-semibold px-8 py-3.5 rounded-full hover:bg-white/10 transition-colors min-h-[48px] flex items-center justify-center"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -12,10 +12,24 @@ export default function AuthModal() {
   const { showAuthModal, closeAuthModal } = useAuthStore();
   const { lang } = useLanguageStore();
   const t = translations[lang].pages.authModal;
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeAuthModal(); };
-    if (showAuthModal) document.addEventListener('keydown', onKey);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeAuthModal(); return; }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) { if (document.activeElement === first) { last.focus(); e.preventDefault(); } }
+      else { if (document.activeElement === last) { first.focus(); e.preventDefault(); } }
+    };
+    if (showAuthModal) {
+      document.addEventListener('keydown', onKey);
+      setTimeout(() => dialogRef.current?.querySelector<HTMLElement>('a,button')?.focus(), 50);
+    }
     return () => document.removeEventListener('keydown', onKey);
   }, [showAuthModal, closeAuthModal]);
 
@@ -36,6 +50,7 @@ export default function AuthModal() {
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-modal-title"

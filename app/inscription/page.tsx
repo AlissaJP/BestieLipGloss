@@ -93,13 +93,13 @@ export default function InscriptionPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="font-greatvibes text-4xl text-primary inline-block mb-3">
+          <Link href="/" className="font-greatvibes text-5xl text-primary inline-block mb-3">
             Bestie LipGloss
           </Link>
-          <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
+          <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-1">
             {t.heading}
           </h1>
-          <p className="font-lato text-sm text-gray-500">
+          <p className="font-lato text-base text-gray-500">
             {t.sub}
           </p>
         </div>
@@ -109,23 +109,23 @@ export default function InscriptionPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                  <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                     {t.firstName} <span className="text-primary">*</span>
                   </label>
                   <div className="relative">
-                    <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <User size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       value={form.prenom}
                       onChange={update('prenom')}
                       placeholder="Marie"
-                      className="w-full pl-9 pr-3 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                      className="w-full pl-9 pr-3 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                       autoComplete="given-name"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                  <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                     {t.lastName}
                   </label>
                   <input
@@ -133,38 +133,38 @@ export default function InscriptionPage() {
                     value={form.nom}
                     onChange={update('nom')}
                     placeholder="Duval"
-                    className="w-full px-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full px-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="family-name"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                   {t.email} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type="email"
                     value={form.email}
                     onChange={update('email')}
                     placeholder="your@email.com"
-                    className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full pl-11 pr-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                <label htmlFor="phone-number" className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                   {t.whatsapp} <span className="text-primary">*</span>
                 </label>
                 <div className="flex border border-pink-200 rounded-xl overflow-hidden bg-gray-50 focus-within:border-primary transition-colors">
                   <select
                     value={selectedPaysId}
                     onChange={(e) => setSelectedPaysId(e.target.value)}
-                    className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
+                    className="bg-transparent font-lato text-base text-gray-700 pl-3 pr-2 py-3.5 outline-none border-r border-pink-200 cursor-pointer shrink-0"
                     aria-label={t.countryCode}
                   >
                     {PAYS.map((p) => (
@@ -174,28 +174,29 @@ export default function InscriptionPage() {
                     ))}
                   </select>
                   <input
+                    id="phone-number"
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="XXXX XXXX"
-                    className="flex-1 px-3 py-3 font-lato text-sm outline-none bg-transparent min-w-0"
+                    className="flex-1 px-3 py-3.5 font-lato text-base outline-none bg-transparent min-w-0"
                     autoComplete="tel-national"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                   {t.pwd} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={form.password}
                     onChange={update('password')}
                     placeholder={t.pwdPlaceholder}
-                    className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full pl-11 pr-11 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="new-password"
                   />
                   <button
@@ -204,23 +205,23 @@ export default function InscriptionPage() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     aria-label={showPassword ? 'Hide' : 'Show'}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                   {t.confirm} <span className="text-primary">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={form.confirm}
                     onChange={update('confirm')}
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full pl-11 pr-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="new-password"
                   />
                 </div>
@@ -230,7 +231,7 @@ export default function InscriptionPage() {
                 <motion.p
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="font-lato text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl"
+                  className="font-lato text-base text-red-500 bg-red-50 px-4 py-3 rounded-xl"
                 >
                   {error}
                 </motion.p>
@@ -240,7 +241,7 @@ export default function InscriptionPage() {
                 type="submit"
                 disabled={isLoading}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-primary hover:bg-pink-400 disabled:opacity-70 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm min-h-[48px] flex items-center justify-center gap-2 mt-1"
+                className="w-full bg-primary hover:bg-pink-400 disabled:opacity-70 text-white font-lato font-semibold py-4 rounded-xl transition-colors text-base min-h-[52px] flex items-center justify-center gap-2 mt-1"
               >
                 {isLoading ? (
                   <>
@@ -254,7 +255,7 @@ export default function InscriptionPage() {
             </div>
           </form>
 
-          <p className="text-center font-lato text-sm text-gray-500 mt-6">
+          <p className="text-center font-lato text-base text-gray-500 mt-6">
             {t.haveAccount}{' '}
             <Link href="/connexion" className="text-primary font-semibold hover:underline">
               {t.signIn}

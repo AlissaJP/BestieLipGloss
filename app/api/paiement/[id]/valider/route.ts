@@ -17,7 +17,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value)) {
+  if (!(await verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value))) {
     return NextResponse.json({ error: 'Non autorisé.' }, { status: 401 });
   }
 

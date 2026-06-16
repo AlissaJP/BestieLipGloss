@@ -48,61 +48,98 @@ export default function HomePage() {
   return (
     <div>
       {/* ——— Hero ——— */}
-      <section
-        className="min-h-screen flex items-center justify-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #D45F85 0%, #D47898 40%, #C9A47A 75%, #C9A47A 100%)' }}
-      >
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-white/15 rounded-full blur-2xl pointer-events-none" />
+      <section className="relative w-full overflow-hidden aspect-[1234/941]">
+        <Image
+          src="/accueilV2.png"
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          quality={95}
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/10" />
 
-        <div className="relative max-w-4xl mx-auto px-4 text-center py-24">
+        {/* MOBILE : < lg, centré */}
+        <div className="lg:hidden absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 gap-3">
+          <p className="font-lato text-xs tracking-[0.35em] text-white/90 uppercase [text-shadow:0_1px_6px_rgba(0,0,0,0.4)]">
+            {t.home.hero.eyebrow}
+          </p>
+          <h1 className="font-playfair font-bold text-3xl text-white leading-tight [text-shadow:0_2px_16px_rgba(0,0,0,0.4)]">
+            {t.home.hero.title}
+          </h1>
+          <p className="font-cormorant text-base text-white italic leading-relaxed mb-1 [text-shadow:0_1px_8px_rgba(0,0,0,0.35)]">
+            {t.home.hero.subtitle}
+          </p>
+          <Link href="/boutique"
+            className="w-full max-w-xs bg-white text-primary font-lato font-bold px-6 py-3 rounded-full text-base hover:bg-pink-50 transition-colors shadow-lg flex items-center justify-center min-h-[44px]">
+            {t.home.hero.shopBtn}
+          </Link>
+          <Link href="/comment-commander"
+            className="w-full max-w-xs border-2 border-white text-white font-lato font-semibold px-6 py-3 rounded-full text-base hover:bg-white/15 transition-colors flex items-center justify-center min-h-[44px] [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
+            {t.home.hero.howToBtn}
+          </Link>
+        </div>
+
+        {/* DESKTOP : positions calées sur les zones annotées */}
+
+        {/* Texte — carré bleu */}
+        <div className="hidden lg:flex flex-col justify-center gap-4 absolute z-10 text-center"
+          style={{ left: '39%', top: '1%', right: '4%', bottom: '37%' }}>
           <motion.p initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-            className="font-lato text-xs tracking-[0.35em] text-white/80 uppercase mb-5">
+            className="font-lato text-base tracking-[0.35em] text-white uppercase [text-shadow:0_1px_6px_rgba(0,0,0,0.45)]">
             {t.home.hero.eyebrow}
           </motion.p>
-
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-playfair font-bold text-4xl sm:text-6xl lg:text-7xl text-white mb-6 leading-tight">
+            className="font-playfair font-bold text-7xl text-white leading-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.45)]">
             {t.home.hero.title}
           </motion.h1>
-
           <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
-            className="font-cormorant text-xl sm:text-2xl text-white/90 mb-10 max-w-2xl mx-auto italic leading-relaxed">
+            className="font-cormorant text-3xl text-white italic leading-relaxed [text-shadow:0_1px_10px_rgba(0,0,0,0.4)]">
             {t.home.hero.subtitle}
           </motion.p>
-
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/boutique"
-              className="bg-white text-primary font-lato font-bold px-8 py-4 rounded-full text-base hover:bg-pink-50 transition-colors shadow-lg min-h-[52px] flex items-center justify-center">
-              {t.home.hero.shopBtn}
-            </Link>
-            <Link href="/comment-commander"
-              className="border-2 border-white text-white font-lato font-semibold px-8 py-4 rounded-full text-base hover:bg-white/10 transition-colors min-h-[52px] flex items-center justify-center">
-              {t.home.hero.howToBtn}
-            </Link>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2">
-            <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}
-              className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
-              <div className="w-1 h-2 bg-white/70 rounded-full" />
-            </motion.div>
-          </motion.div>
         </div>
+
+        {/* Bouton 1 — bloc rouge 1 */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+          className="hidden lg:flex absolute z-10"
+          style={{ right: '40%', top: '71%', width: '28%' }}>
+          <Link href="/boutique"
+            className="w-full bg-white text-primary font-lato font-bold px-6 py-3 rounded-full text-base hover:bg-pink-50 transition-colors shadow-lg flex items-center justify-center min-h-[44px]">
+            {t.home.hero.shopBtn}
+          </Link>
+        </motion.div>
+
+        {/* Bouton 2 — bloc rouge 2 */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.45 }}
+          className="hidden lg:flex absolute z-10"
+          style={{ right: '40%', top: '78%', width: '28%' }}>
+          <Link href="/comment-commander"
+            className="w-full border-2 border-white text-white font-lato font-semibold px-6 py-3 rounded-full text-base hover:bg-white/15 transition-colors flex items-center justify-center min-h-[44px] [text-shadow:0_1px_4px_rgba(0,0,0,0.3)]">
+            {t.home.hero.howToBtn}
+          </Link>
+        </motion.div>
+
+        {/* Indicateur de scroll */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}
+            className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-2 bg-white/70 rounded-full" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ——— Featured Products ——— */}
-      <section className="py-20 px-4">
+      <section className="py-28 px-4">
         <div className="max-w-7xl mx-auto">
           <FadeIn className="text-center mb-12">
-            <p className="font-lato text-xs tracking-widest text-accent uppercase mb-2">{t.home.featured.eyebrow}</p>
-            <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-3">{t.home.featured.title}</h2>
-            <p className="font-cormorant text-xl text-gray-500 italic">{t.home.featured.subtitle}</p>
+            <p className="font-lato text-sm tracking-widest text-accent uppercase mb-2">{t.home.featured.eyebrow}</p>
+            <h2 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-3">{t.home.featured.title}</h2>
+            <p className="font-cormorant text-2xl text-gray-500 italic">{t.home.featured.subtitle}</p>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {products.slice(0, 4).map((product, i) => (
               <FadeIn key={product.id} delay={i * 0.1}>
                 <ProductCard product={product} />
@@ -112,7 +149,7 @@ export default function HomePage() {
 
           <FadeIn delay={0.4} className="text-center mt-10">
             <Link href="/boutique"
-              className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3 rounded-full transition-colors shadow-sm">
+              className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-10 py-4 rounded-full transition-colors shadow-sm text-base">
               {t.home.featured.viewAll} ({products.length})
             </Link>
           </FadeIn>
@@ -120,25 +157,26 @@ export default function HomePage() {
       </section>
 
       {/* ——— Notre Histoire ——— */}
-      <section id="notre-histoire" className="py-20 px-4" style={{ backgroundColor: 'var(--secondary)' }}>
+      <section id="notre-histoire" className="py-28 px-4" style={{ backgroundColor: 'var(--secondary)' }}>
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
             <FadeIn>
               <div className="rounded-3xl overflow-hidden shadow-lg relative w-full aspect-[1600/983] lg:mt-44">
                 <Image
                   src="/CEO2.png"
                   alt="CEO Bestie LipGloss"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
             </FadeIn>
             <FadeIn delay={0.2}>
               <div>
-                <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-6 leading-snug">
+                <h2 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-6 leading-snug">
                   {t.home.story.title}
                 </h2>
-                <div className="space-y-4 font-lato text-gray-600 leading-relaxed text-sm sm:text-base">
+                <div className="space-y-4 font-lato text-gray-600 leading-relaxed text-base sm:text-lg">
                   <p>{t.home.story.p1}</p>
                   <p>{t.home.story.p2}</p>
                   <p>{t.home.story.p3}</p>
@@ -148,7 +186,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex flex-wrap gap-3 mt-8">
                   {[t.home.story.tag1, t.home.story.tag3].map((tag) => (
-                    <span key={tag} className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full font-lato text-sm text-gray-700 shadow-sm">
+                    <span key={tag} className="bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full font-lato text-base text-gray-700 shadow-sm">
                       {tag}
                     </span>
                   ))}
@@ -160,33 +198,33 @@ export default function HomePage() {
       </section>
 
       {/* ——— Testimonials ——— */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-28 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <FadeIn className="text-center mb-12">
-            <p className="font-lato text-xs tracking-widest text-accent uppercase mb-2">{t.home.reviews.eyebrow}</p>
-            <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-3">{t.home.reviews.title}</h2>
-            <p className="font-cormorant text-xl text-gray-500 italic">{t.home.reviews.subtitle}</p>
+            <p className="font-lato text-sm tracking-widest text-accent uppercase mb-2">{t.home.reviews.eyebrow}</p>
+            <h2 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-3">{t.home.reviews.title}</h2>
+            <p className="font-cormorant text-2xl text-gray-500 italic">{t.home.reviews.subtitle}</p>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, i) => (
               <FadeIn key={testimonial.name} delay={i * 0.15}>
-                <div className="bg-pink-50 rounded-2xl p-6 border border-pink-100 h-full flex flex-col">
+                <div className="bg-pink-50 rounded-2xl p-8 border border-pink-100 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`${testimonial.avatar} w-10 h-10 rounded-full flex items-center justify-center font-playfair font-bold text-gray-700 flex-shrink-0`}>
+                    <div className={`${testimonial.avatar} w-14 h-14 rounded-full flex items-center justify-center font-playfair font-bold text-lg text-gray-700 flex-shrink-0`}>
                       {testimonial.initial}
                     </div>
                     <div>
-                      <p className="font-playfair font-semibold text-gray-800 text-sm">{testimonial.name}</p>
-                      <p className="font-lato text-xs text-gray-400">{testimonial.location}</p>
+                      <p className="font-playfair font-semibold text-gray-800 text-base">{testimonial.name}</p>
+                      <p className="font-lato text-sm text-gray-400">{testimonial.location}</p>
                     </div>
                   </div>
                   <div className="flex gap-0.5 mb-3">
                     {Array.from({ length: testimonial.rating }).map((_, j) => (
-                      <Star key={j} size={13} className="fill-accent text-accent" aria-hidden="true" />
+                      <Star key={j} size={16} className="fill-accent text-accent" aria-hidden="true" />
                     ))}
                   </div>
-                  <p className="font-cormorant text-base text-gray-600 italic leading-relaxed flex-1">
+                  <p className="font-cormorant text-xl text-gray-600 italic leading-relaxed flex-1">
                     &ldquo;{testimonialQuotes[i]}&rdquo;
                   </p>
                 </div>

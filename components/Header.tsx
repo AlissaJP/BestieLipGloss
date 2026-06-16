@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,7 @@ import {
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
+import { useAdminStore } from '@/store/adminStore';
 import { translations } from '@/lib/translations';
 import CartDrawer from './CartDrawer';
 
@@ -23,19 +24,54 @@ const LANGS: { code: Lang; flag: string; name: string }[] = [
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const { openCart, totalItems } = useCartStore();
   const { isLoggedIn, user, logout } = useAuthStore();
   const { lang, setLang } = useLanguageStore();
+  const { managedProducts } = useAdminStore();
   const router = useRouter();
   const t = translations[lang];
   const itemCount = totalItems();
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (!q.trim()) return [];
+    return managedProducts
+      .filter((p) => p.published !== false)
+      .filter((p) => {
+        const hay = [p.name, p.shade, p.description, p.collection ?? '']
+          .join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return hay.includes(q);
+      })
+      .slice(0, 5);
+  }, [searchQuery, managedProducts]);
+
+  const mobileResults = useMemo(() => {
+    const q = mobileSearchQuery.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (!q.trim()) return [];
+    return managedProducts
+      .filter((p) => p.published !== false)
+      .filter((p) => {
+        const hay = [p.name, p.shade, p.description, p.collection ?? '']
+          .join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return hay.includes(q);
+      })
+      .slice(0, 5);
+  }, [mobileSearchQuery, managedProducts]);
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
 
   const navLinks = [
     { href: '/', label: t.nav.home },
@@ -59,6 +95,7 @@ export default function Header() {
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setIsUserMenuOpen(false);
       if (langRef.current && !langRef.current.contains(e.target as Node)) setIsLangOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) closeSearch();
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -85,12 +122,12 @@ export default function Header() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-20 lg:h-24">
 
             {/* Logo */}
             <Link href="/" className="flex flex-col leading-none">
-              <span className="font-greatvibes text-2xl lg:text-3xl text-primary">Bestie LipGloss</span>
-              <span className="font-lato text-[10px] text-gray-400 tracking-[0.25em] uppercase hidden sm:block">
+              <span className="font-greatvibes text-3xl lg:text-4xl text-primary">Bestie LipGloss</span>
+              <span className="font-lato text-xs text-gray-400 tracking-[0.25em] uppercase hidden sm:block">
                 Natural Haitian Beauty
               </span>
             </Link>
@@ -99,7 +136,7 @@ export default function Header() {
             <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}
-                  className="font-lato text-sm text-gray-700 hover:text-primary transition-colors tracking-wide">
+                  className="font-lato text-lg text-gray-700 hover:text-primary transition-colors tracking-wide">
                   {link.label}
                 </Link>
               ))}
@@ -109,22 +146,91 @@ export default function Header() {
             <div className="flex items-center gap-1 sm:gap-2">
 
               {/* Search (desktop) */}
-              <div className="hidden sm:flex items-center">
+              <div className="hidden sm:flex items-center relative" ref={searchRef}>
                 <AnimatePresence>
                   {isSearchOpen && (
-                    <motion.input key="search"
-                      initial={{ width: 0, opacity: 0 }} animate={{ width: 180, opacity: 1 }}
+                    <motion.div key="search-wrap"
+                      initial={{ width: 0, opacity: 0 }} animate={{ width: 220, opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                      type="text" placeholder={t.search.placeholder}
-                      className="font-lato text-sm border border-pink-200 rounded-full px-4 py-1.5 outline-none focus:border-primary bg-white"
-                      autoFocus onBlur={() => setIsSearchOpen(false)} aria-label="Search"
-                    />
+                      className="overflow-visible"
+                    >
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') closeSearch();
+                          if (e.key === 'Enter' && searchQuery.trim()) {
+                            router.push(`/boutique?q=${encodeURIComponent(searchQuery.trim())}`);
+                            closeSearch();
+                          }
+                        }}
+                        placeholder={t.search.placeholder}
+                        className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-1.5 outline-none focus:border-primary bg-white"
+                        autoFocus
+                        aria-label="Rechercher un produit"
+                        aria-autocomplete="list"
+                        aria-controls="search-results"
+                      />
+                      {/* Dropdown résultats */}
+                      <AnimatePresence>
+                        {searchQuery.trim() && (
+                          <motion.div
+                            id="search-results"
+                            role="listbox"
+                            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-pink-100 overflow-hidden z-50"
+                          >
+                            {searchResults.length === 0 ? (
+                              <p className="font-lato text-sm text-gray-400 px-4 py-3 text-center">{t.search.noResults}</p>
+                            ) : (
+                              <>
+                                {searchResults.map((p) => (
+                                  <Link
+                                    key={p.id}
+                                    href={`/boutique/${p.slug}`}
+                                    role="option"
+                                    onClick={closeSearch}
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-pink-50 transition-colors border-b border-pink-50 last:border-0"
+                                  >
+                                    <div
+                                      className="w-9 h-9 rounded-xl flex-shrink-0"
+                                      style={{ background: p.bgColor || '#F2E9E1' }}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-lato text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                                      <p className="font-lato text-xs text-gray-400 truncate">{p.shade}</p>
+                                    </div>
+                                    <span className="font-lato text-xs text-primary font-semibold shrink-0">{p.price_htg} HTG</span>
+                                  </Link>
+                                ))}
+                                {searchResults.length === 5 && (
+                                  <Link
+                                    href={`/boutique?q=${encodeURIComponent(searchQuery.trim())}`}
+                                    onClick={closeSearch}
+                                    className="block font-lato text-xs text-primary text-center py-2.5 hover:bg-pink-50 transition-colors font-semibold"
+                                  >
+                                    {t.search.viewAll} →
+                                  </Link>
+                                )}
+                              </>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   )}
                 </AnimatePresence>
-                <button onClick={() => setIsSearchOpen(!isSearchOpen)}
+                <button
+                  onClick={() => {
+                    if (isSearchOpen && !searchQuery) closeSearch();
+                    else setIsSearchOpen(true);
+                  }}
                   className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                  aria-label="Open search">
-                  <Search size={19} />
+                  aria-label="Ouvrir la recherche"
+                >
+                  <Search size={22} />
                 </button>
               </div>
 
@@ -138,7 +244,7 @@ export default function Header() {
                   aria-label="Language / Langue"
                   aria-expanded={isLangOpen}
                 >
-                  <Globe size={19} />
+                  <Globe size={22} />
                 </button>
                 <AnimatePresence>
                   {isLangOpen && (
@@ -180,7 +286,7 @@ export default function Header() {
                     aria-label={t.auth.myAccount} aria-expanded={isUserMenuOpen}
                   >
                     <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-sm select-none">👩🏾</div>
-                    <span className="font-lato text-sm font-medium hidden md:block max-w-[80px] truncate">
+                    <span className="font-lato text-base font-medium hidden md:block max-w-[80px] truncate">
                       {user?.name?.split(' ')[0]}
                     </span>
                   </button>
@@ -198,8 +304,8 @@ export default function Header() {
                         <div className="px-4 py-3.5 bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100 flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-lg flex-shrink-0 select-none">👩🏾</div>
                           <div className="min-w-0">
-                            <p className="font-playfair font-semibold text-sm text-gray-800 truncate">{user?.name}</p>
-                            <p className="font-lato text-xs text-gray-400 truncate">{user?.email}</p>
+                            <p className="font-playfair font-semibold text-base text-gray-800 truncate">{user?.name}</p>
+                            <p className="font-lato text-sm text-gray-400 truncate">{user?.email}</p>
                           </div>
                         </div>
 
@@ -212,8 +318,8 @@ export default function Header() {
                                 <Icon size={15} className="text-primary" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-lato text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">{label}</p>
-                                <p className="font-lato text-xs text-gray-400">{desc}</p>
+                                <p className="font-lato text-base font-medium text-gray-800 group-hover:text-primary transition-colors">{label}</p>
+                                <p className="font-lato text-sm text-gray-400">{desc}</p>
                               </div>
                               <ChevronRight size={14} className="text-gray-300 group-hover:text-primary transition-colors" />
                             </Link>
@@ -228,8 +334,8 @@ export default function Header() {
                               <LogOut size={15} className="text-red-400" />
                             </div>
                             <div className="flex-1 text-left">
-                              <p className="font-lato text-sm font-medium text-red-500 group-hover:text-red-600 transition-colors">{t.auth.logout}</p>
-                              <p className="font-lato text-xs text-gray-400">{t.auth.logoutSub}</p>
+                              <p className="font-lato text-base font-medium text-red-500 group-hover:text-red-600 transition-colors">{t.auth.logout}</p>
+                              <p className="font-lato text-sm text-gray-400">{t.auth.logoutSub}</p>
                             </div>
                           </button>
                         </div>
@@ -240,11 +346,11 @@ export default function Header() {
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/connexion"
-                    className="font-lato text-sm text-gray-600 hover:text-primary transition-colors px-3 py-1.5">
+                    className="font-lato text-base text-gray-600 hover:text-primary transition-colors px-3 py-1.5">
                     {t.auth.login}
                   </Link>
                   <Link href="/inscription"
-                    className="font-lato text-sm font-semibold bg-primary hover:bg-pink-400 text-white px-4 py-1.5 rounded-full transition-colors">
+                    className="font-lato text-base font-semibold bg-primary hover:bg-pink-400 text-white px-4 py-1.5 rounded-full transition-colors">
                     {t.auth.register}
                   </Link>
                 </div>
@@ -255,7 +361,7 @@ export default function Header() {
                 <button onClick={openCart}
                   className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
                   aria-label={`Cart (${itemCount} items)`}>
-                  <ShoppingBag size={22} />
+                  <ShoppingBag size={25} />
                   <AnimatePresence>
                     {itemCount > 0 && (
                       <motion.span key={itemCount} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -272,7 +378,7 @@ export default function Header() {
               <button onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="lg:hidden p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
                 aria-label={isMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={isMenuOpen}>
-                {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                {isMenuOpen ? <X size={25} /> : <Menu size={25} />}
               </button>
             </div>
           </div>
@@ -334,9 +440,48 @@ export default function Header() {
 
                 {/* Mobile search */}
                 <div className="pt-3 pb-1 border-t border-pink-100">
-                  <input type="text" placeholder={t.search.placeholderMobile}
+                  <input
+                    type="text"
+                    value={mobileSearchQuery}
+                    onChange={(e) => setMobileSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && mobileSearchQuery.trim()) {
+                        router.push(`/boutique?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
+                        setIsMenuOpen(false);
+                        setMobileSearchQuery('');
+                      }
+                    }}
+                    placeholder={t.search.placeholderMobile}
                     className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-2.5 outline-none focus:border-primary bg-gray-50"
-                    aria-label="Mobile search" />
+                    aria-label="Rechercher un produit"
+                  />
+                  {/* Résultats mobile */}
+                  {mobileSearchQuery.trim() && (
+                    <div className="mt-2 rounded-2xl border border-pink-100 overflow-hidden bg-white">
+                      {mobileResults.length === 0 ? (
+                        <p className="font-lato text-sm text-gray-400 px-4 py-3 text-center">{t.search.noResults}</p>
+                      ) : (
+                        mobileResults.map((p) => (
+                          <Link
+                            key={p.id}
+                            href={`/boutique/${p.slug}`}
+                            onClick={() => { setIsMenuOpen(false); setMobileSearchQuery(''); }}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-pink-50 transition-colors border-b border-pink-50 last:border-0"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex-shrink-0"
+                              style={{ background: p.bgColor || '#F2E9E1' }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-lato text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                              <p className="font-lato text-xs text-gray-400 truncate">{p.shade}</p>
+                            </div>
+                            <span className="font-lato text-xs text-primary font-semibold shrink-0">{p.price_htg} HTG</span>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </nav>
             </motion.div>

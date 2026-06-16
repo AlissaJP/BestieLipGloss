@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type OrderStatus = 'attente' | 'valide' | 'livraison' | 'livre' | 'annule';
+export type CustomerOrderStatus = 'attente' | 'valide' | 'livraison' | 'livre' | 'annule';
 export type OrderPaymentMethod = 'moncash' | 'zelle' | 'card';
 
 export interface StoredOrderItem {
@@ -17,7 +17,7 @@ export interface StoredOrderItem {
 export interface StoredOrder {
   id: string;
   date: string;
-  status: OrderStatus;
+  status: CustomerOrderStatus;
   items: StoredOrderItem[];
   total: number;
   totalUSD: number;
@@ -42,10 +42,10 @@ export const useOrdersStore = create<OrdersState>()(
       cancelOrder: (id) =>
         set((state) => ({
           orders: state.orders.map((o) =>
-            o.id === id ? { ...o, status: 'annule' as OrderStatus } : o
+            o.id === id ? { ...o, status: 'annule' as CustomerOrderStatus } : o
           ),
         })),
     }),
-    { name: 'bestie-orders' }
+    { name: 'bestie-orders', skipHydration: true }
   )
 );

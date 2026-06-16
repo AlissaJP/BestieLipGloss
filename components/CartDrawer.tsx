@@ -38,13 +38,14 @@ export default function CartDrawer() {
             transition={{ type: 'tween', duration: 0.3 }}
             className="fixed right-0 top-0 h-full w-full sm:w-[400px] bg-white z-50 flex flex-col shadow-2xl"
             role="dialog"
-            aria-label="Cart"
+            aria-modal="true"
+            aria-label="Panier"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-pink-100">
               <div className="flex items-center gap-2">
-                <ShoppingBag size={20} className="text-primary" aria-hidden="true" />
-                <h2 className="font-playfair font-semibold text-gray-800 text-lg">{t.cart.title}</h2>
+                <ShoppingBag size={22} className="text-primary" aria-hidden="true" />
+                <h2 className="font-playfair font-semibold text-gray-800 text-xl">{t.cart.title}</h2>
                 {items.length > 0 && (
                   <span className="bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                     {items.reduce((a, i) => a + i.quantity, 0)}
@@ -65,11 +66,11 @@ export default function CartDrawer() {
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-3">
                   <span className="text-6xl" aria-hidden="true">💋</span>
-                  <p className="font-playfair text-gray-500 text-lg">{t.cart.empty}</p>
-                  <p className="font-lato text-sm text-gray-400">{t.cart.emptyDesc}</p>
+                  <p className="font-playfair text-gray-500 text-xl">{t.cart.empty}</p>
+                  <p className="font-lato text-base text-gray-400">{t.cart.emptyDesc}</p>
                   <button
                     onClick={closeCart}
-                    className="mt-3 bg-primary text-white font-lato text-sm px-6 py-2.5 rounded-full hover:bg-pink-400 transition-colors"
+                    className="mt-3 bg-primary text-white font-lato text-base px-6 py-2.5 rounded-full hover:bg-pink-400 transition-colors"
                   >
                     {t.cart.viewShop}
                   </button>
@@ -100,11 +101,11 @@ export default function CartDrawer() {
                       )}
                       {/* Details */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-playfair font-semibold text-gray-800 text-sm truncate">{item.name}</p>
+                        <p className="font-playfair font-semibold text-gray-800 text-base truncate">{item.name}</p>
                         <span className="inline-block font-lato text-[11px] text-primary bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-full mt-0.5">
                           {item.shade}
                         </span>
-                        <p className="font-playfair font-bold text-primary text-sm mt-1">
+                        <p className="font-playfair font-bold text-primary text-base mt-1">
                           ${(item.price_usd * item.quantity).toFixed(2)}
                         </p>
                       </div>
@@ -121,7 +122,7 @@ export default function CartDrawer() {
                           <button
                             onClick={() => updateQuantity(item.variantKey, item.quantity - 1)}
                             className="w-6 h-6 rounded-full border border-pink-200 flex items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors"
-                            aria-label="Decrease quantity"
+                            aria-label={`Diminuer la quantité de ${item.name}`}
                           >
                             <Minus size={10} />
                           </button>
@@ -129,7 +130,7 @@ export default function CartDrawer() {
                           <button
                             onClick={() => updateQuantity(item.variantKey, item.quantity + 1)}
                             className="w-6 h-6 rounded-full border border-pink-200 flex items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors"
-                            aria-label="Increase quantity"
+                            aria-label={`Augmenter la quantité de ${item.name}`}
                           >
                             <Plus size={10} />
                           </button>
@@ -145,16 +146,16 @@ export default function CartDrawer() {
             {items.length > 0 && (
               <div className="px-6 py-5 border-t border-pink-100 space-y-3 bg-white">
                 <div className="flex justify-between items-center">
-                  <span className="font-lato text-gray-600 text-sm">{t.cart.subtotal}</span>
-                  <span className="font-playfair font-bold text-gray-800 text-xl">${totalUSD.toFixed(2)}</span>
+                  <span className="font-lato text-gray-600 text-base">{t.cart.subtotal}</span>
+                  <span className="font-playfair font-bold text-gray-800 text-2xl">${totalUSD.toFixed(2)}</span>
                 </div>
-                <p className="font-lato text-xs text-gray-400">
+                <p className="font-lato text-sm text-gray-400">
                   {totalHTG >= 2000 ? t.cart.freeShipping : t.cart.shippingLeft.replace('{n}', `$${((2000 - totalHTG) / 130).toFixed(2)}`)}
                 </p>
                 <Link
                   href="/panier"
                   onClick={closeCart}
-                  className="block w-full text-center bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[48px] flex items-center justify-center text-sm"
+                  className="block w-full text-center bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3 rounded-xl transition-colors min-h-[48px] flex items-center justify-center text-base"
                 >
                   {t.cart.order}
                 </Link>

@@ -83,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'bestie-auth',
+      skipHydration: true,
       partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user }),
     }
   )

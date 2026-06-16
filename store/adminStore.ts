@@ -96,7 +96,8 @@ export const useAdminStore = create<AdminState>()(
         })),
     }),
     {
-      name: 'bestie-admin-v2',
+      name: 'bestie-admin-v3',
+      skipHydration: true,
       partialize: (state) => ({
         orders: state.orders,
         customers: state.customers,

@@ -73,13 +73,13 @@ function ConnexionForm() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="font-greatvibes text-4xl text-primary inline-block mb-3">
+          <Link href="/" className="font-greatvibes text-5xl text-primary inline-block mb-3">
             Bestie LipGloss
           </Link>
-          <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">
+          <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-1">
             {t.heading}
           </h1>
-          <p className="font-lato text-sm text-gray-500">
+          <p className="font-lato text-base text-gray-500">
             {t.sub}
           </p>
         </div>
@@ -88,17 +88,17 @@ function ConnexionForm() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="space-y-5">
               <div>
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
                   {t.userLabel}
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.userPlaceholder}
-                    className="w-full pl-11 pr-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full pl-11 pr-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="email"
                   />
                 </div>
@@ -106,21 +106,21 @@ function ConnexionForm() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-lato text-sm font-medium text-gray-700">
+                  <label className="font-lato text-base font-medium text-gray-700">
                     {t.pwdLabel}
                   </label>
-                  <Link href="/mot-de-passe-oublie" className="font-lato text-xs text-primary hover:underline">
+                  <Link href="/mot-de-passe-oublie" className="font-lato text-sm text-primary hover:underline">
                     {t.forgotPwd}
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-11 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors"
+                    className="w-full pl-11 pr-11 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
                     autoComplete="current-password"
                   />
                   <button
@@ -129,7 +129,7 @@ function ConnexionForm() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     aria-label={showPassword ? t.hide : t.show}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -138,7 +138,7 @@ function ConnexionForm() {
                 <motion.p
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="font-lato text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl"
+                  className="font-lato text-base text-red-500 bg-red-50 px-4 py-3 rounded-xl"
                 >
                   {error}
                 </motion.p>
@@ -148,7 +148,7 @@ function ConnexionForm() {
                 type="submit"
                 disabled={isLoading}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-primary hover:bg-pink-400 disabled:opacity-70 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm min-h-[48px] flex items-center justify-center gap-2 mt-1"
+                className="w-full bg-primary hover:bg-pink-400 disabled:opacity-70 text-white font-lato font-semibold py-4 rounded-xl transition-colors text-base min-h-[52px] flex items-center justify-center gap-2 mt-1"
               >
                 {isLoading ? (
                   <>
@@ -164,11 +164,11 @@ function ConnexionForm() {
 
           <div className="my-6 flex items-center gap-3">
             <div className="flex-1 h-px bg-pink-100" />
-            <span className="font-lato text-xs text-gray-400">{t.or}</span>
+            <span className="font-lato text-sm text-gray-400">{t.or}</span>
             <div className="flex-1 h-px bg-pink-100" />
           </div>
 
-          <p className="text-center font-lato text-sm text-gray-500">
+          <p className="text-center font-lato text-base text-gray-500">
             {t.noAccount}{' '}
             <Link href="/inscription" className="text-primary font-semibold hover:underline">
               {t.signUpFree}

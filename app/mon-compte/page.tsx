@@ -104,10 +104,10 @@ export default function MonComptePage() {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.2 }}
-                      className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-primary font-lato text-sm font-semibold px-3 py-1.5 rounded-full"
+                      className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-primary font-lato text-base font-semibold px-3 py-1.5 rounded-full"
                     >
                       <span>🏷️ {code}</span>
-                      <span className="text-gray-400 text-xs">(-{VALID_CODES[code]}%)</span>
+                      <span className="text-gray-400 text-sm">(-{VALID_CODES[code]}%)</span>
                       <button
                         onClick={() => removeCoupon(code)}
                         className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
@@ -129,11 +129,11 @@ export default function MonComptePage() {
                 onChange={(e) => setCouponInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddCoupon()}
                 placeholder="Ex : BESTIE10"
-                className="flex-1 font-lato text-sm border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-gray-50 focus:bg-white transition-colors uppercase"
+                className="flex-1 font-lato text-base border border-pink-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-gray-50 focus:bg-white transition-colors uppercase"
               />
               <button
                 onClick={handleAddCoupon}
-                className="bg-primary text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
+                className="bg-primary text-white font-lato text-base font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
                 <Plus size={14} />{t.account.couponsSave}
               </button>
@@ -144,7 +144,7 @@ export default function MonComptePage() {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className={`font-lato text-xs mt-2 font-medium ${couponStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}
+                  className={`font-lato text-sm mt-2 font-medium ${couponStatus === 'valid' ? 'text-green-600' : 'text-red-400'}`}
                 >
                   {couponStatus === 'valid' && t.account.couponsSaved}
                   {couponStatus === 'invalid' && t.account.couponsInvalid}
@@ -163,7 +163,7 @@ export default function MonComptePage() {
               <Star size={22} className="text-accent" />
             </div>
             <p className="font-playfair font-bold text-2xl text-gray-800">0</p>
-            <p className="font-lato text-xs text-gray-500 mt-0.5">{t.account.points}</p>
+            <p className="font-lato text-sm text-gray-500 mt-0.5">{t.account.points}</p>
           </motion.div>
         </div>
 
@@ -175,13 +175,13 @@ export default function MonComptePage() {
             </div>
             <div>
               <h3 className="font-playfair font-semibold text-gray-800">{t.account.myReviews}</h3>
-              <p className="font-lato text-xs text-gray-400">{t.account.myReviewsSub}</p>
+              <p className="font-lato text-sm text-gray-400">{t.account.myReviewsSub}</p>
             </div>
           </div>
           <div className="flex flex-col items-center py-6 gap-2 mt-2">
             <span className="text-3xl select-none">💬</span>
-            <p className="font-playfair font-semibold text-gray-600 text-sm">{t.account.noReviews}</p>
-            <p className="font-lato text-xs text-gray-400 text-center max-w-xs">{t.account.noReviewsDesc}</p>
+            <p className="font-playfair font-semibold text-gray-600 text-base">{t.account.noReviews}</p>
+            <p className="font-lato text-sm text-gray-400 text-center max-w-xs">{t.account.noReviewsDesc}</p>
           </div>
         </div>
 
@@ -197,10 +197,10 @@ export default function MonComptePage() {
                 {item.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-playfair font-semibold text-gray-800 group-hover:text-primary transition-colors text-sm">
+                <p className="font-playfair font-semibold text-gray-800 group-hover:text-primary transition-colors text-base">
                   {item.title}
                 </p>
-                <p className="font-lato text-xs text-gray-400 mt-0.5 leading-snug">{item.desc}</p>
+                <p className="font-lato text-sm text-gray-400 mt-0.5 leading-snug">{item.desc}</p>
               </div>
               <span className="text-gray-300 group-hover:text-primary transition-colors font-lato text-lg flex-shrink-0">›</span>
             </Link>

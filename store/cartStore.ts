@@ -108,6 +108,6 @@ export const useCartStore = create<CartState>()(
         }
       },
     }),
-    { name: 'bestie-cart' }
+    { name: 'bestie-cart', skipHydration: true }
   )
 );

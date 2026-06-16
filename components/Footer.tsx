@@ -3,6 +3,7 @@
 import { Heart } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
+import { WHATSAPP_URL, INSTAGRAM_URL, FACEBOOK_URL, TIKTOK_URL } from '@/lib/contact';
 
 export default function Footer() {
   const { lang } = useLanguageStore();
@@ -22,7 +23,7 @@ export default function Footer() {
           <div>
             <h4 className="font-playfair font-semibold text-gray-800 mb-5">{t.footer.quickLinks}</h4>
             <div className="flex gap-4">
-              <a href="#" target="_blank" rel="noopener noreferrer"
+              <a href={INSTAGRAM_URL || '#'} target={INSTAGRAM_URL ? '_blank' : undefined} rel="noopener noreferrer"
                 className="flex flex-col items-center gap-2 group"
                 aria-label="Instagram">
                 <span className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center text-gray-400 group-hover:text-primary group-hover:bg-pink-100 transition-colors">
@@ -33,7 +34,7 @@ export default function Footer() {
                 <span className="font-lato text-xs text-gray-400 group-hover:text-primary transition-colors">Instagram</span>
               </a>
 
-              <a href="#" target="_blank" rel="noopener noreferrer"
+              <a href={FACEBOOK_URL || '#'} target={FACEBOOK_URL ? '_blank' : undefined} rel="noopener noreferrer"
                 className="flex flex-col items-center gap-2 group"
                 aria-label="Facebook">
                 <span className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center text-gray-400 group-hover:text-primary group-hover:bg-pink-100 transition-colors">
@@ -44,7 +45,7 @@ export default function Footer() {
                 <span className="font-lato text-xs text-gray-400 group-hover:text-primary transition-colors">Facebook</span>
               </a>
 
-              <a href="#" target="_blank" rel="noopener noreferrer"
+              <a href={TIKTOK_URL || '#'} target={TIKTOK_URL ? '_blank' : undefined} rel="noopener noreferrer"
                 className="flex flex-col items-center gap-2 group"
                 aria-label="TikTok">
                 <span className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center text-gray-400 group-hover:text-primary group-hover:bg-pink-100 transition-colors">
@@ -62,7 +63,7 @@ export default function Footer() {
             <h4 className="font-playfair font-semibold text-gray-800 mb-4">{t.footer.contact}</h4>
             <p className="font-lato text-sm text-gray-500 mb-4 leading-relaxed">{t.footer.contactDesc}</p>
             <a
-              href="https://wa.me/50900000000"
+              href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm"

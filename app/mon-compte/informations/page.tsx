@@ -238,15 +238,15 @@ export default function InformationsPage() {
     setShowAddAddr(false);
   };
 
-  const inputCls = 'w-full px-4 py-3 border border-pink-200 rounded-xl font-lato text-sm outline-none focus:border-primary bg-gray-50 transition-colors';
-  const labelCls = 'font-lato text-xs text-gray-500 mb-1 block';
-  const btnSave = 'flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors';
-  const btnCancel = 'font-lato text-sm text-gray-400 hover:text-gray-600 transition-colors px-4 py-2.5';
+  const inputCls = 'w-full px-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors';
+  const labelCls = 'font-lato text-sm text-gray-500 mb-1 block';
+  const btnSave = 'flex items-center gap-1.5 bg-primary hover:bg-pink-400 text-white font-lato text-base font-semibold px-5 py-2.5 rounded-xl transition-colors';
+  const btnCancel = 'font-lato text-base text-gray-400 hover:text-gray-600 transition-colors px-4 py-2.5';
 
   return (
     <div className="min-h-screen bg-[#F2E9E1]">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <Link href="/mon-compte" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-8">
+        <Link href="/mon-compte" className="inline-flex items-center gap-2 font-lato text-base text-gray-500 hover:text-primary transition-colors mb-8">
           <ArrowLeft size={15} />{t.back}
         </Link>
 
@@ -259,10 +259,10 @@ export default function InformationsPage() {
             {!editIdent ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-lato text-sm text-gray-700"><span className="text-gray-400 mr-2">{t.identity.nameLabel}</span>{user?.name || '—'}</p>
-                  <p className="font-lato text-sm text-gray-700 mt-1"><span className="text-gray-400 mr-2">{t.identity.usernameLabel}</span>{user?.pseudo || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
+                  <p className="font-lato text-base text-gray-700"><span className="text-gray-400 mr-2">{t.identity.nameLabel}</span>{user?.name || '—'}</p>
+                  <p className="font-lato text-base text-gray-700 mt-1"><span className="text-gray-400 mr-2">{t.identity.usernameLabel}</span>{user?.pseudo || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
                 </div>
-                <button onClick={() => { setIdentForm({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-sm text-primary hover:underline">{t.edit}</button>
+                <button onClick={() => { setIdentForm({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -286,8 +286,8 @@ export default function InformationsPage() {
           <Section icon={<Mail size={17} className="text-primary" />} title={t.email.title}>
             {!editEmail ? (
               <div className="flex items-center justify-between">
-                <p className="font-lato text-sm text-gray-700">{user?.email || '—'}</p>
-                <button onClick={() => { setEmailForm({ email: user?.email ?? '', confirm: '' }); setEmailError(''); setEditEmail(true); }} className="font-lato text-sm text-primary hover:underline">{t.edit}</button>
+                <p className="font-lato text-base text-gray-700">{user?.email || '—'}</p>
+                <button onClick={() => { setEmailForm({ email: user?.email ?? '', confirm: '' }); setEmailError(''); setEditEmail(true); }} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -299,7 +299,7 @@ export default function InformationsPage() {
                   <label className={labelCls}>{t.email.confirmEmail}</label>
                   <input type="email" className={inputCls} value={emailForm.confirm} onChange={e => setEmailForm(p => ({ ...p, confirm: e.target.value }))} />
                 </div>
-                {emailError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{emailError}</p>}
+                {emailError && <p className="font-lato text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{emailError}</p>}
                 <div className="flex items-center gap-3 pt-1">
                   <button onClick={saveEmail} className={btnSave}><Check size={14} />{t.save}</button>
                   <button onClick={() => setEditEmail(false)} className={btnCancel}>{t.cancel}</button>
@@ -312,8 +312,8 @@ export default function InformationsPage() {
           <Section icon={<Phone size={17} className="text-primary" />} title={tp.title}>
             {!editPhone ? (
               <div className="flex items-center justify-between">
-                <p className="font-lato text-sm text-gray-700">{user?.telephone || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
-                <button onClick={openEditPhone} className="font-lato text-sm text-primary hover:underline">{t.edit}</button>
+                <p className="font-lato text-base text-gray-700">{user?.telephone || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
+                <button onClick={openEditPhone} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -323,7 +323,7 @@ export default function InformationsPage() {
                     <select
                       value={phonePaysId}
                       onChange={(e) => setPhonePaysId(e.target.value)}
-                      className="bg-transparent font-lato text-sm text-gray-700 pl-3 pr-2 py-3 outline-none border-r border-pink-200 cursor-pointer shrink-0"
+                      className="bg-transparent font-lato text-base text-gray-700 pl-3 pr-2 py-3.5 outline-none border-r border-pink-200 cursor-pointer shrink-0"
                       aria-label={tp.countryCode}
                     >
                       {PAYS.map((p) => (
@@ -337,12 +337,12 @@ export default function InformationsPage() {
                       value={phoneLocal}
                       onChange={(e) => setPhoneLocal(e.target.value)}
                       placeholder={tp.placeholder}
-                      className="flex-1 px-3 py-3 font-lato text-sm outline-none bg-transparent min-w-0"
+                      className="flex-1 px-3 py-3.5 font-lato text-base outline-none bg-transparent min-w-0"
                       autoComplete="tel-national"
                     />
                   </div>
                 </div>
-                {phoneSuccess && <p className="font-lato text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">{tp.saved}</p>}
+                {phoneSuccess && <p className="font-lato text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">{tp.saved}</p>}
                 <div className="flex items-center gap-3 pt-1">
                   <button onClick={savePhone} className={btnSave}><Check size={14} />{t.save}</button>
                   <button onClick={() => setEditPhone(false)} className={btnCancel}>{t.cancel}</button>
@@ -355,8 +355,8 @@ export default function InformationsPage() {
           <Section icon={<Lock size={17} className="text-primary" />} title={t.password.title}>
             {!editPwd ? (
               <div className="flex items-center justify-between">
-                <p className="font-lato text-sm text-gray-400 tracking-widest">••••••••</p>
-                <button onClick={() => { setPwdError(''); setPwdSuccess(false); setEditPwd(true); }} className="font-lato text-sm text-primary hover:underline">{t.edit}</button>
+                <p className="font-lato text-base text-gray-400 tracking-widest">••••••••</p>
+                <button onClick={() => { setPwdError(''); setPwdSuccess(false); setEditPwd(true); }} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -376,8 +376,8 @@ export default function InformationsPage() {
                     </div>
                   </div>
                 ))}
-                {pwdError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{pwdError}</p>}
-                {pwdSuccess && <p className="font-lato text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">{t.password.success}</p>}
+                {pwdError && <p className="font-lato text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{pwdError}</p>}
+                {pwdSuccess && <p className="font-lato text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">{t.password.success}</p>}
                 <div className="flex items-center gap-3 pt-1">
                   <button onClick={savePwd} className={btnSave}><Check size={14} />{t.save}</button>
                   <button onClick={() => setEditPwd(false)} className={btnCancel}>{t.cancel}</button>
@@ -398,14 +398,14 @@ export default function InformationsPage() {
                   <div className="flex items-start gap-3">
                     <span className="text-xl mt-0.5">{(addr.country ?? 'hti') === 'usa' ? '🇺🇸' : '🇭🇹'}</span>
                     <div>
-                      <p className="font-lato text-sm font-semibold text-gray-800">{addr.label}</p>
-                      <p className="font-lato text-xs text-gray-500 mt-0.5">{addr.adresse}</p>
+                      <p className="font-lato text-base font-semibold text-gray-800">{addr.label}</p>
+                      <p className="font-lato text-sm text-gray-500 mt-0.5">{addr.adresse}</p>
                       {(addr.country ?? 'hti') === 'hti' ? (
-                        <p className="font-lato text-xs text-gray-500">
+                        <p className="font-lato text-sm text-gray-500">
                           {addr.departement ? `${addr.departement} · ` : ''}{addr.quartier ? `${addr.quartier}, ` : ''}{addr.ville}, Haiti
                         </p>
                       ) : (
-                        <p className="font-lato text-xs text-gray-500">{addr.ville}{addr.state ? `, ${addr.state}` : ''} {addr.zipCode ?? ''}, USA</p>
+                        <p className="font-lato text-sm text-gray-500">{addr.ville}{addr.state ? `, ${addr.state}` : ''} {addr.zipCode ?? ''}, USA</p>
                       )}
                     </div>
                   </div>
@@ -521,7 +521,7 @@ export default function InformationsPage() {
                     )}
                   </AnimatePresence>
 
-                  {addrError && <p className="font-lato text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
+                  {addrError && <p className="font-lato text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
 
                   <div className="flex items-center gap-3">
                     <button onClick={saveAddress} className={btnSave}><Check size={14} />{t.save}</button>
@@ -532,7 +532,7 @@ export default function InformationsPage() {
             </AnimatePresence>
 
             {!showAddAddr && (
-              <button onClick={() => setShowAddAddr(true)} className="inline-flex items-center gap-2 font-lato text-sm text-primary hover:underline">
+              <button onClick={() => setShowAddAddr(true)} className="inline-flex items-center gap-2 font-lato text-base text-primary hover:underline">
                 <Plus size={15} />{t.address.addAddress}
               </button>
             )}

@@ -369,6 +369,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="md:hidden w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-gray-500 hover:bg-pink-100 transition-colors"
+            aria-label="Ouvrir le menu"
           >
             <Menu size={18} />
           </button>
@@ -438,7 +439,8 @@ export default function AdminDashboard() {
                     Bestie LipGloss
                   </span>
                   <button onClick={() => setMobileSidebarOpen(false)}
-                    className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-gray-400">
+                    className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-gray-400"
+                    aria-label="Fermer le menu">
                     <X size={15} />
                   </button>
                 </div>

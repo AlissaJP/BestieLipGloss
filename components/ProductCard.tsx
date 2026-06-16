@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       <Link href={`/boutique/${product.slug}`} className="block flex-1">
         {/* Image */}
-        <div className={`${product.introImage ? 'bg-gray-50' : product.bgColor} relative h-56 flex items-center justify-center overflow-hidden`}>
+        <div className={`${product.introImage ? 'bg-gray-50' : product.bgColor} relative h-64 flex items-center justify-center overflow-hidden`}>
           {product.introImage ? (
             <Image
               src={product.introImage}
@@ -72,18 +72,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Badge */}
-          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-lato font-semibold px-3 py-1 rounded-full text-gray-700 shadow-sm z-10">
+          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-sm font-lato font-semibold px-3 py-1 rounded-full text-gray-700 shadow-sm z-10">
             {product.badge}
           </span>
 
           {/* Favorite button */}
           <button
             onClick={handleToggleFavorite}
-            className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform z-10"
+            className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform z-10"
             aria-label={favorited ? t.product.removeFav : t.product.addFav}
           >
             <Heart
-              size={15}
+              size={18}
               className={favorited ? 'fill-red-400 text-red-400' : 'text-gray-400'}
             />
           </button>
@@ -95,29 +95,29 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Info */}
-        <div className="p-4 pb-2">
-          <p className="font-cormorant text-xs text-gray-400 italic mb-0.5">{product.shade}</p>
-          <h3 className="font-playfair font-semibold text-gray-800 text-base mb-1">{product.name}</h3>
+        <div className="p-5 pb-3">
+          <p className="font-cormorant text-sm text-gray-400 italic mb-0.5">{product.shade}</p>
+          <h3 className="font-playfair font-semibold text-gray-800 text-lg mb-1">{product.name}</h3>
           {product.stock < 10 && (
             <p className="font-lato text-xs text-orange-500 mb-1">⚠️ {t.product.outOfStock} {product.stock} {t.product.inStock}</p>
           )}
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="font-playfair font-bold text-primary text-lg">${product.price_usd}</span>
-            <span className="font-lato text-xs text-gray-400">({product.price_htg} HTG)</span>
+            <span className="font-playfair font-bold text-primary text-xl">${product.price_usd}</span>
+            <span className="font-lato text-sm text-gray-400">({product.price_htg} HTG)</span>
           </div>
         </div>
       </Link>
 
       {/* Add to cart */}
-      <div className="px-4 pb-4 pt-2">
+      <div className="px-5 pb-5 pt-2">
         <motion.button
           onClick={handleAddToCart}
           whileTap={{ scale: 0.96 }}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-lato text-sm font-semibold transition-all duration-300 min-h-[44px] ${
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-lato text-base font-semibold transition-all duration-300 min-h-[48px] ${
             added ? 'bg-green-500 text-white' : 'bg-primary hover:bg-pink-400 text-white'
           }`}
         >
-          <ShoppingBag size={15} aria-hidden="true" />
+          <ShoppingBag size={18} aria-hidden="true" />
           {added ? t.cart.added : t.cart.add}
         </motion.button>
       </div>

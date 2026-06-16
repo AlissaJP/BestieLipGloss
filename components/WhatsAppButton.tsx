@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
+import { WHATSAPP_URL } from '@/lib/contact';
 
 export default function WhatsAppButton() {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -27,7 +28,7 @@ export default function WhatsAppButton() {
       </AnimatePresence>
 
       <motion.a
-        href="https://wa.me/50900000000"
+        href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         whileHover={{ scale: 1.1 }}
