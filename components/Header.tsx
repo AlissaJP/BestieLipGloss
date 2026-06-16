@@ -127,7 +127,7 @@ export default function Header() {
             {/* Logo */}
             <Link href="/" className="flex flex-col leading-none">
               <span className="font-greatvibes text-3xl lg:text-4xl text-primary">Bestie LipGloss</span>
-              <span className="font-lato text-xs text-gray-400 tracking-[0.25em] uppercase hidden sm:block">
+              <span className="font-lato text-xs text-gray-400 tracking-[0.25em] uppercase">
                 Natural Haitian Beauty
               </span>
             </Link>
