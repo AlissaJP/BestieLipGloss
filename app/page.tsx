@@ -88,8 +88,8 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* MOBILE — trust badges en bas du hero, fond transparent */}
-        <div className="lg:hidden absolute bottom-0 left-0 right-0 z-10 px-3 py-3">
+        {/* MOBILE — trust badges remontés, fond transparent */}
+        <div className="lg:hidden absolute bottom-10 left-0 right-0 z-10 px-3 py-3">
           <div className="grid grid-cols-2 gap-x-2 gap-y-2 max-w-sm mx-auto">
             {trustBadges.map((item, i) => (
               <div key={i} className={`flex items-center gap-2 ${i % 2 === 0 ? 'justify-start' : 'justify-start pl-3 border-l border-pink-300/60'}`}>
@@ -142,13 +142,13 @@ export default function HomePage() {
           </Link>
         </motion.div>
 
-        {/* DESKTOP — trust badges en bas du hero, fond transparent */}
+        {/* DESKTOP — trust badges remontés, fond transparent */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }}
-          className="hidden lg:grid grid-cols-4 divide-x divide-pink-300/50 absolute bottom-0 left-0 right-0 z-10"
+          className="hidden lg:grid grid-cols-4 divide-x divide-pink-300/50 absolute bottom-20 left-0 right-0 z-10"
         >
           {trustBadges.map((item, i) => (
-            <div key={i} className="flex items-center justify-center gap-3 py-5 px-6">
+            <div key={i} className="flex items-center justify-center gap-3 py-4 px-6">
               <span className="shrink-0">{item.icon}</span>
               <div>
                 <p className="font-lato font-bold text-gray-900 text-sm leading-tight">{item.title}</p>
@@ -156,6 +156,15 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </motion.div>
+
+        {/* Indicateur de scroll */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.6 }}
+            className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-2 bg-white/70 rounded-full" />
+          </motion.div>
         </motion.div>
       </section>
 
