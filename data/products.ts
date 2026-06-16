@@ -59,7 +59,7 @@ export const products: Product[] = [
     stock: 15,
     badge: 'Best-seller ✨',
     bgColor: 'bg-amber-100',
-    bgColorMini: ['#92400E', 'bg-pink-300', 'bg-red-400', 'bg-rose-200', 'bg-red-600'],
+    bgColorMini: ['bg-amber-800', 'bg-pink-300', 'bg-red-400', 'bg-rose-200', 'bg-red-600'],
     introImage: '/products/honey/introduction.png',
     is_active: true,
     is_bestseller: true,
@@ -74,7 +74,7 @@ export const products: Product[] = [
         description:
           'Un brun caramel riche et chaleureux qui sublime magnifiquement les teints foncés avec profondeur et sensualité. Cette teinte enveloppante apporte une intensité naturelle et sophistiquée à tes lèvres. Le choix idéal pour un regard profond et envoûtant.',
         image: '/products/honey/brown.png',
-        bgColor: '#92400E',
+        bgColor: 'bg-amber-800',
         is_active: true,
       },
       {
