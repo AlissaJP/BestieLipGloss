@@ -2,21 +2,26 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, RefreshCw, PartyPopper } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
+import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
 
 const OTP_LENGTH = 6;
 const OTP_DURATION = 120;
 
 function VerificationForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const email = searchParams.get('email') ?? '';
 
   const { lang } = useLanguageStore();
   const t = translations[lang].pages.otp;
+  const { login } = useAuthStore();
+  const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
@@ -63,6 +68,16 @@ function VerificationForm() {
         return;
       }
       sessionStorage.removeItem(`otp_token_${email}`);
+      // Connexion automatique avec les données de l'inscription
+      if (data.pendingUser) {
+        login({
+          name: data.pendingUser.name,
+          email: data.pendingUser.email,
+          telephone: data.pendingUser.telephone,
+          pseudo: data.pendingUser.pseudo,
+        });
+        syncCartOnLogin();
+      }
       setStatus('success');
     } catch {
       setStatus('error');
@@ -161,12 +176,12 @@ function VerificationForm() {
               {t.welcomeSub}
             </p>
 
-            <Link
-              href="/connexion"
+            <button
+              onClick={() => router.push('/')}
               className="block w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm text-center"
             >
               {t.continueBtn}
-            </Link>
+            </button>
           </div>
         </motion.div>
       </div>

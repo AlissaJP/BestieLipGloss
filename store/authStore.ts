@@ -28,7 +28,7 @@ interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
   showAuthModal: boolean;
-  login: (userData: { name: string; email: string; telephone?: string }) => void;
+  login: (userData: { name: string; email: string; telephone?: string; pseudo?: string }) => void;
   logout: () => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       showAuthModal: false,
       login: (userData) =>
-        set({ isLoggedIn: true, user: { ...userData, pseudo: '', addresses: [], coupons: [] } }),
+        set({ isLoggedIn: true, user: { ...userData, pseudo: userData.pseudo ?? '', addresses: [], coupons: [] } }),
       logout: () => set({ isLoggedIn: false, user: null }),
       openAuthModal: () => set({ showAuthModal: true }),
       closeAuthModal: () => set({ showAuthModal: false }),

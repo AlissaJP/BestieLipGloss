@@ -27,6 +27,7 @@ export default function InscriptionPage() {
   const [form, setForm] = useState({
     prenom: '',
     nom: '',
+    pseudo: '',
     email: '',
     password: '',
     confirm: '',
@@ -43,8 +44,13 @@ export default function InscriptionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.prenom || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
+    if (!form.prenom || !form.pseudo || !form.email || !phoneNumber.trim() || !form.password || !form.confirm) {
       setError(t.fillAll);
+      return;
+    }
+    const pseudoClean = form.pseudo.trim().replace(/\s+/g, '');
+    if (pseudoClean.length < 3) {
+      setError(t.invalidUsername);
       return;
     }
     if (!form.email.includes('@') || !form.email.includes('.')) {
@@ -69,7 +75,7 @@ export default function InscriptionPage() {
       const res = await fetch('/api/otp/envoyer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, name, telephone: fullPhone }),
+        body: JSON.stringify({ email: form.email, name, telephone: fullPhone, pseudo: pseudoClean }),
       });
       const data = await res.json().catch(() => ({})) as { error?: string; token?: string };
       if (!res.ok) {
@@ -141,6 +147,26 @@ export default function InscriptionPage() {
                     autoComplete="family-name"
                   />
                 </div>
+              </div>
+
+              {/* Username */}
+              <div>
+                <label className="font-lato text-base font-medium text-gray-700 block mb-1.5">
+                  {t.username} <span className="text-primary">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-lato text-base pointer-events-none select-none">@</span>
+                  <input
+                    type="text"
+                    value={form.pseudo}
+                    onChange={(e) => setForm((prev) => ({ ...prev, pseudo: e.target.value.replace(/\s/g, '') }))}
+                    placeholder={t.usernamePlaceholder}
+                    className="w-full pl-8 pr-4 py-3.5 border border-pink-200 rounded-xl font-lato text-base outline-none focus:border-primary bg-gray-50 transition-colors"
+                    autoComplete="username"
+                    maxLength={30}
+                  />
+                </div>
+                <p className="font-lato text-xs text-gray-400 mt-1">{t.usernameNote}</p>
               </div>
 
               <div>

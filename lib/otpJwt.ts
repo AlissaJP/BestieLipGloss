@@ -41,16 +41,18 @@ interface OtpPayload {
   exp: number       // Unix ms expiry
   name: string
   telephone: string
+  pseudo: string
 }
 
 export async function createOtpToken(
   email: string,
   code: string,
   name: string,
-  telephone: string
+  telephone: string,
+  pseudo: string
 ): Promise<string> {
   const codeHash = await sha256hex(`${getSecret()}:${code}`)
-  const payload: OtpPayload = { email, codeHash, exp: Date.now() + 120_000, name, telephone }
+  const payload: OtpPayload = { email, codeHash, exp: Date.now() + 120_000, name, telephone, pseudo }
   const payloadB64 = toB64url(ENC.encode(JSON.stringify(payload)))
   const key = await importKey()
   const sig = await crypto.subtle.sign('HMAC', key, ENC.encode(payloadB64))
@@ -62,7 +64,7 @@ export async function verifyOtpToken(
   email: string,
   code: string
 ): Promise<
-  | { valid: true; pendingUser: { name: string; email: string; telephone: string } }
+  | { valid: true; pendingUser: { name: string; email: string; telephone: string; pseudo: string } }
   | { valid: false; reason: 'expired' | 'invalid' | 'not_found' }
 > {
   if (!token?.trim()) return { valid: false, reason: 'not_found' }
@@ -99,5 +101,5 @@ export async function verifyOtpToken(
   const codeHash = await sha256hex(`${getSecret()}:${code}`)
   if (codeHash !== payload.codeHash) return { valid: false, reason: 'invalid' }
 
-  return { valid: true, pendingUser: { name: payload.name, email, telephone: payload.telephone } }
+  return { valid: true, pendingUser: { name: payload.name, email, telephone: payload.telephone, pseudo: payload.pseudo } }
 }

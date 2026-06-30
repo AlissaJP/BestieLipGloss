@@ -11,24 +11,25 @@ export async function POST(request: NextRequest) {
     email: string;
     name?: string;
     telephone?: string;
+    pseudo?: string;
   };
-  const { email, name, telephone } = body;
+  const { email, name, telephone, pseudo } = body;
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   if (!email || !emailRegex.test(email)) {
     return NextResponse.json({ error: 'Adresse e-mail invalide.' }, { status: 400 });
   }
 
-  // Inscription : name + telephone obligatoires
-  if (!name || !telephone) {
-    return NextResponse.json({ error: 'Nom et téléphone requis pour l\'inscription.' }, { status: 400 });
+  // Inscription : name + telephone + pseudo obligatoires
+  if (!name || !telephone || !pseudo) {
+    return NextResponse.json({ error: "Nom, téléphone et nom d'utilisateur requis pour l'inscription." }, { status: 400 });
   }
 
   try {
     const code = genCode();
 
     // Crée un token signé (stateless — fonctionne sur Vercel serverless)
-    const token = await createOtpToken(email, code, name, telephone);
+    const token = await createOtpToken(email, code, name, telephone, pseudo);
 
     // Envoie le code par e-mail
     await sendOtpEmail(email, code, name);

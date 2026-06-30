@@ -287,7 +287,7 @@ export default function Header() {
                   >
                     <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-lg select-none">👩🏾</div>
                     <span className="font-lato text-lg font-medium hidden sm:block max-w-[120px] truncate">
-                      {user?.name?.split(' ')[0]}
+                      {user?.pseudo || user?.name?.split(' ')[0]}
                     </span>
                   </button>
 

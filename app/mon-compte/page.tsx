@@ -72,7 +72,7 @@ export default function MonComptePage() {
           👩🏾
         </div>
         <h1 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-2">
-          {user?.name ? `${t.account.hello}, ${user.name.split(' ')[0]} 💕` : 'My Account'}
+          {user ? `${t.account.hello}, ${user.pseudo || user.name.split(' ')[0]} 💕` : 'My Account'}
         </h1>
         <p className="font-cormorant text-xl text-gray-500 italic">{t.account.welcome}</p>
       </div>
