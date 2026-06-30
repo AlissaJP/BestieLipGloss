@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Eye, Heart } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
@@ -18,6 +18,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [added, setAdded] = useState(false);
+  const [favFly, setFavFly] = useState(false);
   const { addItem, openCart } = useCartStore();
   const { isLoggedIn, openAuthModal } = useAuthStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
@@ -46,8 +47,15 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!isLoggedIn) { openAuthModal(); return; }
+    const wasAdding = !isFavorite(product.id);
     toggleFavorite(product);
+    // Animation "vol vers l'icône favoris" uniquement lors de l'ajout
+    if (wasAdding) {
+      setFavFly(true);
+      setTimeout(() => setFavFly(false), 700);
+    }
   };
 
   return (
@@ -58,13 +66,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       <Link href={`/boutique/${product.slug}`} className="block flex-1">
         {/* Image */}
-        <div className={`${product.image ? 'bg-gray-50' : product.bgColor} relative h-64 flex items-center justify-center overflow-hidden`}>
+        <div className={`${product.image ? 'bg-gray-50' : product.bgColor} relative h-64 flex items-center justify-center overflow-visible`}>
           {product.image ? (
             <Image
               src={product.image}
               alt={product.name}
               fill
-              className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              className="object-cover object-center group-hover:scale-105 transition-transform duration-500 rounded-t-2xl"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
           ) : (
@@ -79,14 +87,34 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Favorite button */}
           <button
             onClick={handleToggleFavorite}
-            className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform z-10"
+            className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform z-20"
             aria-label={favorited ? t.product.removeFav : t.product.addFav}
           >
-            <Heart
-              size={18}
-              className={favorited ? 'fill-red-400 text-red-400' : 'text-gray-400'}
-            />
+            <motion.div
+              animate={favFly ? { scale: [1, 1.4, 0.9, 1] } : { scale: 1 }}
+              transition={{ duration: 0.35 }}
+            >
+              <Heart
+                size={18}
+                className={favorited ? 'fill-red-400 text-red-400' : 'text-gray-400'}
+              />
+            </motion.div>
           </button>
+
+          {/* Cœur volant vers l'icône favoris dans le header */}
+          <AnimatePresence>
+            {favFly && (
+              <motion.div
+                initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                animate={{ opacity: 0, scale: 0.4, x: 30, y: -120 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.65, ease: 'easeOut' }}
+                className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center pointer-events-none z-30"
+              >
+                <Heart size={18} className="fill-red-400 text-red-400" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Hover overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center z-10">

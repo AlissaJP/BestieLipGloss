@@ -36,8 +36,9 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   const { openCart, totalItems } = useCartStore();
-  const { items: favorites } = useFavoritesStore();
+  const { items: favorites, lastAddedAt } = useFavoritesStore();
   const favoriteCount = favorites.length;
+  const [heartPulse, setHeartPulse] = useState(false);
   const { isLoggedIn, user, logout } = useAuthStore();
   const { lang, setLang } = useLanguageStore();
   const { managedProducts } = useAdminStore();
@@ -113,8 +114,16 @@ export default function Header() {
     logout();
     setIsUserMenuOpen(false);
     setIsMenuOpen(false);
-    router.push('/');
+    window.location.href = '/';
   };
+
+  // Pulse l'icône cœur chaque fois qu'un favori est ajouté
+  useEffect(() => {
+    if (lastAddedAt === 0) return;
+    setHeartPulse(true);
+    const t = setTimeout(() => setHeartPulse(false), 600);
+    return () => clearTimeout(t);
+  }, [lastAddedAt]);
 
   return (
     <>
@@ -363,16 +372,15 @@ export default function Header() {
                 <Link href="/mon-compte/favoris"
                   className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
                   aria-label="Mes favoris">
-                  <Heart size={23} />
-                  <AnimatePresence>
-                    {favoriteCount > 0 && (
-                      <motion.span key={favoriteCount} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute -top-0.5 -right-0.5 bg-red-400 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
-                        aria-hidden="true">
-                        {favoriteCount > 9 ? '9+' : favoriteCount}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  <motion.div
+                    animate={heartPulse ? { scale: [1, 1.5, 0.9, 1.1, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <Heart
+                      size={23}
+                      className={favoriteCount > 0 ? 'fill-red-400 text-red-400' : ''}
+                    />
+                  </motion.div>
                 </Link>
               )}
 

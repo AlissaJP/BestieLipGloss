@@ -51,6 +51,6 @@ export const useOrdersStore = create<OrdersState>()(
           ),
         })),
     }),
-    { name: 'bestie-orders', skipHydration: true }
+    { name: 'bestie-orders-v2', skipHydration: true }
   )
 );

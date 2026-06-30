@@ -100,6 +100,6 @@ export const useCartStore = create<CartState>()(
         }
       },
     }),
-    { name: 'bestie-cart', skipHydration: true }
+    { name: 'bestie-cart-v2', skipHydration: true }
   )
 );
