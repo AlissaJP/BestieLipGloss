@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag, Menu, X, Search, User,
-  LogOut, ChevronRight, Settings, Globe,
+  LogOut, ChevronRight, Settings, Globe, Heart,
 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
 import { useAdminStore } from '@/store/adminStore';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { translations } from '@/lib/translations';
 import CartDrawer from './CartDrawer';
 
@@ -35,6 +36,8 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   const { openCart, totalItems } = useCartStore();
+  const { items: favorites } = useFavoritesStore();
+  const favoriteCount = favorites.length;
   const { isLoggedIn, user, logout } = useAuthStore();
   const { lang, setLang } = useLanguageStore();
   const { managedProducts } = useAdminStore();
@@ -77,7 +80,6 @@ export default function Header() {
     { href: '/', label: t.nav.home },
     { href: '/boutique', label: t.nav.shop },
     { href: '/#notre-histoire', label: t.nav.story },
-    { href: '/comment-commander', label: t.nav.howTo },
   ];
 
   const userMenuItems = [
@@ -354,6 +356,24 @@ export default function Header() {
                     {t.auth.register}
                   </Link>
                 </div>
+              )}
+
+              {/* Favoris — visible uniquement si connecté */}
+              {isLoggedIn && (
+                <Link href="/mon-compte/favoris"
+                  className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
+                  aria-label="Mes favoris">
+                  <Heart size={23} />
+                  <AnimatePresence>
+                    {favoriteCount > 0 && (
+                      <motion.span key={favoriteCount} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 bg-red-400 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
+                        aria-hidden="true">
+                        {favoriteCount > 9 ? '9+' : favoriteCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
               )}
 
               {/* Cart — visible uniquement si connecté */}
