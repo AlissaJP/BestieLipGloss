@@ -37,7 +37,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       price_htg: product.price_htg,
       price_usd: product.price_usd,
       bgColor: product.bgColor,
-      image: product.introImage,
+      image: product.image,
     });
     setAdded(true);
     openCart();
@@ -58,10 +58,10 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       <Link href={`/boutique/${product.slug}`} className="block flex-1">
         {/* Image */}
-        <div className={`${product.introImage ? 'bg-gray-50' : product.bgColor} relative h-64 flex items-center justify-center overflow-hidden`}>
-          {product.introImage ? (
+        <div className={`${product.image ? 'bg-gray-50' : product.bgColor} relative h-64 flex items-center justify-center overflow-hidden`}>
+          {product.image ? (
             <Image
-              src={product.introImage}
+              src={product.image}
               alt={product.name}
               fill
               className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
@@ -103,7 +103,6 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           <div className="flex items-baseline gap-2 mt-1">
             <span className="font-playfair font-bold text-primary text-xl">${product.price_usd}</span>
-            <span className="font-lato text-sm text-gray-400">({product.price_htg} HTG)</span>
           </div>
         </div>
       </Link>

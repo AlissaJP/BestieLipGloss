@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAdminStore } from '@/store/adminStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 export default function AdminLoginPage() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].admin.login;
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -20,7 +25,7 @@ export default function AdminLoginPage() {
   }, [isLoggedIn, router]);
 
   const handleLogin = async () => {
-    if (!username || !password) { setError('Remplis les deux champs.'); return; }
+    if (!username || !password) { setError(t.errorFillAll); return; }
     setLoading(true);
     setError('');
     const res = await fetch('/api/admin/login', {
@@ -33,7 +38,7 @@ export default function AdminLoginPage() {
       login();
       router.push('/admin/dashboard');
     } else {
-      setError("Identifiants incorrects. Vérifie ton nom d'utilisateur et ton mot de passe.");
+      setError(t.errorInvalid);
     }
   };
 
@@ -56,15 +61,15 @@ export default function AdminLoginPage() {
           >
             <span className="text-3xl">💋</span>
           </div>
-          <h1 className="font-playfair font-bold text-2xl text-gray-800">Bestie Admin</h1>
-          <p className="font-lato text-sm text-gray-400 mt-1">Tableau de bord administrateur</p>
+          <h1 className="font-playfair font-bold text-2xl text-gray-800">{t.heading}</h1>
+          <p className="font-lato text-sm text-gray-400 mt-1">{t.sub}</p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-pink-50 p-8 space-y-5">
           {/* Username */}
           <div>
-            <label className="font-lato text-xs text-gray-500 mb-1.5 block">Nom d&apos;utilisateur</label>
+            <label className="font-lato text-xs text-gray-500 mb-1.5 block">{t.userLabel}</label>
             <div className="relative">
               <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" />
               <input
@@ -81,7 +86,7 @@ export default function AdminLoginPage() {
 
           {/* Password */}
           <div>
-            <label className="font-lato text-xs text-gray-500 mb-1.5 block">Mot de passe</label>
+            <label className="font-lato text-xs text-gray-500 mb-1.5 block">{t.pwdLabel}</label>
             <div className="relative">
               <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" />
               <input
@@ -115,12 +120,12 @@ export default function AdminLoginPage() {
             className="w-full py-3 rounded-xl font-lato font-bold text-sm text-white transition-all disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
             style={{ background: 'linear-gradient(135deg, #D45F85, #D4835A)' }}
           >
-            {loading ? 'Connexion en cours…' : 'Se connecter →'}
+            {loading ? t.loggingIn : t.loginBtn}
           </button>
         </div>
 
         <p className="text-center font-lato text-xs text-gray-300 mt-6">
-          Bestie LipGloss — Espace administrateur
+          {t.footer}
         </p>
       </motion.div>
     </div>

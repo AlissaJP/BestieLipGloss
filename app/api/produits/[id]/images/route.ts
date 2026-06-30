@@ -22,6 +22,6 @@ export async function GET(
   }
 
   // Stub — returns empty until DB is connected.
-  // Fallback: frontend uses Produit.introImage when this array is empty.
+  // Fallback: frontend uses Produit.image when this array is empty.
   return NextResponse.json({ images: [] as ImageProduit[] });
 }

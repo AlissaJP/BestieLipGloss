@@ -156,6 +156,8 @@ export default function PanierPage() {
   const expressDelay = zoneDelay(selectedZone, 'express');
   const standardFeeHTG = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, 'standard') : 0;
   const expressFeeHTG = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, 'express') : 0;
+  const standardFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones, 'standard') : 0;
+  const expressFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones, 'express') : 0;
   const hasExpress = selectedZone?.frais_express_htg != null;
 
   const applyPromo = async () => {
@@ -650,7 +652,7 @@ export default function PanierPage() {
                           </div>
                           <p className="font-lato text-xs text-gray-500">{standardDelay ? `Délai estimé : ${standardDelay}` : 'Délai variable'}</p>
                           <p className="font-lato text-sm font-bold text-primary mt-1">
-                            {standardFeeHTG === 0 ? '🎉 Gratuit' : `${standardFeeHTG} HTG`}
+                            {standardFeeHTG === 0 ? '🎉 Gratuit' : `$${standardFeeUSD.toFixed(2)}`}
                           </p>
                         </button>
                         {/* Express */}
@@ -663,7 +665,7 @@ export default function PanierPage() {
                               {deliveryType === 'express' && <span className="ml-auto w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white text-[10px]">✓</span>}
                             </div>
                             <p className="font-lato text-xs text-gray-500">{expressDelay ? `Délai estimé : ${expressDelay}` : 'Livraison rapide'}</p>
-                            <p className="font-lato text-sm font-bold text-primary mt-1">{expressFeeHTG} HTG</p>
+                            <p className="font-lato text-sm font-bold text-primary mt-1">${expressFeeUSD.toFixed(2)}</p>
                           </button>
                         ) : (
                           <div className="p-4 rounded-xl border-2 border-gray-100 opacity-50 bg-gray-50">
@@ -914,19 +916,16 @@ export default function PanierPage() {
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* Référence de transaction — uniquement pour Zelle et Carte */}
-                  {paymentMethod !== 'moncash' && (
+                  {/* Référence de transaction — uniquement pour Zelle */}
+                  {paymentMethod === 'zelle' && (
                     <div className="bg-white rounded-2xl p-6 border border-pink-100">
                       <label className={labelCls} htmlFor="reference-transaction">
                         {tc.refLabel}
-                        {paymentMethod === 'card' && (
-                          <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
-                        )}
                       </label>
                       <input
                         id="reference-transaction"
                         type="text"
-                        placeholder={paymentMethod === 'zelle' ? tc.refZelle : tc.refCard}
+                        placeholder={tc.refZelle}
                         value={referenceTransaction}
                         onChange={(e) => setReferenceTransaction(e.target.value)}
                         className={inputCls}

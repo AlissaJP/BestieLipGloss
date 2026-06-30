@@ -30,8 +30,9 @@ function Stars({ note }: { note: number }) {
   );
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+function formatDate(iso: string, lang: string) {
+  const locale = lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-US';
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function AdminAvisPage() {
@@ -189,7 +190,7 @@ export default function AdminAvisPage() {
                         <p className="font-cormorant text-base text-gray-600 italic leading-relaxed mb-2">
                           &ldquo;{a.texte}&rdquo;
                         </p>
-                        <p className="font-lato text-xs text-gray-400">{formatDate(a.date_creation)} · Produit #{a.id_produit}</p>
+                        <p className="font-lato text-xs text-gray-400">{formatDate(a.date_creation, lang)} · Produit #{a.id_produit}</p>
                       </div>
 
                       {/* Right: action buttons */}

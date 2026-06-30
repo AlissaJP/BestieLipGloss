@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 
 type PaiementStatut = 'en_attente' | 'validé' | 'refusé';
 
@@ -58,13 +60,17 @@ const STATUT_STYLE: Record<PaiementStatut, string> = {
   refusé: 'bg-red-100 text-red-600',
 };
 
-const STATUT_LABEL: Record<PaiementStatut, string> = {
-  en_attente: 'En attente',
-  validé: 'Validé',
-  refusé: 'Refusé',
-};
-
 export default function AdminPaiementsPage() {
+  const { lang } = useLanguageStore();
+  const t = translations[lang].admin.payments;
+  const locale = lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-US';
+
+  const STATUT_LABEL: Record<PaiementStatut, string> = {
+    en_attente: t.statusPending,
+    validé: t.statusValidated,
+    refusé: t.statusRefused,
+  };
+
   const [paiements, setPaiements] = useState<PaiementAdmin[]>(STUB_PAIEMENTS);
   const [selected, setSelected] = useState<PaiementAdmin | null>(null);
   const [noteAdmin, setNoteAdmin] = useState('');
@@ -99,13 +105,13 @@ export default function AdminPaiementsPage() {
     <div className="min-h-screen bg-[#F2E9E1] p-6">
       <div className="max-w-4xl mx-auto">
         <Link href="/admin/dashboard" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-6">
-          <ArrowLeft size={15} />Retour au dashboard
+          <ArrowLeft size={15} />{t.backDashboard}
         </Link>
 
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="font-playfair font-bold text-2xl text-gray-800">Paiements</h1>
-            <p className="font-lato text-sm text-gray-500 mt-0.5">Validation des preuves de paiement clients</p>
+            <h1 className="font-playfair font-bold text-2xl text-gray-800">{t.title}</h1>
+            <p className="font-lato text-sm text-gray-500 mt-0.5">{t.subtitle}</p>
           </div>
           <div className="flex gap-2">
             {(['en_attente', 'validé', 'refusé', 'all'] as const).map((s) => (
@@ -116,7 +122,7 @@ export default function AdminPaiementsPage() {
                   filterStatut === s ? 'bg-primary text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
                 }`}
               >
-                {s === 'all' ? 'Tous' : STATUT_LABEL[s]}
+                {s === 'all' ? t.filterAll : STATUT_LABEL[s]}
                 {s !== 'all' && (
                   <span className="ml-1.5 font-bold">{paiements.filter((p) => p.statut === s).length}</span>
                 )}
@@ -128,7 +134,7 @@ export default function AdminPaiementsPage() {
         <div className="space-y-3">
           {visible.length === 0 && (
             <div className="bg-white rounded-2xl border border-pink-100 p-10 text-center">
-              <p className="font-lato text-gray-400 text-sm">Aucun paiement dans cette catégorie.</p>
+              <p className="font-lato text-gray-400 text-sm">{t.empty}</p>
             </div>
           )}
           {visible.map((p) => (
@@ -146,20 +152,20 @@ export default function AdminPaiementsPage() {
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
                   <p className="font-lato text-xs text-gray-500">
-                    {p.montant_paye != null ? `${p.montant_paye} ${p.devise_paiement}` : 'Montant non renseigné'}
+                    {p.montant_paye != null ? `${p.montant_paye} ${p.devise_paiement}` : t.amountUnknown}
                   </p>
                   {p.reference_transaction && (
-                    <p className="font-lato text-xs text-gray-400">Réf : {p.reference_transaction}</p>
+                    <p className="font-lato text-xs text-gray-400">{t.refLabel} {p.reference_transaction}</p>
                   )}
                   <p className="font-lato text-xs text-gray-400">
-                    {new Date(p.date_paiement).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(p.date_paiement).toLocaleString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 {p.note_client && (
                   <p className="font-lato text-xs text-gray-500 mt-1 italic">&ldquo;{p.note_client}&rdquo;</p>
                 )}
                 {p.note_admin && (
-                  <p className="font-lato text-xs text-blue-600 mt-1">Note admin : {p.note_admin}</p>
+                  <p className="font-lato text-xs text-blue-600 mt-1">{t.noteAdminLabel} {p.note_admin}</p>
                 )}
               </div>
               {p.statut === 'en_attente' && (
@@ -167,7 +173,7 @@ export default function AdminPaiementsPage() {
                   onClick={() => { setSelected(p); setNoteAdmin(p.note_admin ?? ''); }}
                   className="flex-shrink-0 bg-primary hover:bg-pink-400 text-white font-lato text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
                 >
-                  Traiter
+                  {t.processBtn}
                 </button>
               )}
             </div>
@@ -180,42 +186,42 @@ export default function AdminPaiementsPage() {
             <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
               <div className="flex items-center gap-3 mb-2">
                 <Clock size={18} className="text-orange-400" />
-                <h2 className="font-playfair font-bold text-lg text-gray-800">Valider le paiement</h2>
+                <h2 className="font-playfair font-bold text-lg text-gray-800">{t.modalTitle}</h2>
               </div>
-              <p className="font-lato text-sm text-gray-600 mb-1">Commande : <span className="font-semibold text-gray-800">{selected.id_commande}</span></p>
+              <p className="font-lato text-sm text-gray-600 mb-1">{t.orderLabel} <span className="font-semibold text-gray-800">{selected.id_commande}</span></p>
               {selected.montant_paye != null && (
-                <p className="font-lato text-sm text-gray-600 mb-1">Montant déclaré : <span className="font-semibold">{selected.montant_paye} {selected.devise_paiement}</span></p>
+                <p className="font-lato text-sm text-gray-600 mb-1">{t.declaredAmount} <span className="font-semibold">{selected.montant_paye} {selected.devise_paiement}</span></p>
               )}
               {selected.reference_transaction && (
-                <p className="font-lato text-sm text-gray-600 mb-4">Réf. : {selected.reference_transaction}</p>
+                <p className="font-lato text-sm text-gray-600 mb-4">{t.refShort} {selected.reference_transaction}</p>
               )}
               <div className="mt-4">
-                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">Note interne <span className="text-gray-400 font-normal">(optionnel)</span></label>
+                <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">{t.noteInternalLabel} <span className="text-gray-400 font-normal">{t.noteOptional}</span></label>
                 <textarea
                   rows={3}
                   value={noteAdmin}
                   onChange={(e) => setNoteAdmin(e.target.value)}
-                  placeholder="Ex. : Montant reçu confirmé sur MonCash…"
+                  placeholder={t.notePlaceholder}
                   className="w-full font-lato text-sm border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary resize-none"
                 />
               </div>
               <div className="flex gap-3 mt-5">
                 <button onClick={() => setSelected(null)} className="flex-1 border border-gray-200 text-gray-600 font-lato text-sm py-2.5 rounded-xl hover:border-gray-300 transition-colors">
-                  Annuler
+                  {t.cancelBtn}
                 </button>
                 <button
                   onClick={() => handleDecision('refusé')}
                   disabled={loading}
                   className="flex items-center gap-1.5 border-2 border-red-200 text-red-500 hover:bg-red-50 font-lato text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
                 >
-                  <XCircle size={15} />Refuser
+                  <XCircle size={15} />{t.refuseBtn}
                 </button>
                 <button
                   onClick={() => handleDecision('validé')}
                   disabled={loading}
                   className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
                 >
-                  <CheckCircle size={15} />Valider
+                  <CheckCircle size={15} />{t.validateBtn}
                 </button>
               </div>
             </div>

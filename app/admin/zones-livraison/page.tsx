@@ -107,8 +107,8 @@ export default function AdminZonesLivraisonPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-playfair font-semibold text-gray-800">{zone.nom_zone}</p>
                   <p className="font-lato text-xs text-gray-500 mt-0.5">
-                    {zone.frais_htg} HTG
-                    {zone.seuil_gratuit != null && ` · ${tz.freeFrom.replace('{n}', String(zone.seuil_gratuit))}`}
+                    ${(zone.frais_usd ?? zone.frais_htg / 130).toFixed(2)}
+                    {zone.seuil_gratuit != null && ` · ${tz.freeFrom.replace('{n}', (zone.seuil_gratuit / 130).toFixed(2))}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">

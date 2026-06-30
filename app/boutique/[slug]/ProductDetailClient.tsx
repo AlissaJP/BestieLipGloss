@@ -11,7 +11,7 @@ import { useFavoritesStore } from '@/store/favoritesStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import ProductCard from '@/components/ProductCard';
-import type { Product, ColorVariant } from '@/data/products';
+import type { Product } from '@/data/products';
 import type { ImageProduit } from '@/app/api/produits/[id]/images/route';
 
 interface AvisPublie {
@@ -24,7 +24,7 @@ interface AvisPublie {
 }
 
 type ReviewTr = { today: string; dayAgo: string; daysAgo: string; weekAgo: string; weeksAgo: string };
-function relativeDate(iso: string, tr: ReviewTr): string {
+function relativeDate(iso: string, tr: ReviewTr, lang: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return tr.today;
@@ -32,7 +32,8 @@ function relativeDate(iso: string, tr: ReviewTr): string {
   if (days < 7) return tr.daysAgo.replace('{n}', String(days));
   if (days < 14) return tr.weekAgo;
   if (days < 30) return tr.weeksAgo.replace('{n}', String(Math.floor(days / 7)));
-  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const locale = lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-US';
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
 interface Props {
@@ -52,18 +53,8 @@ export default function ProductDetailClient({ product, related }: Props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [flyBalls, setFlyBalls] = useState<Array<{ id: number; x: number; y: number; tx: number; ty: number }>>([]);
-  const sortedVariants = [...(product.variants ?? [])].sort((a, b) => {
-    const aActive = a.is_active !== false ? 0 : 1;
-    const bActive = b.is_active !== false ? 0 : 1;
-    if (aActive !== bActive) return aActive - bActive;
-    return (a.ordre_affichage ?? 0) - (b.ordre_affichage ?? 0);
-  });
-  const firstActive = sortedVariants.find((v) => v.is_active !== false) ?? sortedVariants[0] ?? null;
-  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(firstActive);
   useEffect(() => {
     setSelectedImage(0);
-    setSelectedVariant(firstActive);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
 
   useEffect(() => {
@@ -93,8 +84,6 @@ export default function ProductDetailClient({ product, related }: Props) {
     if (!isLoggedIn) { openAuthModal(); return; }
     toggleFavorite(product);
   };
-
-  const images = [product.bgColor, ...product.bgColorMini];
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,14 +127,14 @@ export default function ProductDetailClient({ product, related }: Props) {
     if (!isLoggedIn) { openAuthModal(); return; }
     for (let i = 0; i < quantity; i++) {
       addItem({
-        variantKey: selectedVariant ? `${product.id}::${selectedVariant.id}` : String(product.id),
+        variantKey: String(product.id),
         id: product.id,
         name: product.name,
-        shade: selectedVariant?.name ?? product.shade,
+        shade: product.shade,
         price_htg: product.price_htg,
         price_usd: product.price_usd,
-        bgColor: selectedVariant?.bgColor ?? product.bgColor,
-        image: selectedVariant?.image ?? product.introImage,
+        bgColor: product.bgColor,
+        image: product.image,
       });
     }
     setAdded(true);
@@ -180,46 +169,21 @@ export default function ProductDetailClient({ product, related }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Gallery */}
           <div className="space-y-4">
-            {(product.introImage || product.variants) ? (
-              <>
-                <motion.div
-                  key={selectedVariant?.id ?? 'intro'}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                  className="relative rounded-3xl overflow-hidden h-80 sm:h-[420px] bg-pink-50 shadow-inner"
-                >
-                  <Image
-                    src={selectedVariant?.image ?? product.introImage ?? ''}
-                    alt={`${product.name}${selectedVariant ? ` – ${selectedVariant.name}` : ''}`}
-                    fill
-                    className="object-cover object-center"
-                    priority
-                  />
-                </motion.div>
-                <div className="flex gap-3 overflow-x-auto pb-1">
-                  {sortedVariants.map((variant) => {
-                    const inactive = variant.is_active === false;
-                    return (
-                      <button
-                        key={variant.id}
-                        onClick={() => !inactive && setSelectedVariant(variant)}
-                        disabled={inactive}
-                        className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
-                          inactive
-                            ? 'opacity-40 cursor-not-allowed border-transparent'
-                            : selectedVariant?.id === variant.id
-                              ? 'border-primary scale-105 shadow-md'
-                              : 'border-transparent hover:border-pink-200'
-                        }`}
-                        aria-label={variant.name}
-                      >
-                        <Image src={variant.image} alt={variant.name} fill className="object-cover object-center" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
+            {product.image ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+                className="relative rounded-3xl overflow-hidden h-80 sm:h-[420px] bg-pink-50 shadow-inner"
+              >
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover object-center"
+                  priority
+                />
+              </motion.div>
             ) : productImages.length > 0 ? (
               <>
                 <motion.div
@@ -253,32 +217,14 @@ export default function ProductDetailClient({ product, related }: Props) {
                 </div>
               </>
             ) : (
-              <>
-                <motion.div
-                  key={selectedImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                  className={`${images[selectedImage]} rounded-3xl h-80 sm:h-[420px] flex items-center justify-center text-9xl shadow-inner`}
-                  aria-label={`Image ${selectedImage + 1}`}
-                >
-                  💋
-                </motion.div>
-                <div className="flex gap-3">
-                  {images.map((bg, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedImage(i)}
-                      className={`${bg} w-20 h-20 rounded-xl flex items-center justify-center text-3xl border-2 transition-all ${
-                        selectedImage === i ? 'border-primary scale-105 shadow-md' : 'border-transparent hover:border-pink-200'
-                      }`}
-                      aria-label={`Image ${i + 1}`}
-                    >
-                      💋
-                    </button>
-                  ))}
-                </div>
-              </>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+                className={`${product.bgColor} rounded-3xl h-80 sm:h-[420px] flex items-center justify-center text-9xl shadow-inner`}
+              >
+                💋
+              </motion.div>
             )}
           </div>
 
@@ -290,50 +236,14 @@ export default function ProductDetailClient({ product, related }: Props) {
 
             <h1 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800 mb-4">{product.name}</h1>
 
-            {/* Color variant selector */}
-            {product.variants ? (
-              <div className="mb-5">
-                <p className="font-lato text-[11px] text-gray-400 uppercase tracking-widest mb-2.5">{t.product.shade}</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {sortedVariants.map((variant) => {
-                    const inactive = variant.is_active === false;
-                    return (
-                      <button
-                        key={variant.id}
-                        onClick={() => !inactive && setSelectedVariant(variant)}
-                        disabled={inactive}
-                        className={`flex items-center gap-2 px-3.5 py-2 rounded-full font-lato text-sm transition-all border-2 ${
-                          inactive
-                            ? 'border-gray-100 text-gray-300 cursor-not-allowed line-through'
-                            : selectedVariant?.id === variant.id
-                              ? 'border-primary bg-pink-50 text-primary font-semibold'
-                              : 'border-pink-100 text-gray-600 hover:border-primary hover:text-primary'
-                        }`}
-                      >
-                        <span className={`w-3 h-3 rounded-full flex-shrink-0 ${inactive ? 'bg-gray-200' : variant.bgColor}`} />
-                        {variant.name}
-                        {inactive && (
-                          <span className="font-lato text-[9px] font-semibold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full ml-0.5 no-underline" style={{ textDecoration: 'none' }}>
-                            {t.product.soldOut}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="font-cormorant text-lg text-gray-500 italic">{selectedVariant?.shade}</p>
-              </div>
-            ) : (
-              <p className="font-cormorant text-lg text-gray-500 italic mb-5">{product.shade}</p>
-            )}
+            <p className="font-cormorant text-lg text-gray-500 italic mb-5">{product.shade}</p>
 
             <div className="flex items-baseline gap-3 mb-6">
               <span className="font-playfair font-bold text-3xl text-primary">${product.price_usd}</span>
-              <span className="font-lato text-sm text-gray-400">({product.price_htg} HTG)</span>
             </div>
 
             <p className="font-lato text-gray-600 leading-relaxed mb-6 text-sm sm:text-base">
-              {selectedVariant?.description ?? product.description}
+              {product.description}
             </p>
 
             {/* Benefits */}
@@ -433,7 +343,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-playfair font-semibold text-gray-800">{r.nom_client}</p>
-                                <p className="font-lato text-xs text-gray-400">{relativeDate(r.date_creation, tr)}</p>
+                                <p className="font-lato text-xs text-gray-400">{relativeDate(r.date_creation, tr, lang)}</p>
                     </div>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (

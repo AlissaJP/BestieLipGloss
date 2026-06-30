@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   // 4. Montant minimum
   if (promo.montant_minimum !== null && montant < promo.montant_minimum) {
-    return NextResponse.json({ valid: false, reason: `Commande minimum de ${promo.montant_minimum} HTG requise.` });
+    return NextResponse.json({ valid: false, reason: `Commande minimum de $${(promo.montant_minimum / 130).toFixed(2)} requise.` });
   }
 
   // TODO (BDD) à la validation commande: UPDATE CodePromo SET nb_utilisations_actuel = nb_utilisations_actuel + 1 WHERE id = ?

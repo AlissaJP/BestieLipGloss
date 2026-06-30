@@ -48,7 +48,7 @@ export default function Header() {
     return managedProducts
       .filter((p) => p.published !== false)
       .filter((p) => {
-        const hay = [p.name, p.shade, p.description, p.collection ?? '']
+        const hay = [p.name, p.shade, p.description]
           .join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         return hay.includes(q);
       })
@@ -61,7 +61,7 @@ export default function Header() {
     return managedProducts
       .filter((p) => p.published !== false)
       .filter((p) => {
-        const hay = [p.name, p.shade, p.description, p.collection ?? '']
+        const hay = [p.name, p.shade, p.description]
           .join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         return hay.includes(q);
       })
@@ -128,12 +128,12 @@ export default function Header() {
             <Link href="/" className="flex flex-col leading-none">
               <span className="font-greatvibes text-3xl lg:text-4xl text-primary">Bestie LipGloss</span>
               <span className="font-lato text-xs text-gray-400 tracking-[0.25em] uppercase">
-                Natural Haitian Beauty
+                {translations[lang].common.tagline}
               </span>
             </Link>
 
             {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
+            <nav className="hidden lg:flex items-center gap-8" aria-label={t.common.mainNav}>
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}
                   className="font-lato text-lg text-gray-700 hover:text-primary transition-colors tracking-wide">
@@ -168,7 +168,7 @@ export default function Header() {
                         placeholder={t.search.placeholder}
                         className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-1.5 outline-none focus:border-primary bg-white"
                         autoFocus
-                        aria-label="Rechercher un produit"
+                        aria-label={t.search.ariaInput}
                         aria-autocomplete="list"
                         aria-controls="search-results"
                       />
@@ -202,7 +202,7 @@ export default function Header() {
                                       <p className="font-lato text-sm font-medium text-gray-800 truncate">{p.name}</p>
                                       <p className="font-lato text-xs text-gray-400 truncate">{p.shade}</p>
                                     </div>
-                                    <span className="font-lato text-xs text-primary font-semibold shrink-0">{p.price_htg} HTG</span>
+                                    <span className="font-lato text-xs text-primary font-semibold shrink-0">${p.price_usd}</span>
                                   </Link>
                                 ))}
                                 {searchResults.length === 5 && (
@@ -228,7 +228,7 @@ export default function Header() {
                     else setIsSearchOpen(true);
                   }}
                   className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                  aria-label="Ouvrir la recherche"
+                  aria-label={t.search.ariaOpen}
                 >
                   <Search size={22} />
                 </button>
@@ -241,7 +241,7 @@ export default function Header() {
                   className={`p-2 rounded-full transition-colors ${
                     isLangOpen ? 'text-primary bg-pink-50' : 'text-gray-600 hover:text-primary hover:bg-pink-50'
                   }`}
-                  aria-label="Language / Langue"
+                  aria-label={t.lang.change}
                   aria-expanded={isLangOpen}
                 >
                   <Globe size={22} />
@@ -360,7 +360,7 @@ export default function Header() {
               {isLoggedIn && (
                 <button onClick={openCart}
                   className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                  aria-label={`Cart (${itemCount} items)`}>
+                  aria-label={t.cart.ariaCartCount.replace('{n}', String(itemCount))}>
                   <ShoppingBag size={25} />
                   <AnimatePresence>
                     {itemCount > 0 && (
@@ -377,7 +377,7 @@ export default function Header() {
               {/* Mobile hamburger */}
               <button onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="lg:hidden p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={isMenuOpen}>
+                aria-label={isMenuOpen ? t.common.closeMenu : t.common.openMenu} aria-expanded={isMenuOpen}>
                 {isMenuOpen ? <X size={25} /> : <Menu size={25} />}
               </button>
             </div>
@@ -392,7 +392,7 @@ export default function Header() {
               exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}
               className="lg:hidden overflow-hidden bg-white border-t border-pink-100 shadow-lg"
             >
-              <nav className="px-5 py-4 flex flex-col gap-1" aria-label="Mobile navigation">
+              <nav className="px-5 py-4 flex flex-col gap-1" aria-label={t.common.mobileNav}>
                 {navLinks.map((link) => (
                   <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)}
                     className="font-lato text-base text-gray-700 hover:text-primary transition-colors py-3 border-b border-gray-50 min-h-[44px] flex items-center">
@@ -453,7 +453,7 @@ export default function Header() {
                     }}
                     placeholder={t.search.placeholderMobile}
                     className="w-full font-lato text-sm border border-pink-200 rounded-full px-4 py-2.5 outline-none focus:border-primary bg-gray-50"
-                    aria-label="Rechercher un produit"
+                    aria-label={t.search.ariaInput}
                   />
                   {/* Résultats mobile */}
                   {mobileSearchQuery.trim() && (

@@ -37,6 +37,9 @@ const PAYMENT_LABEL: Record<string, string> = {
   cash:    '💵 Cash',
 };
 
+// Tous les montants admin s'affichent en USD, sauf mention explicite MonCash/HTG.
+const usd = (htg: number) => `$${(htg / 130).toFixed(2)}`;
+
 const LANGS: { code: Lang; flag: string; label: string }[] = [
   { code: 'fr', flag: '🇫🇷', label: 'FR' },
   { code: 'en', flag: '🇺🇸', label: 'EN' },
@@ -46,6 +49,11 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 function useT() {
   const { lang } = useLanguageStore();
   return translations[lang].admin;
+}
+
+function useCommonT() {
+  const { lang } = useLanguageStore();
+  return translations[lang].common;
 }
 
 function Badge({ status }: { status: OrderStatus }) {
@@ -223,7 +231,7 @@ function UserDrawer({ customer, orders, onClose }: {
               </div>
               <div className="bg-white rounded-2xl border border-pink-100 p-4 text-center"
                 style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-                <p className="font-playfair font-bold text-2xl text-primary">{customer.totalSpent.toLocaleString()}</p>
+                <p className="font-playfair font-bold text-2xl text-primary">{usd(customer.totalSpent)}</p>
                 <p className="font-lato text-xs text-gray-400 mt-0.5">{t.drawer.spent}</p>
               </div>
             </div>
@@ -256,7 +264,7 @@ function UserDrawer({ customer, orders, onClose }: {
                           <p className="font-lato text-xs text-gray-400">{order.date} · {PAYMENT_LABEL[order.paymentMethod]}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="font-playfair font-bold text-gray-800">{order.total.toLocaleString()} HTG</p>
+                          <p className="font-playfair font-bold text-gray-800">{usd(order.total)}</p>
                           <p className="font-lato text-[10px] text-gray-400 flex items-center gap-1 mt-1 justify-end">
                             <MapPin size={10} />{order.address.split(',')[0]}
                           </p>
@@ -283,6 +291,7 @@ export default function AdminDashboard() {
   } = useAdminStore();
   const { lang, setLang } = useLanguageStore();
   const t = translations[lang].admin;
+  const tc = translations[lang].common;
   const [tab, setTab] = useState<Tab>('overview');
   const [selectedCustomer, setSelectedCustomer] = useState<AdminCustomer | null>(null);
   const [userSearch, setUserSearch] = useState('');
@@ -369,7 +378,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="md:hidden w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-gray-500 hover:bg-pink-100 transition-colors"
-            aria-label="Ouvrir le menu"
+            aria-label={tc.openMenu}
           >
             <Menu size={18} />
           </button>
@@ -440,7 +449,7 @@ export default function AdminDashboard() {
                   </span>
                   <button onClick={() => setMobileSidebarOpen(false)}
                     className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-gray-400"
-                    aria-label="Fermer le menu">
+                    aria-label={tc.closeMenu}>
                     <X size={15} />
                   </button>
                 </div>
@@ -475,7 +484,7 @@ export default function AdminDashboard() {
                     <StatCard icon={<Users size={16} className="text-white" />} label={t.stats.clients} value={customers.length} sub={t.stats.registered} gradient="linear-gradient(135deg,#A78BFA,#C4B5FD)" />
                     <StatCard icon={<Clock size={16} className="text-white" />} label={t.stats.pending} value={pending.length} sub={t.stats.toApprove} gradient="linear-gradient(135deg,#F59E0B,#FCD34D)" />
                     <StatCard icon={<Truck size={16} className="text-white" />} label={t.stats.shipping} value={shipping.length} sub={t.stats.onTheWay} gradient="linear-gradient(135deg,#3B82F6,#93C5FD)" />
-                    <StatCard icon={<TrendingUp size={16} className="text-white" />} label={t.stats.revenue} value={revenue.toLocaleString()} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#D45F85,#D4835A)" />
+                    <StatCard icon={<TrendingUp size={16} className="text-white" />} label={t.stats.revenue} value={usd(revenue)} sub={t.stats.cumulated} gradient="linear-gradient(135deg,#D45F85,#D4835A)" />
                   </div>
 
                   <div className="bg-white rounded-3xl border border-pink-100 overflow-hidden"
@@ -497,7 +506,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                            <span className="font-lato text-sm font-semibold text-gray-700 hidden sm:inline">{order.total.toLocaleString()} HTG</span>
+                            <span className="font-lato text-sm font-semibold text-gray-700 hidden sm:inline">{usd(order.total)}</span>
                             <Badge status={order.status} />
                           </div>
                         </div>
@@ -538,7 +547,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <div className="text-right">
-                            <p className="font-playfair font-bold text-primary text-sm">{c.totalSpent.toLocaleString()} HTG</p>
+                            <p className="font-playfair font-bold text-primary text-sm">{usd(c.totalSpent)}</p>
                             <p className="font-lato text-xs text-gray-400">{c.ordersCount} cmd</p>
                           </div>
                           <ChevronRight size={15} className="text-gray-300" />
@@ -583,7 +592,7 @@ export default function AdminDashboard() {
                                 <td className="px-4 py-4 font-lato text-sm text-gray-500">{c.phone}</td>
                                 <td className="px-4 py-4 font-lato text-sm text-gray-400">{c.joinDate}</td>
                                 <td className="px-4 py-4 text-right"><span className="font-lato text-sm font-semibold text-gray-700">{c.ordersCount}</span></td>
-                                <td className="px-4 py-4 text-right"><span className="font-lato text-sm font-bold text-primary">{c.totalSpent.toLocaleString()} HTG</span></td>
+                                <td className="px-4 py-4 text-right"><span className="font-lato text-sm font-bold text-primary">{usd(c.totalSpent)}</span></td>
                                 <td className="px-4 py-4"><ChevronRight size={15} className="text-gray-300 group-hover:text-primary transition-colors ml-auto" /></td>
                               </tr>
                             ))}
@@ -726,7 +735,7 @@ function OrdersSection({
                           {item.qty}× <span className="text-primary font-medium">{item.shade}</span>
                         </p>
                       ))}
-                      <p className="font-playfair font-bold text-base md:text-lg text-gray-800">{order.total.toLocaleString()} HTG</p>
+                      <p className="font-playfair font-bold text-base md:text-lg text-gray-800">{usd(order.total)}</p>
                       <p className="font-lato text-xs text-gray-400">{PAYMENT_LABEL[order.paymentMethod]}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -846,24 +855,22 @@ function toSlug(str: string) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-type FormVariant = { id: string; name: string; shade: string; description: string; image: string; bgColor: string; ordre_affichage: number; is_active: boolean };
 type FormState = {
-  name: string; shade: string; introImage: string;
+  name: string; shade: string; image: string;
   price_htg: string; price_usd: string; description: string;
   badge: string; bgColor: string; stock: string;
-  variants: FormVariant[]; ingredients: string[]; benefits: string[];
+  ingredients: string[]; benefits: string[];
 };
 
 function emptyForm(): FormState {
-  return { name: '', shade: '', introImage: '', price_htg: '', price_usd: '', description: '', badge: 'Best-seller ✨', bgColor: '#FBCFE8', stock: '10', variants: [], ingredients: [], benefits: [] };
+  return { name: '', shade: '', image: '', price_htg: '', price_usd: '', description: '', badge: 'Best-seller ✨', bgColor: '#FBCFE8', stock: '10', ingredients: [], benefits: [] };
 }
 
 function productToForm(p: ManagedProduct): FormState {
   return {
-    name: p.name, shade: p.shade, introImage: p.introImage ?? '',
+    name: p.name, shade: p.shade, image: p.image ?? '',
     price_htg: String(p.price_htg), price_usd: String(p.price_usd),
     description: p.description, badge: p.badge, bgColor: p.bgColor, stock: String(p.stock),
-    variants: p.variants ? p.variants.map((v) => ({ ...v, ordre_affichage: v.ordre_affichage ?? 0, is_active: v.is_active ?? true })) : [],
     ingredients: [...p.ingredients], benefits: [...p.benefits],
   };
 }
@@ -939,7 +946,7 @@ function ImageUpload({ value, onChange, label, small }: {
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
       {value ? (
         <div className="relative group cursor-pointer" onClick={() => inputRef.current?.click()}>
-          <img src={value} alt="aperçu"
+          <img src={value} alt=""
             className={`w-full ${small ? 'h-20' : 'h-32'} object-cover rounded-xl border border-pink-100`} />
           <div className="absolute inset-0 bg-black/35 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-lato text-xs font-semibold">
             <Upload size={13} />{label}
@@ -967,26 +974,8 @@ function ProductForm({ initial, onSave, onCancel }: {
 }) {
   const tp = useT().products;
   const [form, setForm] = useState<FormState>(initial ? productToForm(initial) : emptyForm());
-  const [vForm, setVForm] = useState<FormVariant | null>(null);
-  const [vIdx, setVIdx] = useState<number | null>(null);
 
   const upd = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((prev) => ({ ...prev, [k]: v }));
-
-  const openVariant = (v?: FormVariant, idx?: number) => {
-    setVForm(v ?? { id: '', name: '', shade: '', description: '', image: '', bgColor: '#F9A8D4', ordre_affichage: form.variants.length + 1, is_active: true });
-    setVIdx(idx ?? null);
-  };
-
-  const saveVariant = () => {
-    if (!vForm || !vForm.name.trim()) return;
-    const v = { ...vForm, id: vForm.id || toSlug(vForm.name) };
-    if (vIdx !== null) {
-      const arr = [...form.variants]; arr[vIdx] = v; upd('variants', arr);
-    } else {
-      upd('variants', [...form.variants, v]);
-    }
-    setVForm(null); setVIdx(null);
-  };
 
   const handleSubmit = () => {
     if (!form.name.trim() || !form.price_htg) return;
@@ -994,15 +983,13 @@ function ProductForm({ initial, onSave, onCancel }: {
       slug: toSlug(form.name),
       name: form.name.trim(),
       shade: form.shade.trim(),
-      introImage: form.introImage.trim() || undefined,
+      image: form.image.trim() || undefined,
       price_htg: Number(form.price_htg) || 0,
       price_usd: Number(form.price_usd) || 0,
       description: form.description.trim(),
       badge: form.badge,
       bgColor: form.bgColor,
-      bgColorMini: form.variants.length > 0 ? form.variants.map((v) => v.bgColor) : [form.bgColor],
       stock: Number(form.stock) || 0,
-      variants: form.variants.length > 0 ? form.variants : undefined,
       ingredients: form.ingredients,
       benefits: form.benefits,
     });
@@ -1054,7 +1041,7 @@ function ProductForm({ initial, onSave, onCancel }: {
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
             <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionVisual}</p>
             <FLabel label={tp.fieldPhoto}>
-              <ImageUpload value={form.introImage} onChange={(v) => upd('introImage', v)} label={tp.fieldPhotoBtnChange} />
+              <ImageUpload value={form.image} onChange={(v) => upd('image', v)} label={tp.fieldPhotoBtnChange} />
             </FLabel>
             <FLabel label={tp.fieldBgColor}>
               <ColorPicker value={form.bgColor} onChange={(v) => upd('bgColor', v)} />
@@ -1068,95 +1055,6 @@ function ProductForm({ initial, onSave, onCancel }: {
         </div>
 
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-4" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
-            <div className="flex items-center justify-between">
-              <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionVariants} ({form.variants.length})</p>
-              <button type="button" onClick={() => openVariant()} className="flex items-center gap-1 font-lato text-xs font-semibold text-primary hover:text-pink-400 transition-colors">
-                <Plus size={12} /> {tp.variantAdd}
-              </button>
-            </div>
-
-            {vForm && (
-              <div className="border border-pink-200 rounded-xl p-4 space-y-3 bg-pink-50/40">
-                <p className="font-lato text-xs font-semibold text-gray-600">{vIdx !== null ? tp.variantEdit : tp.variantNew}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <input value={vForm.name} onChange={(e) => setVForm((v) => v ? { ...v, name: e.target.value } : v)} placeholder="Nom (ex : Cherry)" className={INPUT_CLS + ' text-xs py-2'} />
-                  <input value={vForm.shade} onChange={(e) => setVForm((v) => v ? { ...v, shade: e.target.value } : v)} placeholder="Teinte courte" className={INPUT_CLS + ' text-xs py-2'} />
-                </div>
-                <div className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <ImageUpload value={vForm.image} onChange={(v) => setVForm((vf) => vf ? { ...vf, image: v } : vf)} label={tp.variantPhotoBtn} small />
-                  </div>
-                  <div className="flex-shrink-0 w-24">
-                    <input
-                      type="number" min={0}
-                      value={vForm.ordre_affichage}
-                      onChange={(e) => setVForm((v) => v ? { ...v, ordre_affichage: parseInt(e.target.value) || 0 } : v)}
-                      placeholder="Ordre"
-                      title="ordre_affichage"
-                      className={INPUT_CLS + ' text-xs py-2'}
-                    />
-                  </div>
-                </div>
-                <textarea value={vForm.description} onChange={(e) => setVForm((v) => v ? { ...v, description: e.target.value } : v)} rows={2} placeholder="Description…" className={INPUT_CLS + ' resize-none text-xs py-2'} />
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setVForm((v) => v ? { ...v, is_active: !v.is_active } : v)}
-                    className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${vForm.is_active ? 'bg-green-400' : 'bg-gray-200'}`}
-                  >
-                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${vForm.is_active ? 'left-[calc(100%-18px)]' : 'left-0.5'}`} />
-                  </button>
-                  <span className="font-lato text-xs text-gray-500">{vForm.is_active ? tp.variantActive : tp.variantInactive}</span>
-                </div>
-                <div>
-                  <p className="font-lato text-[10px] text-gray-400 mb-1.5">{tp.variantBgColor}</p>
-                  <div className="flex items-center gap-2 mb-2">
-                    <input type="color" value={resolveColor(vForm.bgColor)}
-                      onChange={(e) => setVForm((v) => v ? { ...v, bgColor: e.target.value } : v)}
-                      className="w-8 h-8 rounded-lg cursor-pointer border border-pink-100 p-0.5 bg-white" />
-                    <span className="font-lato text-[10px] text-gray-400 font-mono">{resolveColor(vForm.bgColor)}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {BG_OPTIONS.map((preset) => (
-                      <button key={preset} type="button" onClick={() => setVForm((v) => v ? { ...v, bgColor: preset } : v)}
-                        style={{ background: preset }}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${resolveColor(vForm.bgColor) === preset ? 'border-gray-700 scale-110' : 'border-white'}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={saveVariant} className="flex-1 bg-primary text-white font-lato text-xs font-semibold py-2 rounded-xl hover:bg-pink-400 transition-colors">{tp.variantSave}</button>
-                  <button type="button" onClick={() => { setVForm(null); setVIdx(null); }} className="px-4 bg-gray-100 text-gray-500 font-lato text-xs py-2 rounded-xl hover:bg-gray-200 transition-colors">{tp.variantCancel}</button>
-                </div>
-              </div>
-            )}
-
-            {form.variants.length > 0 && (
-              <div className="space-y-2">
-                {form.variants.map((v, i) => (
-                  <div key={v.id || i} className="flex items-center gap-3 bg-pink-50/60 rounded-xl px-3 py-2.5 border border-pink-100">
-                    {v.image ? (
-                      <img src={v.image} alt={v.name} className="w-9 h-9 rounded-lg object-cover border border-pink-100 flex-shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                    ) : (
-                      <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: resolveColor(v.bgColor) }} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-lato text-sm font-semibold text-gray-700 truncate">{v.name}</p>
-                      <p className="font-lato text-xs text-gray-400 truncate">{v.shade}</p>
-                    </div>
-                    {v.is_active === false && (
-                      <span className="font-lato text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">{tp.variantInactive}</span>
-                    )}
-                    <button type="button" onClick={() => openVariant(v, i)} className="text-gray-400 hover:text-primary transition-colors p-1"><Edit3 size={13} /></button>
-                    <button type="button" onClick={() => upd('variants', form.variants.filter((_, idx) => idx !== i))} className="text-gray-400 hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="bg-white rounded-2xl border border-pink-100 p-5 space-y-3" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
             <p className="font-lato text-[10px] font-bold text-gray-400 uppercase tracking-widest">{tp.sectionIngredients}</p>
             <TagInput tags={form.ingredients} placeholder={tp.ingPlaceholder}
@@ -1200,14 +1098,15 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
   onToggle: (id: number) => void;
 }) {
   const tp = useT().products;
+  const tc = useCommonT();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const bgColor = resolveColor(p.bgColor);
 
   return (
     <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden flex flex-col" style={{ boxShadow: '0 2px 12px rgba(242,167,187,0.08)' }}>
       <div className="h-28 relative flex items-center justify-center" style={{ background: bgColor }}>
-        {p.introImage ? (
-          <img src={p.introImage} alt={p.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+        {p.image ? (
+          <img src={p.image} alt={p.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
         ) : (
           <span className="text-5xl select-none">💋</span>
         )}
@@ -1227,9 +1126,8 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
           <span className="font-lato text-[10px] text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">#{p.id}</span>
         </div>
         <div className="flex items-center gap-2 mt-1.5 mb-4 flex-wrap">
-          <span className="font-playfair font-bold text-primary text-sm">{p.price_htg} HTG</span>
+          <span className="font-playfair font-bold text-primary text-sm">${p.price_usd}</span>
           <span className="font-lato text-[10px] text-gray-400 bg-pink-50 px-2 py-0.5 rounded-full">{p.badge}</span>
-          {p.variants && <span className="font-lato text-[10px] text-gray-400">{p.variants.length} teintes</span>}
           <span className="font-lato text-[10px] text-gray-400 ml-auto">Stock : {p.stock}</span>
         </div>
 
@@ -1241,7 +1139,7 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
           >
             {p.published ? <><EyeOff size={12} /> {tp.btnUnpublish}</> : <><Eye size={12} /> {tp.btnPublish}</>}
           </button>
-          <button onClick={() => onEdit(p)} className="px-3 py-2 rounded-xl border-2 border-pink-100 text-primary hover:bg-pink-50 transition-colors" title="Modifier">
+          <button onClick={() => onEdit(p)} className="px-3 py-2 rounded-xl border-2 border-pink-100 text-primary hover:bg-pink-50 transition-colors" title={tc.edit}>
             <Edit3 size={13} />
           </button>
           {confirmDelete ? (
@@ -1250,7 +1148,7 @@ function AdminProductCard({ p, onEdit, onDelete, onToggle }: {
             </button>
           ) : (
             <button onClick={() => setConfirmDelete(true)} onBlur={() => setTimeout(() => setConfirmDelete(false), 200)}
-              className="px-3 py-2 rounded-xl border-2 border-gray-100 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors" title="Supprimer">
+              className="px-3 py-2 rounded-xl border-2 border-gray-100 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors" title={tc.delete}>
               <Trash2 size={13} />
             </button>
           )}
