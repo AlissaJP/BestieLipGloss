@@ -168,7 +168,7 @@ export const translations = {
       coupons: 'Mes coupons',
       couponsSave: 'Enregistrer',
       couponsSaved: '✓ Coupon enregistré dans ta liste !',
-      couponsInvalid: 'Code invalide. Essaie BESTIE10 ou BESTIE15.',
+      couponsInvalid: 'Ce coupon est invalide.',
       couponsDuplicate: 'Ce coupon est déjà dans ta liste.',
     },
     footer: {
@@ -895,7 +895,7 @@ export const translations = {
       coupons: 'My Coupons',
       couponsSave: 'Save',
       couponsSaved: '✓ Coupon saved to your list!',
-      couponsInvalid: 'Invalid code. Try BESTIE10 or BESTIE15.',
+      couponsInvalid: 'This coupon is invalid.',
       couponsDuplicate: 'This coupon is already in your list.',
     },
     footer: {
@@ -1622,7 +1622,7 @@ export const translations = {
       coupons: 'Mis cupones',
       couponsSave: 'Guardar',
       couponsSaved: '✓ ¡Cupón guardado en tu lista!',
-      couponsInvalid: 'Código inválido. Prueba BESTIE10 o BESTIE15.',
+      couponsInvalid: 'Este cupón es inválido.',
       couponsDuplicate: 'Este cupón ya está en tu lista.',
     },
     footer: {

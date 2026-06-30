@@ -148,12 +148,19 @@ function SidebarContent({
           </button>
         ))}
       </nav>
-      <div className="px-3 pb-3 border-t border-pink-50 pt-3">
+      <div className="px-3 pb-3 border-t border-pink-50 pt-3 space-y-0.5">
         <a
           href="/admin/avis"
           className="w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm text-gray-500 hover:text-gray-700 hover:bg-pink-50/60 transition-all"
         >
           <span className="flex items-center gap-2.5"><Star size={15} />{t.avis.link}</span>
+          <ExternalLink size={11} className="text-gray-300" />
+        </a>
+        <a
+          href="/admin/coupons"
+          className="w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-2xl font-lato text-sm text-gray-500 hover:text-gray-700 hover:bg-pink-50/60 transition-all"
+        >
+          <span className="flex items-center gap-2.5">🏷️ Coupons</span>
           <ExternalLink size={11} className="text-gray-300" />
         </a>
       </div>

@@ -19,6 +19,11 @@ export interface StoredOrder {
   date: string;
   status: CustomerOrderStatus;
   items: StoredOrderItem[];
+  subtotalUSD: number;
+  discountAmountUSD?: number;
+  promoCode?: string;
+  deliveryFeeUSD: number;
+  deliveryType?: 'standard' | 'express';
   total: number;
   totalUSD: number;
   deliveryAddress: string;

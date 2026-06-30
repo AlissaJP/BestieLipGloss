@@ -9,11 +9,6 @@ import { useFavoritesStore } from '@/store/favoritesStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 
-const VALID_CODES: Record<string, number> = {
-  BESTIE10: 10,
-  BESTIE15: 15,
-};
-
 export default function MonComptePage() {
   const { user, addCoupon, removeCoupon } = useAuthStore();
   const { items: favoris } = useFavoritesStore();
@@ -21,27 +16,35 @@ export default function MonComptePage() {
   const t = translations[lang];
 
   const [couponInput, setCouponInput] = useState('');
-  const [couponStatus, setCouponStatus] = useState<'valid' | 'invalid' | 'duplicate' | null>(null);
+  const [couponStatus, setCouponStatus] = useState<'valid' | 'invalid' | 'duplicate' | 'loading' | null>(null);
 
   const savedCoupons = user?.coupons ?? [];
 
-  const handleAddCoupon = () => {
+  const handleAddCoupon = async () => {
     const code = couponInput.toUpperCase().trim();
     if (!code) return;
-    if (VALID_CODES[code] === undefined) {
-      setCouponStatus('invalid');
-      setTimeout(() => setCouponStatus(null), 3000);
-      return;
-    }
     if (savedCoupons.includes(code)) {
       setCouponStatus('duplicate');
       setTimeout(() => setCouponStatus(null), 3000);
       return;
     }
-    addCoupon(code);
-    setCouponInput('');
-    setCouponStatus('valid');
-    setTimeout(() => setCouponStatus(null), 3000);
+    setCouponStatus('loading');
+    try {
+      const res = await fetch(`/api/promo/check?code=${encodeURIComponent(code)}`);
+      const data = await res.json() as { valid: boolean };
+      if (!data.valid) {
+        setCouponStatus('invalid');
+        setTimeout(() => setCouponStatus(null), 3000);
+        return;
+      }
+      addCoupon(code);
+      setCouponInput('');
+      setCouponStatus('valid');
+      setTimeout(() => setCouponStatus(null), 3000);
+    } catch {
+      setCouponStatus('invalid');
+      setTimeout(() => setCouponStatus(null), 3000);
+    }
   };
 
   const menuItems = [
@@ -107,7 +110,6 @@ export default function MonComptePage() {
                       className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-primary font-lato text-base font-semibold px-3 py-1.5 rounded-full"
                     >
                       <span>🏷️ {code}</span>
-                      <span className="text-gray-400 text-sm">(-{VALID_CODES[code]}%)</span>
                       <button
                         onClick={() => removeCoupon(code)}
                         className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
@@ -133,9 +135,15 @@ export default function MonComptePage() {
               />
               <button
                 onClick={handleAddCoupon}
-                className="bg-primary text-white font-lato text-base font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5"
+                disabled={couponStatus === 'loading'}
+                className="bg-primary text-white font-lato text-base font-semibold px-4 py-2.5 rounded-xl hover:bg-pink-400 transition-colors whitespace-nowrap flex items-center gap-1.5 disabled:opacity-60"
               >
-                <Plus size={14} />{t.account.couponsSave}
+                {couponStatus === 'loading' ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Plus size={14} />
+                )}
+                {t.account.couponsSave}
               </button>
             </div>
             <AnimatePresence>

@@ -82,7 +82,22 @@ function OrderCard({
 
       {/* Footer */}
       <div className="px-5 py-4 space-y-2.5">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        {/* Détail prix */}
+        <div className="space-y-1">
+          {order.promoCode && order.discountAmountUSD != null && (
+            <div className="flex justify-between font-lato text-xs text-green-600">
+              <span>🏷️ {order.promoCode}</span>
+              <span>−${order.discountAmountUSD.toFixed(2)}</span>
+            </div>
+          )}
+          {order.deliveryFeeUSD != null && (
+            <div className="flex justify-between font-lato text-xs text-gray-400">
+              <span>Livraison {order.deliveryType === 'express' ? '(Express)' : ''}</span>
+              <span>{order.deliveryFeeUSD === 0 ? 'Gratuite' : `$${order.deliveryFeeUSD.toFixed(2)}`}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-pink-50">
           <div className="flex items-center gap-1.5 font-lato text-xs text-gray-500">
             <CreditCard size={13} className="text-primary flex-shrink-0" />
             {t.payVia} <span className="font-semibold text-gray-700 ml-1">{PAY_LABEL[order.paymentMethod] ?? order.paymentMethod}</span>

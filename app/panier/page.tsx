@@ -82,7 +82,7 @@ function formatAddress(addr: Address): string {
 export default function PanierPage() {
   const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCartStore();
   const { user } = useAuthStore();
-  const addOrder = useOrdersStore((s) => s.addOrder);
+  const { addOrder, orders } = useOrdersStore();
   const { lang } = useLanguageStore();
   const tc = translations[lang].checkout;
   const tCart = translations[lang].cart;
@@ -221,7 +221,13 @@ export default function PanierPage() {
       }));
       addOrder({
         id: numeroCommande, date: new Date().toISOString(), status: 'attente',
-        items: orderItems, total, totalUSD: parseFloat(totalUSD.toFixed(2)),
+        items: orderItems,
+        subtotalUSD: parseFloat(subtotalUSD.toFixed(2)),
+        discountAmountUSD: promoInfo ? parseFloat(discountAmountUSD.toFixed(2)) : undefined,
+        promoCode: promoInfo?.code || undefined,
+        deliveryFeeUSD: parseFloat(deliveryFeeUSD.toFixed(2)),
+        deliveryType: deliveryData?.deliveryType,
+        total, totalUSD: parseFloat(totalUSD.toFixed(2)),
         deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
         instructionsLivraison: deliveryData?.instructions || undefined,
         paymentMethod: 'moncash', devise: 'HTG',
@@ -295,6 +301,11 @@ export default function PanierPage() {
         date: new Date().toISOString(),
         status: 'attente',
         items: orderItems,
+        subtotalUSD: parseFloat(subtotalUSD.toFixed(2)),
+        discountAmountUSD: promoInfo ? parseFloat(discountAmountUSD.toFixed(2)) : undefined,
+        promoCode: promoInfo?.code || undefined,
+        deliveryFeeUSD: parseFloat(deliveryFeeUSD.toFixed(2)),
+        deliveryType: deliveryData?.deliveryType,
         total,
         totalUSD: parseFloat(totalUSD.toFixed(2)),
         deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
@@ -311,43 +322,110 @@ export default function PanierPage() {
     }
   };
 
-  /* ——— STEP 3 : Success ——— */
+  /* ——— STEP 3 : Reçu ——— */
   if (step === 3) {
+    const confirmedOrder = orders.find((o) => o.id === numeroCommande);
     return (
-      <div className="min-h-screen bg-[#F2E9E1] flex items-center justify-center px-4 py-20">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
-          className="bg-white rounded-3xl p-8 sm:p-12 max-w-lg w-full text-center shadow-xl border border-pink-100">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={40} className="text-green-500" />
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <h1 className="font-playfair font-bold text-3xl text-gray-800 mb-4">{tc.confirmed}</h1>
-            <p className="font-lato text-gray-600 leading-relaxed mb-2">{tc.confirmedSub}</p>
-            {numeroCommande && (
-              <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 border border-gray-200 inline-block">
-                <p className="font-lato text-xs text-gray-500 mb-0.5">{tc.orderNumber}</p>
-                <p className="font-playfair font-bold text-gray-800 tracking-wider">{numeroCommande}</p>
-              </div>
-            )}
-            <p className="font-cormorant text-lg text-gray-500 italic mb-4">{tc.whatsappConfirm}</p>
+      <div className="min-h-screen bg-[#F2E9E1] px-4 py-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          className="max-w-lg mx-auto space-y-4">
+
+          {/* Header succès */}
+          <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-pink-100">
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+              className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={34} className="text-green-500" />
+            </motion.div>
+            <h1 className="font-playfair font-bold text-2xl text-gray-800 mb-1">{tc.confirmed}</h1>
+            <p className="font-lato text-sm text-gray-500 mb-3">{tc.confirmedSub}</p>
+            <div className="bg-gray-50 rounded-xl px-4 py-2.5 inline-block border border-gray-100">
+              <p className="font-lato text-[10px] text-gray-400 mb-0.5">{tc.orderNumber}</p>
+              <p className="font-playfair font-bold text-gray-800 tracking-wider text-sm">{numeroCommande}</p>
+            </div>
             {deliveryData?.address && deliveryDelay && (
-              <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4 inline-block">
+              <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 inline-block">
                 <p className="font-lato text-xs text-amber-600 font-semibold">📦 {tc.estimatedDelivery} {deliveryDelay}</p>
                 <p className="font-lato text-xs text-amber-500">{deliveryData.address.ville}</p>
               </div>
             )}
-            <div className="bg-pink-50 rounded-2xl p-4 mb-8 text-left">
-              <p className="font-lato text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">{tc.questions}</span><br />
-                {tc.questionsMsg}{' '}
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">{WHATSAPP_NUMBER}</a>
-              </p>
+          </div>
+
+          {/* Reçu détaillé */}
+          {confirmedOrder && (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-pink-100">
+              <p className="font-playfair font-bold text-gray-800 mb-4">🧾 Détail de votre commande</p>
+
+              {/* Articles */}
+              <div className="space-y-2 mb-4">
+                {confirmedOrder.items.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-5 h-5 rounded-full flex-shrink-0 ${item.bgColor}`} />
+                      <span className="font-lato text-sm text-gray-700 truncate">
+                        {item.name} <span className="text-gray-400">· {item.shade}</span>
+                      </span>
+                      <span className="font-lato text-xs text-gray-400 flex-shrink-0">×{item.quantity}</span>
+                    </div>
+                    <span className="font-lato text-sm font-semibold text-gray-800 flex-shrink-0">
+                      ${(item.price_usd * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Calcul */}
+              <div className="border-t border-pink-50 pt-3 space-y-2">
+                <div className="flex justify-between font-lato text-sm text-gray-500">
+                  <span>Sous-total</span>
+                  <span>${confirmedOrder.subtotalUSD.toFixed(2)}</span>
+                </div>
+
+                {confirmedOrder.promoCode && confirmedOrder.discountAmountUSD && (
+                  <div className="flex justify-between font-lato text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      🏷️ Coupon <strong>{confirmedOrder.promoCode}</strong>
+                    </span>
+                    <span>−${confirmedOrder.discountAmountUSD.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between font-lato text-sm text-gray-500">
+                  <span>Livraison {confirmedOrder.deliveryType === 'express' ? '(Express)' : '(Standard)'}</span>
+                  <span>{confirmedOrder.deliveryFeeUSD === 0 ? '🎉 Gratuite' : `$${confirmedOrder.deliveryFeeUSD.toFixed(2)}`}</span>
+                </div>
+
+                <div className="border-t border-pink-100 pt-2 flex justify-between">
+                  <span className="font-playfair font-bold text-gray-800">Total</span>
+                  <span className="font-playfair font-bold text-primary text-xl">
+                    {confirmedOrder.devise === 'HTG'
+                      ? `${confirmedOrder.total.toLocaleString()} HTG`
+                      : `$${confirmedOrder.totalUSD.toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Adresse & paiement */}
+              {confirmedOrder.deliveryAddress && (
+                <div className="mt-4 pt-3 border-t border-pink-50 font-lato text-xs text-gray-500 space-y-1">
+                  <p>📍 {confirmedOrder.deliveryAddress}</p>
+                  <p>💳 {confirmedOrder.paymentMethod === 'moncash' ? 'MonCash' : confirmedOrder.paymentMethod === 'zelle' ? 'Zelle' : 'Carte'}</p>
+                </div>
+              )}
             </div>
-            <Link href="/boutique" className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3.5 rounded-full transition-colors w-full justify-center">
-              {tc.continueShopping}
-            </Link>
-          </motion.div>
+          )}
+
+          {/* Contact WhatsApp */}
+          <div className="bg-pink-50 rounded-2xl p-4 border border-pink-100">
+            <p className="font-lato text-sm text-gray-600">
+              <span className="font-semibold text-gray-800">{tc.questions}</span><br />
+              {tc.questionsMsg}{' '}
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">{WHATSAPP_NUMBER}</a>
+            </p>
+          </div>
+
+          <Link href="/boutique" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato font-semibold px-8 py-3.5 rounded-full transition-colors w-full">
+            {tc.continueShopping}
+          </Link>
         </motion.div>
       </div>
     );
