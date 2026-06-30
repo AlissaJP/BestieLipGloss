@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrRefreshOtp } from '@/lib/otpStore';
+import { createOtpToken } from '@/lib/otpJwt';
 import { sendOtpEmail } from '@/lib/email';
+
+function genCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
@@ -15,26 +19,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Adresse e-mail invalide.' }, { status: 400 });
   }
 
-  try {
-    const newUser = name && telephone ? { name, telephone } : undefined;
-    const code = createOrRefreshOtp(email, newUser);
+  // Inscription : name + telephone obligatoires
+  if (!name || !telephone) {
+    return NextResponse.json({ error: 'Nom et téléphone requis pour l\'inscription.' }, { status: 400 });
+  }
 
+  try {
+    const code = genCode();
+
+    // Crée un token signé (stateless — fonctionne sur Vercel serverless)
+    const token = await createOtpToken(email, code, name, telephone);
+
+    // Envoie le code par e-mail
     await sendOtpEmail(email, code, name);
 
-    return NextResponse.json({ success: true });
+    // Le token est retourné au client (stocké dans sessionStorage côté front)
+    return NextResponse.json({ success: true, token });
+
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
-    console.error('[OTP] Erreur route /api/otp/envoyer:', message);
+    console.error('[OTP] Erreur /api/otp/envoyer:', message);
 
-    if (message === 'no_pending') {
-      return NextResponse.json(
-        { error: 'Aucune inscription en cours pour cet e-mail.' },
-        { status: 404 }
-      );
+    if (message.includes('BREVO_LOGIN_EMAIL') || message.includes('BREVO_API_KEY')) {
+      return NextResponse.json({ error: 'Configuration e-mail manquante sur le serveur.' }, { status: 503 });
     }
-    if (message === 'BREVO_LOGIN_EMAIL ou BREVO_API_KEY manquant dans .env.local') {
-      return NextResponse.json({ error: 'Configuration e-mail manquante.' }, { status: 503 });
-    }
-    return NextResponse.json({ error: "Impossible d'envoyer l'e-mail." }, { status: 500 });
+    return NextResponse.json({ error: "Impossible d'envoyer l'e-mail de vérification." }, { status: 500 });
   }
 }

@@ -12,6 +12,7 @@ const inputCls = 'w-full font-lato text-sm border border-gray-200 rounded-xl px-
 export default function AdminZonesLivraisonPage() {
   const { lang } = useLanguageStore();
   const tz = translations[lang].admin.zones;
+  const tc = translations[lang].common;
   const [zones, setZones] = useState<ZoneLivraison[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ZoneLivraison | null>(null);
@@ -47,12 +48,16 @@ export default function AdminZonesLivraisonPage() {
     const payload: ZoneLivraison = {
       id: editing?.id ?? Date.now(),
       nom_zone: form.nom_zone.trim(),
+      pays: editing?.pays ?? 'hti',
       frais_htg: parseFloat(form.frais_htg) || 0,
-      seuil_gratuit: form.seuil_gratuit ? parseFloat(form.seuil_gratuit) : null,
-      actif: form.actif,
       frais_usd: null,
+      seuil_gratuit: form.seuil_gratuit ? parseFloat(form.seuil_gratuit) : null,
       delai_min_heures: null,
       delai_max_heures: null,
+      frais_express_htg: null,
+      frais_express_usd: null,
+      delai_express_heures: null,
+      actif: form.actif,
     };
     if (editing) {
       setZones((z) => z.map((x) => x.id === editing.id ? payload : x));
@@ -68,7 +73,7 @@ export default function AdminZonesLivraisonPage() {
   };
 
   const handleDelete = (zone: ZoneLivraison) => {
-    if (!confirm(`Supprimer la zone "${zone.nom_zone}" ?`)) return;
+    if (!confirm(tz.confirmDeleteZone.replace('{n}', zone.nom_zone))) return;
     // TODO (BDD): DELETE FROM ZoneLivraison WHERE id = ?
     setZones((z) => z.filter((x) => x.id !== zone.id));
   };
@@ -117,14 +122,14 @@ export default function AdminZonesLivraisonPage() {
                   <button
                     onClick={() => openEdit(zone)}
                     className="w-8 h-8 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors"
-                    title="Modifier"
+                    title={tc.edit}
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => handleDelete(zone)}
                     className="w-8 h-8 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors"
-                    title="Supprimer"
+                    title={tc.delete}
                   >
                     <Trash2 size={14} />
                   </button>

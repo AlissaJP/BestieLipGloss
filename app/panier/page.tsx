@@ -4,23 +4,19 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, CreditCard, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare, Lock } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, CreditCard, CheckCircle, MapPin, Phone, UserCircle, ChevronDown, MessageSquare, Lock, Zap, Clock } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore, type Address } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import CheckoutStepper from '@/components/CheckoutStepper';
-import { products } from '@/data/products';
-import type { ColorVariant } from '@/data/products';
 import type { ZoneLivraison } from '@/app/api/zones-livraison/route';
 import { useOrdersStore } from '@/store/ordersStore';
 import { WHATSAPP_URL, WHATSAPP_NUMBER } from '@/lib/contact';
 
-const USA_FEE = 3500;
-
+type DeliveryType = 'standard' | 'express';
 type PromoInfo = { code: string; valeur: number; type: 'pct' | 'fixe' };
-
-type SavedDelivery = { name: string; telephone: string; address: Address; instructions: string };
+type SavedDelivery = { name: string; telephone: string; address: Address; instructions: string; deliveryType: DeliveryType };
 
 const inputCls = 'w-full font-lato text-base border border-pink-200 rounded-xl px-4 py-3.5 outline-none focus:border-primary bg-white min-h-[48px]';
 const labelCls = 'font-lato text-base text-gray-700 font-medium block mb-1.5';
@@ -37,28 +33,41 @@ function generateNumeroCommande(): string {
   return `BES-${year}-${suffix}`;
 }
 
-function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison[]): number {
-  if ((addr.country ?? 'hti') === 'usa') return USA_FEE;
-  const zone = zones.find((z) => z.nom_zone === addr.ville);
-  const frais = zone?.frais_htg ?? 400;
-  const seuil = zone?.seuil_gratuit ?? 2000;
-  return discountedSubtotal >= seuil ? 0 : frais;
+function getZone(addr: Address, zones: ZoneLivraison[]): ZoneLivraison | undefined {
+  if ((addr.country ?? 'hti') === 'usa') return zones.find((z) => z.pays === 'usa');
+  return zones.find((z) => z.nom_zone === addr.ville);
 }
 
-// V5 — utilise frais_usd si défini pour la zone, sinon convertit le tarif HTG
-function addrFeeUSD(addr: Address, discountedSubtotalUSD: number, zones: ZoneLivraison[]): number {
-  if ((addr.country ?? 'hti') === 'usa') return parseFloat((USA_FEE / 130).toFixed(2));
-  const zone = zones.find((z) => z.nom_zone === addr.ville);
-  if (zone?.frais_usd != null) return zone.frais_usd;
-  const fraisHTG = zone?.frais_htg ?? 400;
-  const seuilHTG = zone?.seuil_gratuit ?? 2000;
-  if (discountedSubtotalUSD * 130 >= seuilHTG) return 0;
-  return parseFloat((fraisHTG / 130).toFixed(2));
+function addrFee(addr: Address, discountedSubtotal: number, zones: ZoneLivraison[], type: DeliveryType = 'standard'): number {
+  const zone = getZone(addr, zones);
+  if (!zone) return 400;
+  if (type === 'express') return zone.frais_express_htg ?? zone.frais_htg;
+  const seuil = zone.seuil_gratuit ?? 2000;
+  return discountedSubtotal >= seuil ? 0 : zone.frais_htg;
 }
 
-// V6 — délai affiché pour une zone donnée ("24h" ou "24–48h")
-function zoneDelay(zone: ZoneLivraison | undefined): string | null {
-  if (!zone || zone.delai_min_heures == null || zone.delai_max_heures == null) return null;
+function addrFeeUSD(addr: Address, discountedSubtotalUSD: number, zones: ZoneLivraison[], type: DeliveryType = 'standard'): number {
+  const zone = getZone(addr, zones);
+  if (!zone) return parseFloat((400 / 130).toFixed(2));
+  if (type === 'express') {
+    if (zone.frais_express_usd != null) return zone.frais_express_usd;
+    return parseFloat(((zone.frais_express_htg ?? zone.frais_htg) / 130).toFixed(2));
+  }
+  if (zone.frais_usd != null) {
+    const seuil = zone.seuil_gratuit ?? 2000;
+    return discountedSubtotalUSD * 130 >= seuil ? 0 : zone.frais_usd;
+  }
+  const seuil = zone.seuil_gratuit ?? 2000;
+  if (discountedSubtotalUSD * 130 >= seuil) return 0;
+  return parseFloat((zone.frais_htg / 130).toFixed(2));
+}
+
+function zoneDelay(zone: ZoneLivraison | undefined, type: DeliveryType = 'standard'): string | null {
+  if (!zone) return null;
+  if (type === 'express') {
+    return zone.delai_express_heures != null ? `${zone.delai_express_heures}h` : null;
+  }
+  if (zone.delai_min_heures == null || zone.delai_max_heures == null) return null;
   if (zone.delai_min_heures === zone.delai_max_heures) return `${zone.delai_min_heures}h`;
   return `${zone.delai_min_heures}–${zone.delai_max_heures}h`;
 }
@@ -71,7 +80,7 @@ function formatAddress(addr: Address): string {
 }
 
 export default function PanierPage() {
-  const { items, removeItem, updateQuantity, updateItemVariant, clearCart, totalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCartStore();
   const { user } = useAuthStore();
   const addOrder = useOrdersStore((s) => s.addOrder);
   const { lang } = useLanguageStore();
@@ -94,6 +103,7 @@ export default function PanierPage() {
 
   const savedAddresses = user?.addresses ?? [];
   const [selectedAddr, setSelectedAddr] = useState<Address | null>(null);
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('standard');
 
   useEffect(() => {
     if (selectedAddr === null && savedAddresses.length > 0) {
@@ -117,12 +127,6 @@ export default function PanierPage() {
   const [deliveryData, setDeliveryData] = useState<SavedDelivery | null>(null);
   const [numeroCommande, setNumeroCommande] = useState('');
 
-  const itemsNeedingVariant = items.filter((item) => {
-    const p = products.find((pd) => pd.id === item.id);
-    return p?.variants && item.variantKey === String(item.id);
-  });
-  const hasUnselectedVariants = itemsNeedingVariant.length > 0;
-
   const subtotal = totalPrice();
   const discountAmount = promoInfo
     ? promoInfo.type === 'pct'
@@ -131,7 +135,7 @@ export default function PanierPage() {
     : 0;
   const discountedSubtotal = subtotal - discountAmount;
 
-  const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones) : 0;
+  const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, deliveryType) : 0;
   const total = discountedSubtotal + deliveryFee;
 
   // USD calculations
@@ -142,12 +146,17 @@ export default function PanierPage() {
       : promoInfo.valeur / 130
     : 0;
   const discountedSubtotalUSD = subtotalUSD - discountAmountUSD;
-  const deliveryFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones) : 0; // V5
+  const deliveryFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones, deliveryType) : 0;
   const totalUSD = discountedSubtotalUSD + deliveryFeeUSD;
 
-  // V6 — délai estimé pour la zone sélectionnée
-  const selectedZone = selectedAddr ? zones.find((z) => z.nom_zone === selectedAddr.ville) : undefined;
-  const deliveryDelay = zoneDelay(selectedZone);
+  // Délai estimé selon la zone et le type de livraison
+  const selectedZone = selectedAddr ? getZone(selectedAddr, zones) : undefined;
+  const deliveryDelay = zoneDelay(selectedZone, deliveryType);
+  const standardDelay = zoneDelay(selectedZone, 'standard');
+  const expressDelay = zoneDelay(selectedZone, 'express');
+  const standardFeeHTG = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, 'standard') : 0;
+  const expressFeeHTG = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, 'express') : 0;
+  const hasExpress = selectedZone?.frais_express_htg != null;
 
   const applyPromo = async () => {
     if (!promoCode) return;
@@ -180,15 +189,59 @@ export default function PanierPage() {
       telephone: user?.telephone ?? '',
       address: selectedAddr,
       instructions: instructionsLivraison,
+      deliveryType,
     });
     if (!numeroCommande) setNumeroCommande(generateNumeroCommande());
     setPaymentError('');
     setStep(2);
   };
 
+  // MonCash : redirige vers l'interface de paiement MonCash (API officielle)
+  const handleMoncashRedirect = async () => {
+    if (!numeroCommande) return;
+    setPaymentLoading(true);
+    setPaymentError('');
+    try {
+      const res = await fetch('/api/paiement/moncash/initier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_commande: numeroCommande, montant_htg: total }),
+      });
+      const data = await res.json() as { success?: boolean; redirect_url?: string; error?: string };
+      if (!res.ok || !data.redirect_url) {
+        setPaymentError(data.error ?? tc.errorOccurred);
+        return;
+      }
+      // Sauvegarde la commande avant de quitter la page
+      const orderItems = items.map((i) => ({
+        name: i.name, shade: i.shade, quantity: i.quantity,
+        price_htg: i.price_htg, price_usd: i.price_usd, image: i.image, bgColor: i.bgColor,
+      }));
+      addOrder({
+        id: numeroCommande, date: new Date().toISOString(), status: 'attente',
+        items: orderItems, total, totalUSD: parseFloat(totalUSD.toFixed(2)),
+        deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
+        instructionsLivraison: deliveryData?.instructions || undefined,
+        paymentMethod: 'moncash', devise: 'HTG',
+      });
+      clearCart();
+      window.location.href = data.redirect_url;  // Redirection vers MonCash
+    } catch {
+      setPaymentError(tc.errorConnection);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   const onConfirmOrder = async () => {
-    // Validation paiement obligatoire
-    if (paymentMethod === 'moncash' || paymentMethod === 'zelle') {
+    // MonCash → redirection API (pas de validation locale)
+    if (paymentMethod === 'moncash') {
+      await handleMoncashRedirect();
+      return;
+    }
+
+    // Validation paiement pour Zelle / Carte
+    if (paymentMethod === 'zelle') {
       if (!referenceTransaction.trim()) {
         setPaymentError(tc.errorPaymentRequired);
         return;
@@ -202,7 +255,7 @@ export default function PanierPage() {
 
     setPaymentLoading(true);
     setPaymentError('');
-    const devise: 'HTG' | 'USD' = paymentMethod === 'moncash' ? 'HTG' : 'USD';
+    const devise: 'HTG' | 'USD' = 'USD'; // MonCash handled separately with redirect
 
     // Snapshot du panier avant clearCart
     const orderItems = items.map((i) => ({
@@ -222,7 +275,7 @@ export default function PanierPage() {
         body: JSON.stringify({
           id_commande: numeroCommande,
           mode_paiement: paymentMethod,
-          montant_paye: paymentMethod === 'moncash' ? total : parseFloat(totalUSD.toFixed(2)),
+          montant_paye: parseFloat(totalUSD.toFixed(2)),
           devise_paiement: devise,
           reference_transaction: referenceTransaction || null,
           note_client: noteClient || null,
@@ -324,66 +377,34 @@ export default function PanierPage() {
                   <div className="lg:col-span-2 space-y-4">
 
                     {/* Cart items */}
-                    {items.map((item) => {
-                      const productData = products.find((p) => p.id === item.id);
-                      const needsVariant = !!(productData?.variants && item.variantKey === String(item.id));
-                      return (
-                        <div key={item.variantKey} className={`bg-white rounded-2xl p-4 border-2 transition-colors ${needsVariant ? 'border-amber-300' : 'border-pink-100'}`}>
-                          <div className="flex gap-4 items-center">
-                            {item.image ? (
-                              <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50">
-                                <Image src={item.image} alt={item.shade} fill className="object-cover object-center" sizes="160px" quality={90} />
-                              </div>
-                            ) : (
-                              <div className={`${item.bgColor} w-20 h-20 rounded-xl flex items-center justify-center text-3xl flex-shrink-0`} aria-hidden="true">💋</div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
-                              {needsVariant ? (
-                                <p className="font-lato text-xs text-amber-600 font-medium mt-0.5">{tc.chooseShade}</p>
-                              ) : (
-                                <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
-                              )}
-                              <p className="font-playfair font-bold text-primary mt-1">${(item.price_usd * item.quantity).toFixed(2)}</p>
+                    {items.map((item) => (
+                      <div key={item.variantKey} className="bg-white rounded-2xl p-4 border-2 border-pink-100 transition-colors">
+                        <div className="flex gap-4 items-center">
+                          {item.image ? (
+                            <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50">
+                              <Image src={item.image} alt={item.shade} fill className="object-cover object-center" sizes="160px" quality={90} />
                             </div>
-                            <div className="flex flex-col items-end gap-3">
-                              <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Remove ${item.name}`}>
-                                <Trash2 size={15} />
-                              </button>
-                              <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-1.5">
-                                <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Decrease"><Minus size={13} /></button>
-                                <span className="font-lato text-sm font-semibold w-5 text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Increase"><Plus size={13} /></button>
-                              </div>
+                          ) : (
+                            <div className={`${item.bgColor} w-20 h-20 rounded-xl flex items-center justify-center text-3xl flex-shrink-0`} aria-hidden="true">💋</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-playfair font-semibold text-gray-800">{item.name}</p>
+                            <p className="font-cormorant text-sm text-gray-400 italic">{item.shade}</p>
+                            <p className="font-playfair font-bold text-primary mt-1">${(item.price_usd * item.quantity).toFixed(2)}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-3">
+                            <button onClick={() => removeItem(item.variantKey)} className="text-gray-300 hover:text-red-400 transition-colors" aria-label={`Remove ${item.name}`}>
+                              <Trash2 size={15} />
+                            </button>
+                            <div className="flex items-center gap-2 border border-pink-200 rounded-xl px-3 py-1.5">
+                              <button onClick={() => updateQuantity(item.variantKey, item.quantity - 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Decrease"><Minus size={13} /></button>
+                              <span className="font-lato text-sm font-semibold w-5 text-center">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(item.variantKey, item.quantity + 1)} className="text-gray-500 hover:text-primary transition-colors" aria-label="Increase"><Plus size={13} /></button>
                             </div>
                           </div>
-
-                          {/* Inline variant picker */}
-                          {needsVariant && productData?.variants && (
-                            <div className="mt-3 pt-3 border-t border-amber-100">
-                              <p className="font-lato text-xs text-gray-500 mb-2">{tc.selectShade}</p>
-                              <div className="flex flex-wrap gap-2">
-                                {productData.variants.map((v: ColorVariant) => (
-                                  <button
-                                    key={v.id}
-                                    onClick={() => updateItemVariant(item.variantKey, {
-                                      variantKey: `${item.id}::${v.id}`,
-                                      shade: v.name,
-                                      image: v.image,
-                                      bgColor: v.bgColor,
-                                    })}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-lato text-xs border-2 border-pink-200 hover:border-primary hover:text-primary text-gray-600 transition-all"
-                                  >
-                                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${v.bgColor}`} />
-                                    {v.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
 
                     {/* Promo code */}
                     <div className="bg-white rounded-2xl p-5 border border-pink-100">
@@ -506,19 +527,9 @@ export default function PanierPage() {
                           <span className="font-playfair font-bold text-primary text-2xl">${totalUSD.toFixed(2)}</span>
                         </div>
                       </div>
-                      {hasUnselectedVariants && (
-                        <p className="font-lato text-sm text-amber-600 text-center mt-4">
-                          {tc.shadeWarning}
-                        </p>
-                      )}
                       <button
-                        onClick={() => !hasUnselectedVariants && setStep(1)}
-                        disabled={hasUnselectedVariants}
-                        className={`w-full font-lato font-semibold py-3.5 rounded-xl transition-colors mt-3 min-h-[48px] ${
-                          hasUnselectedVariants
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-primary hover:bg-pink-400 text-white'
-                        }`}
+                        onClick={() => setStep(1)}
+                        className="w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors mt-3 min-h-[48px]"
                       >
                         {tc.continueDelivery}
                       </button>
@@ -623,6 +634,49 @@ export default function PanierPage() {
 
                     {addrError && <p className="font-lato text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addrError}</p>}
                   </div>
+
+                  {/* Type de livraison Standard / Express */}
+                  {selectedAddr && (
+                    <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-3">
+                      <h3 className="font-playfair font-semibold text-gray-800">Type de livraison</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Standard */}
+                        <button type="button" onClick={() => setDeliveryType('standard')}
+                          className={`text-left p-4 rounded-xl border-2 transition-all ${deliveryType === 'standard' ? 'border-primary bg-pink-50' : 'border-pink-100 hover:border-pink-200'}`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock size={15} className="text-primary" />
+                            <span className="font-lato font-semibold text-gray-800 text-sm">Standard</span>
+                            {deliveryType === 'standard' && <span className="ml-auto w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white text-[10px]">✓</span>}
+                          </div>
+                          <p className="font-lato text-xs text-gray-500">{standardDelay ? `Délai estimé : ${standardDelay}` : 'Délai variable'}</p>
+                          <p className="font-lato text-sm font-bold text-primary mt-1">
+                            {standardFeeHTG === 0 ? '🎉 Gratuit' : `${standardFeeHTG} HTG`}
+                          </p>
+                        </button>
+                        {/* Express */}
+                        {hasExpress ? (
+                          <button type="button" onClick={() => setDeliveryType('express')}
+                            className={`text-left p-4 rounded-xl border-2 transition-all ${deliveryType === 'express' ? 'border-primary bg-pink-50' : 'border-pink-100 hover:border-pink-200'}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Zap size={15} className="text-amber-500" />
+                              <span className="font-lato font-semibold text-gray-800 text-sm">Express</span>
+                              {deliveryType === 'express' && <span className="ml-auto w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white text-[10px]">✓</span>}
+                            </div>
+                            <p className="font-lato text-xs text-gray-500">{expressDelay ? `Délai estimé : ${expressDelay}` : 'Livraison rapide'}</p>
+                            <p className="font-lato text-sm font-bold text-primary mt-1">{expressFeeHTG} HTG</p>
+                          </button>
+                        ) : (
+                          <div className="p-4 rounded-xl border-2 border-gray-100 opacity-50 bg-gray-50">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Zap size={15} className="text-gray-400" />
+                              <span className="font-lato font-semibold text-gray-400 text-sm">Express</span>
+                            </div>
+                            <p className="font-lato text-xs text-gray-400">Non disponible pour cette zone</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Contact & delivery instructions */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100 space-y-4">
@@ -743,21 +797,21 @@ export default function PanierPage() {
                       {paymentMethod === 'moncash' ? (
                         <>
                           <h3 className="font-playfair font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>{tc.moncashTitle}
+                            <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-xs font-lato">MC</span>
+                            Paiement MonCash
                           </h3>
-                          <ol className="font-lato text-base text-gray-600 space-y-3 list-none">
-                            <li className="flex gap-3"><span className="w-7 h-7 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>{tc.moncashStep1}</li>
-                            <li className="flex gap-3"><span className="w-7 h-7 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>{tc.moncashStep2prefix} &ldquo;{tc.moncashStep2}&rdquo;</li>
-                            <li className="flex gap-3"><span className="w-7 h-7 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>{tc.moncashStep3prefix} <span className="font-bold text-primary mx-1">{total} {tc.moncashStep3suffix}</span></li>
-                          </ol>
-                          <div className="mt-4 bg-red-50 rounded-xl p-4 text-center border border-red-100">
-                            <p className="font-lato text-xs text-gray-500 mb-1">{tc.moncashNumber}</p>
-                            <p className="font-playfair font-bold text-xl text-red-600 tracking-wider">{WHATSAPP_NUMBER}</p>
-                            <p className="font-lato text-xs text-gray-500 mt-1">Bestie LipGloss</p>
+                          <div className="bg-red-50 rounded-xl p-5 text-center border border-red-100 space-y-3">
+                            <p className="font-lato text-base text-gray-700">
+                              Vous allez être redirigé vers l'interface de paiement sécurisée <strong>MonCash</strong> pour effectuer votre paiement de :
+                            </p>
+                            <p className="font-playfair font-bold text-3xl text-red-600">{total.toLocaleString()} HTG</p>
+                            <p className="font-lato text-xs text-gray-400">
+                              Commande n° {numeroCommande} · Votre paiement sera traité directement par MonCash / Digicel Haiti.
+                            </p>
                           </div>
-                          <div className="mt-4 bg-primary/10 rounded-xl p-3 text-center">
-                            <p className="font-lato text-sm text-gray-700">{tc.exactAmount} <span className="font-bold text-primary text-lg">{total} HTG</span></p>
-                          </div>
+                          <p className="font-lato text-xs text-gray-400 mt-3 text-center">
+                            En cliquant &ldquo;Confirmer la commande&rdquo;, vous serez redirigé vers MonCash pour finaliser le paiement.
+                          </p>
                         </>
                       ) : paymentMethod === 'zelle' ? (
                         <>
@@ -860,24 +914,26 @@ export default function PanierPage() {
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* Transaction reference */}
-                  <div className="bg-white rounded-2xl p-6 border border-pink-100">
-                    <label className={labelCls} htmlFor="reference-transaction">
-                      {tc.refLabel}
-                      {paymentMethod === 'card' && (
-                        <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
-                      )}
-                    </label>
-                    <input
-                      id="reference-transaction"
-                      type="text"
-                      placeholder={paymentMethod === 'moncash' ? tc.refMoncash : paymentMethod === 'zelle' ? tc.refZelle : tc.refCard}
-                      value={referenceTransaction}
-                      onChange={(e) => setReferenceTransaction(e.target.value)}
-                      className={inputCls}
-                    />
-                    <p className="font-lato text-xs text-gray-400 mt-1">{tc.refHint}</p>
-                  </div>
+                  {/* Référence de transaction — uniquement pour Zelle et Carte */}
+                  {paymentMethod !== 'moncash' && (
+                    <div className="bg-white rounded-2xl p-6 border border-pink-100">
+                      <label className={labelCls} htmlFor="reference-transaction">
+                        {tc.refLabel}
+                        {paymentMethod === 'card' && (
+                          <span className="text-gray-400 font-normal ml-1">{tc.optional}</span>
+                        )}
+                      </label>
+                      <input
+                        id="reference-transaction"
+                        type="text"
+                        placeholder={paymentMethod === 'zelle' ? tc.refZelle : tc.refCard}
+                        value={referenceTransaction}
+                        onChange={(e) => setReferenceTransaction(e.target.value)}
+                        className={inputCls}
+                      />
+                      <p className="font-lato text-xs text-gray-400 mt-1">{tc.refHint}</p>
+                    </div>
+                  )}
 
                   {/* Client note */}
                   <div className="bg-white rounded-2xl p-6 border border-pink-100">

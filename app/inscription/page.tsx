@@ -71,11 +71,15 @@ export default function InscriptionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, name, telephone: fullPhone }),
       });
+      const data = await res.json().catch(() => ({})) as { error?: string; token?: string };
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
         setError(data.error ?? t.fillAll);
         setIsLoading(false);
         return;
+      }
+      // Stocke le token signé dans sessionStorage (stateless OTP — fonctionne sur Vercel)
+      if (data.token) {
+        sessionStorage.setItem(`otp_token_${form.email}`, data.token);
       }
       router.push(`/verification-email?email=${encodeURIComponent(form.email)}`);
     } catch {

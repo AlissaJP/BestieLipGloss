@@ -47,10 +47,11 @@ function VerificationForm() {
     setStatus('loading');
     setErrorMsg('');
     try {
+      const token = sessionStorage.getItem(`otp_token_${email}`) ?? '';
       const res = await fetch('/api/otp/verifier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code, token }),
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
@@ -61,6 +62,7 @@ function VerificationForm() {
         setTimeout(() => inputRefs.current[0]?.focus(), 50);
         return;
       }
+      sessionStorage.removeItem(`otp_token_${email}`);
       setStatus('success');
     } catch {
       setStatus('error');

@@ -171,13 +171,13 @@ export default function HomePage() {
       {/* ——— Featured Products ——— */}
       <section className="py-12 sm:py-20 lg:py-28 px-4">
         <div className="max-w-7xl mx-auto">
-          <FadeIn className="text-center mb-8 sm:mb-12">
+          <FadeIn className="text-center mb-12">
             <p className="font-lato text-sm tracking-widest text-accent uppercase mb-2">{t.home.featured.eyebrow}</p>
-            <h2 className="font-playfair font-bold text-3xl sm:text-4xl lg:text-5xl text-gray-800 mb-3">{t.home.featured.title}</h2>
-            <p className="font-cormorant text-xl sm:text-2xl text-gray-500 italic">{t.home.featured.subtitle}</p>
+            <h2 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-3">{t.home.featured.title}</h2>
+            <p className="font-cormorant text-2xl text-gray-500 italic">{t.home.featured.subtitle}</p>
           </FadeIn>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {products.slice(0, 4).map((product, i) => (
               <FadeIn key={product.id} delay={i * 0.1}>
                 <ProductCard product={product} />
@@ -238,10 +238,10 @@ export default function HomePage() {
       {/* ——— Testimonials ——— */}
       <section className="py-12 sm:py-20 lg:py-28 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <FadeIn className="text-center mb-8 sm:mb-12">
+          <FadeIn className="text-center mb-12">
             <p className="font-lato text-sm tracking-widest text-accent uppercase mb-2">{t.home.reviews.eyebrow}</p>
-            <h2 className="font-playfair font-bold text-3xl sm:text-4xl lg:text-5xl text-gray-800 mb-3">{t.home.reviews.title}</h2>
-            <p className="font-cormorant text-xl sm:text-2xl text-gray-500 italic">{t.home.reviews.subtitle}</p>
+            <h2 className="font-playfair font-bold text-4xl sm:text-5xl text-gray-800 mb-3">{t.home.reviews.title}</h2>
+            <p className="font-cormorant text-2xl text-gray-500 italic">{t.home.reviews.subtitle}</p>
           </FadeIn>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -275,9 +275,9 @@ export default function HomePage() {
       {/* ——— Why Bestie ——— */}
       <section className="py-10 sm:py-16 lg:py-20 px-4 bg-[#F2E9E1]">
         <div className="max-w-5xl mx-auto">
-          <FadeIn className="text-center mb-8 sm:mb-14">
+          <FadeIn className="text-center mb-14">
             <p className="font-lato text-xs tracking-widest text-accent uppercase mb-2">{t.home.why.eyebrow}</p>
-            <h2 className="font-playfair font-bold text-2xl sm:text-3xl lg:text-4xl text-gray-800">{t.home.why.title}</h2>
+            <h2 className="font-playfair font-bold text-3xl sm:text-4xl text-gray-800">{t.home.why.title}</h2>
           </FadeIn>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
