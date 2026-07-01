@@ -26,13 +26,16 @@
 
 - **Stack** : Next.js 15 (App Router), TypeScript, Tailwind CSS v4, Zustand (état client avec persistance `localStorage`), Framer Motion.
 - **Langues** : site disponible en français, anglais, espagnol (sélection manuelle, stockée côté client).
-- **Devises** : toutes les commandes sont affichées en HTG (gourdes haïtiennes) et en USD. Taux de conversion fixe actuellement codé en dur : **1 USD = 130 HTG**.
-- **Catalogue actuel** : **8 produits individuels**, chaque teinte de gloss étant désormais exposée comme un produit à part entière sur le site (plus de regroupement par "collection" ni de notion de variante/sous-teinte — ce système a été retiré à la demande du métier) :
-  - 5 produits issus de l'ancienne collection *Honey* (Brown, Pink, Red, Rosée, Rouge Grenadier)
-  - 3 produits issus de l'ancienne collection *Labubu* (Pastel, Pink, Red)
-  - Tous les produits sont au même prix : **1690 HTG / 13 USD**.
-  - L'admin ajoute un produit directement (nom, teinte, prix, photo, stock, ingrédients, bénéfices) sans devoir le rattacher à une catégorie ni définir de "photo d'introduction" séparée — chaque produit n'a qu'une seule photo.
-- **Pas de passerelle de paiement automatisée.** Les paiements (MonCash, Zelle, Carte) sont déclaratifs : le client indique qu'il a payé et fournit une référence de transaction ; un administrateur valide manuellement la preuve de paiement après coup.
+- **Devises** : tous les prix et montants s'affichent en **USD** sur l'ensemble du site (client et admin). Seule exception : lorsque le client sélectionne **MonCash** comme mode de paiement, le montant lui est présenté en **HTG** (c'est la devise de MonCash en Haïti). Taux de conversion fixe : **1 USD = 130 HTG**.
+- **Catalogue actuel** : **8 produits individuels**, chaque teinte de gloss étant exposée comme un produit à part entière (plus de regroupement par "collection" ni de variante) :
+  - 5 produits issus de la gamme *Honey* (Brown, Pink, Red, Rosée, Rouge Grenadier)
+  - 3 produits issus de la gamme *Labubu* (Pastel, Pink, Red)
+  - Prix unique : **1690 HTG / $13 USD**.
+  - L'admin ajoute un produit directement (nom, teinte, prix, photo, stock, ingrédients, bénéfices) sans catégorie ni photo d'introduction séparée.
+- **Paiements** :
+  - **MonCash** : intégration de l'API officielle MonCash / Digicel (`/api/paiement/moncash/initier`). Le client est redirigé vers l'interface MonCash pour effectuer la transaction ; confirmation via `/api/paiement/moncash/verifier`. Nécessite les variables d'environnement `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET`, `MONCASH_ENV`.
+  - **Zelle** : manuel — le client envoie et fournit une référence de transaction ; l'admin valide manuellement.
+  - **Carte** : simulation uniquement (champs carte saisis côté front, aucune passerelle réelle branchée). Pas de champ "Référence" pour la carte (retiré — non nécessaire pour ce mode).
 
 ---
 
@@ -64,7 +67,7 @@ Représente un client (et potentiellement un administrateur, voir §7).
 |---|---|---|---|
 | id | INT / UUID (PK) | ✓ | Actuellement absent du modèle client (`user.id` n'existe pas dans `authStore` !) — voir §9 |
 | nom_complet | VARCHAR | ✓ | Prénom + nom concaténés à l'inscription |
-| pseudo | VARCHAR | — | Optionnel, modifiable depuis "Mes informations" |
+| pseudo | VARCHAR | ✓ | **Nom d'affichage principal** — saisi obligatoirement à l'inscription (min. 3 caractères, sans espace). Affiché dans le header et sur la page Mon Compte à la place du nom complet. Modifiable depuis "Mes informations". |
 | email | VARCHAR (UNIQUE) | ✓ | Utilisé comme identifiant de connexion |
 | telephone | VARCHAR | — | Format `+509 XXXX XXXX` (indicatif pays + numéro local) |
 | mot_de_passe_hash | VARCHAR | ✓ | ⚠️ Actuellement **non implémenté** — l'inscription ne stocke aucun mot de passe en base, et la connexion ne vérifie aucun mot de passe réel (voir §7) |
@@ -166,6 +169,7 @@ Panier serveur (pour utilisateurs connectés — synchronisé au login depuis le
 | sous_total_htg / sous_total_usd | DECIMAL | ✓ | Avant réduction et livraison |
 | code_promo_utilise | VARCHAR | — | Code appliqué, le cas échéant |
 | montant_reduction_htg / usd | DECIMAL | — | |
+| type_livraison | ENUM('standard','express') | ✓ | Sélectionné par le client à l'étape Livraison du checkout |
 | frais_livraison_htg / usd | DECIMAL | ✓ | Calculé à la commande (snapshot — ne doit pas changer si le tarif de zone change après coup) |
 | total_htg / total_usd | DECIMAL | ✓ | |
 | devise_paiement_choisie | ENUM('HTG','USD') | ✓ | HTG si MonCash, USD si Zelle/Carte |
@@ -269,25 +273,43 @@ Déjà modélisé dans `app/api/avis/route.ts` avec des données d'exemple.
 | montant_minimum | DECIMAL (nullable) | Sous-total minimum requis en HTG |
 | actif | BOOLEAN | |
 
-**Relation N-N avec Utilisateur** : table de jonction `UtilisateurCodePromo(id_utilisateur, code_promo)` — un code promo peut être "assigné"/débloqué pour un client spécifique (actuellement, `user.coupons` est une simple liste de codes attachée au compte ; on ne voit pas dans le code comment un coupon est attribué à un utilisateur — à clarifier, voir §9).
+**Flux d'attribution** (résolu) :
+1. L'**admin** crée un coupon depuis `/admin/coupons` → `POST /api/promo/admin` (protégé par cookie admin).
+2. L'**utilisateur** saisit manuellement le code dans "Mon Compte" → validé via `GET /api/promo/check?code=...` qui retourne uniquement `{ valid: true/false }` (sans révéler la raison d'invalidité, ni les codes existants).
+3. Si valide, le code est ajouté à `user.coupons` en `localStorage` (futur : table `UtilisateurCodePromo(id_utilisateur, code)`).
+4. Au **checkout**, sélection dans le menu déroulant → validation complète via `GET /api/promo/valider?code=...&montant=...` (inclut la vérification du montant minimum — le `/check` n'en fait pas).
+
+**Routes API coupons** :
+- `GET /api/promo/admin` — liste tous les codes (admin uniquement)
+- `POST /api/promo/admin` — crée un code (admin uniquement)
+- `PATCH /api/promo/admin` — toggle actif/inactif (admin uniquement)
+- `DELETE /api/promo/admin` — supprime un code (admin uniquement)
+- `GET /api/promo/check?code=...` — vérifie si un code est valide pour l'ajouter à un compte (public, retourne uniquement valid/invalid)
+- `GET /api/promo/valider?code=...&montant=...` — validation complète au checkout (public)
 
 ---
 
 ### 3.12 ZoneLivraison
 
-Déjà modélisé avec des données réelles dans `app/api/zones-livraison/route.ts`.
+Déjà modélisé avec des données réelles dans `app/api/zones-livraison/route.ts`. Chaque zone propose désormais deux niveaux de service : **Standard** et **Express**.
 
 | Champ | Type | Notes |
 |---|---|---|
 | id | INT (PK) | |
 | nom_zone | VARCHAR (UNIQUE) | Doit correspondre exactement au champ `ville` de l'adresse pour être retrouvé |
-| frais_htg | DECIMAL | |
-| frais_usd | DECIMAL (nullable) | Si NULL, le front convertit `frais_htg / 130` |
-| seuil_gratuit | DECIMAL (nullable) | Sous-total à partir duquel la livraison est gratuite pour cette zone |
-| delai_min_heures / delai_max_heures | INT (nullable) | Affiché au client ("livraison estimée sous 24–48h") |
+| pays | ENUM('hti','usa') | Permet de retrouver la zone USA sans chercher par `ville` |
+| frais_htg | DECIMAL | Tarif Standard (HTG) |
+| frais_usd | DECIMAL (nullable) | Tarif Standard (USD) — si NULL, front convertit `frais_htg / 130` |
+| seuil_gratuit | DECIMAL (nullable) | Sous-total à partir duquel la livraison **Standard** est gratuite. Express n'est jamais gratuit. |
+| delai_min_heures / delai_max_heures | INT (nullable) | Délai Standard affiché ("24–48h") |
+| frais_express_htg | DECIMAL (nullable) | Tarif Express (HTG) — NULL = Express non disponible pour cette zone |
+| frais_express_usd | DECIMAL (nullable) | Tarif Express (USD) |
+| delai_express_heures | INT (nullable) | Délai Express en heures (valeur unique, ex. 4h pour Port-au-Prince) |
 | actif | BOOLEAN | |
 
-**Cas spécial USA** : si l'adresse du client est aux USA, un tarif fixe de **3500 HTG** (≈ 26.9 USD) est appliqué, indépendamment de la table `ZoneLivraison` (constante `USA_FEE` dans le code — à voir si elle doit devenir configurable en base elle aussi).
+**Données actuelles** (10 zones configurées) :
+- 9 zones Haïti (Port-au-Prince centre, Pétion-Ville, Zone métropolitaine, Cap-Haïtien, Jacmel, Les Cayes, Gonaïves, Saint-Marc, Autre ville)
+- 1 zone USA (`pays='usa'`) : Standard 3 500 HTG / $26.90 en 7–14 jours, Express 6 500 HTG / $50 en 72h
 
 ---
 
@@ -303,18 +325,18 @@ Relation N-N simple entre Utilisateur et Produit (actuellement stockée uniqueme
 
 ### 3.14 OtpVerification (vérification d'inscription)
 
-Données transitoires, déjà esquissées dans `lib/otpStore.ts`.
+⚠️ **Architecture modifiée — plus de table OTP nécessaire.** L'OTP utilise désormais une approche **JWT stateless** via `lib/otpJwt.ts` :
 
-| Champ | Type | Notes |
-|---|---|---|
-| email | VARCHAR (PK) | |
-| code | VARCHAR(6) | Code à 6 chiffres |
-| expires_at | DATETIME | Validité de **2 minutes** |
-| attempts | INT | Max **5 tentatives**, puis le code est invalidé |
-| nom_en_attente | VARCHAR | Nom fourni à l'inscription, pas encore confirmé |
-| telephone_en_attente | VARCHAR | |
+**Fonctionnement** :
+1. À l'inscription, le serveur génère un code à 6 chiffres aléatoires + un **token signé HMAC-SHA256** contenant `{ email, codeHash, exp, name, telephone, pseudo }` (le code est haché avec le secret serveur — jamais exposé en clair dans le token).
+2. Le code est envoyé par email (Brevo SMTP). Le token signé est retourné dans la réponse HTTP et stocké par le client en **`sessionStorage`**.
+3. Quand l'utilisateur saisit son code, le front envoie `{ email, code, token }` au serveur.
+4. Le serveur vérifie la signature HMAC, l'expiration, et compare le hash du code soumis avec celui dans le token — sans aucun stockage serveur.
+5. En cas de succès : **connexion automatique immédiate** (les données `pendingUser` sont dans le token), redirection vers l'accueil. L'utilisateur n'a plus besoin de naviguer vers `/connexion`.
 
-➡️ Recommandation : cette table peut avoir un TTL automatique (ou un job de nettoyage) puisque les données n'ont de sens que pendant quelques minutes.
+**Conséquence pour la BDD** : cette entité **n'a pas besoin de table SQL** — le JWT auto-expirant remplace entièrement le besoin de persistance. Seul le secret `OTP_SECRET` (variable d'environnement) doit être configuré de manière sécurisée sur le serveur.
+
+Variables d'environnement requises : `OTP_SECRET` (secret HMAC), `BREVO_LOGIN_EMAIL`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`.
 
 ---
 
@@ -341,13 +363,13 @@ Voir en détail au §7 — actuellement **pas une vraie table**, mais des identi
 
 ### 4.1 Inscription
 
-1. Le client remplit : prénom (obligatoire), nom (optionnel), email (obligatoire), indicatif pays + numéro WhatsApp (obligatoire), mot de passe + confirmation (obligatoire, min. 6 caractères).
-2. Le formulaire envoie une requête à `/api/otp/envoyer` avec email/nom/téléphone → génère un code OTP à 6 chiffres, l'envoie par email (via Brevo/SMTP), et stocke temporairement les infos du futur compte ("pending user").
+1. Le client remplit : prénom (obligatoire), nom (optionnel), **username / pseudo** (obligatoire, min. 3 caractères, sans espace — c'est le nom d'affichage principal sur le site), email (obligatoire), indicatif pays + numéro WhatsApp (obligatoire), mot de passe + confirmation (obligatoire, min. 6 caractères).
+2. Le formulaire envoie une requête à `/api/otp/envoyer` avec `{email, name, telephone, pseudo}` → génère un code OTP à 6 chiffres, l'envoie par email (via Brevo/SMTP), **crée un token JWT signé** contenant toutes les données d'inscription (voir §3.14), retourne le token dans la réponse HTTP → stocké en `sessionStorage` côté client.
 3. Le client est redirigé vers `/verification-email?email=...` où il saisit le code à 6 chiffres (6 cases séparées, focus automatique, collage supporté).
-4. Code valable **2 minutes**, max **5 tentatives**. Bouton "Renvoyer le code" disponible seulement quand le minuteur atteint 0.
-5. Une fois validé (`/api/otp/verifier`), le compte est considéré comme créé et l'utilisateur est redirigé vers la connexion / page d'accueil.
+4. Code valable **2 minutes**, max protection par rate-limiting IP. Bouton "Renvoyer le code" disponible seulement quand le minuteur atteint 0 (nouveau token signé généré à chaque renvoi).
+5. Une fois validé (`POST /api/otp/verifier` avec `{email, code, token}`) : **connexion automatique immédiate** — les données `pendingUser` extraites du token (name, email, telephone, pseudo) sont transmises au store `authStore`, l'utilisateur est connecté et redirigé vers l'accueil. Il n'y a plus de redirection vers `/connexion`.
 
-⚠️ **Le mot de passe saisi à l'étape 1 n'est actuellement stocké nulle part** — ni en mémoire, ni transmis à la création du compte final. C'est un point à corriger absolument lors du branchement de la BDD (hashage + stockage du mot de passe doivent être ajoutés au flux).
+⚠️ **Le mot de passe saisi à l'étape 1 n'est actuellement stocké nulle part** — ni en mémoire, ni transmis à la création du compte final. C'est un point à corriger absolument lors du branchement de la BDD (hashage + stockage du mot de passe doivent être ajoutés au flux, et le `pseudo` doit être persisté en base lors de la création du compte).
 
 ### 4.2 Connexion
 
@@ -383,34 +405,43 @@ Le panier est un objet client identifié par `variantKey = String(id_produit)` (
 
 **Étape 1 — Livraison**
 - Affiche les coordonnées du compte (nom, téléphone) avec lien d'édition.
-- Sélection d'une adresse enregistrée parmi celles du compte (ou redirection vers "Mes informations" pour en ajouter une si aucune n'existe).
-- Champ "Instructions de livraison" (texte libre, optionnel, **propre à cette commande** et non à l'adresse elle-même).
-- Un **numéro de commande est généré côté client** à ce moment (`BES-AAAA-XXXXXX`) s'il n'existe pas déjà pour cette session de checkout.
+- Sélection d'une adresse enregistrée parmi celles du compte.
+- **Sélecteur de type de livraison** : Standard ou Express (affiché uniquement si l'adresse est sélectionnée). Chaque option affiche son délai estimé et son coût en USD. L'Express n'est pas disponible pour toutes les zones (si `frais_express_htg IS NULL`, l'option est grisée).
+- Champ "Instructions de livraison" (texte libre, optionnel, **propre à cette commande**).
+- Un **numéro de commande est généré côté client** à ce moment (`BES-AAAA-XXXXXX`).
 
 **Étape 2 — Paiement**
-- Choix entre 3 méthodes : **MonCash** (HTG), **Zelle** (USD), **Carte** (USD, champs carte saisis mais non traités par une vraie passerelle — simulation).
-- Affichage des instructions spécifiques à chaque méthode (numéro MonCash, email Zelle, montant exact à envoyer).
-- Champ "Référence de transaction" — **obligatoire** pour MonCash/Zelle, optionnel pour carte.
-- Champ "Note pour la commande" (optionnel).
-- Validation finale → `POST /api/paiement/soumettre` avec toutes les infos (numéro commande, mode, montant déclaré, devise, référence, note, code promo appliqué).
-  - Si une preuve de paiement existe déjà pour cette commande et est `en_attente` ou `validé`, la soumission est bloquée avec un message adapté.
-  - Si le code promo est valide, son compteur d'utilisation est incrémenté à cet instant (pas avant).
-- En cas de succès : la commande est enregistrée dans l'historique du compte (`ordersStore`), le panier est vidé, passage à l'étape 3.
+- Choix entre 3 méthodes :
+  - **MonCash** : le client clique "Confirmer" → appel `POST /api/paiement/moncash/initier` → redirection vers l'interface MonCash (Digicel) → le paiement est effectué par le client dans l'interface MonCash → vérification via `GET /api/paiement/moncash/verifier?orderId=...`. Aucune saisie de référence manuelle.
+  - **Zelle** : instructions affichées (email Zelle), champ **Référence de transaction** (obligatoire), soumission → `POST /api/paiement/soumettre`.
+  - **Carte** : champs carte saisis (non traités par une vraie passerelle — simulation). Pas de champ référence (retiré pour ce mode).
+- Champ "Note pour la commande" (optionnel, tous modes).
+- Si le code promo est valide, son compteur d'utilisation est incrémenté à la soumission (pas avant).
+- En cas de succès : commande enregistrée dans `ordersStore` avec snapshot complet (voir §3.6 et LigneCommande §3.7), panier vidé, passage à l'étape 3.
 
-**Étape 3 — Confirmation**
-- Numéro de commande affiché, délai de livraison estimé selon la zone, rappel du numéro WhatsApp de contact pour toute question.
+**Étape 3 — Reçu complet**
+- Affichage d'un **reçu détaillé** comprenant :
+  - Liste des articles (nom, teinte, quantité, prix unitaire × quantité)
+  - Sous-total
+  - Coupon appliqué (code + montant de réduction) — si applicable
+  - Frais de livraison (Standard ou Express)
+  - **Total final** (HTG pour MonCash, USD pour Zelle/Carte)
+  - Adresse de livraison et méthode de paiement
+- Délai de livraison estimé selon la zone et le type choisi.
+- Numéro WhatsApp de contact pour toute question.
 
 ### 4.6 Espace "Mon compte"
 
-- **Vue d'ensemble** (`/mon-compte`) : liens vers informations, commandes, favoris.
+- **Vue d'ensemble** (`/mon-compte`) : liens vers informations, commandes, favoris. Section coupons et points de fidélité.
+  - **Coupons** : l'utilisateur saisit manuellement un code promo → validé via `GET /api/promo/check?code=...` (existence + actif + non expiré + non maxé, sans vérification de montant minimum). En cas d'invalidité, message générique "Ce coupon est invalide" — aucune raison précise ni suggestion de codes n'est révélée. Code valide → ajouté à `user.coupons` (localStorage / future table `UtilisateurCodePromo`).
 - **Mes informations** (`/mon-compte/informations`) :
-  - Identité (nom complet, pseudo) — modifiable.
+  - Identité (nom complet, **pseudo** / nom d'affichage) — modifiable.
   - Email — modifiable avec confirmation (double saisie).
   - Téléphone — modifiable (indicatif + numéro).
   - Mot de passe — modifiable (mot de passe actuel + nouveau + confirmation). ⚠️ Actuellement purement visuel, aucune vérification ni mise à jour réelle de mot de passe.
   - Adresses de livraison — ajout multiple, suppression. Formulaire dynamique selon le pays (Haïti : département → commune en cascade ; USA : état → ville en cascade + code postal).
-- **Mes commandes** (`/mon-compte/commandes`) : onglets par statut (`attente/valide/livraison/livre/annule`), avec possibilité d'**annuler** une commande tant qu'elle est en statut `attente` uniquement.
-- **Mes favoris** (`/mon-compte/favoris`) : produits ajoutés en favoris (actuellement stocké uniquement en local, jamais synchronisé serveur).
+- **Mes commandes** (`/mon-compte/commandes`) : onglets par statut, avec possibilité d'**annuler** une commande tant qu'elle est en statut `attente` uniquement. Chaque commande affiche le détail complet : coupon appliqué + réduction, frais de livraison (Standard/Express), et total.
+- **Mes favoris** (`/mon-compte/favoris`) : produits ajoutés en favoris. Le cœur ❤ sur chaque carte produit permet un ajout/retrait direct (sans ouvrir la fiche produit). L'icône favoris dans le header pulse lors d'un ajout. Actuellement stocké uniquement en `localStorage`, jamais synchronisé serveur.
 
 ---
 
@@ -432,18 +463,28 @@ Accès via `/admin` → connexion avec `username=admin` (voir §4.2 et §7), ses
   - Bouton "Publier/Dépublier" (équivaut à `Produit.is_active`).
   - Suppression avec confirmation.
 
-### 5.2 Avis clients (`/admin/avis`)
+### 5.2 Coupons (`/admin/coupons`)
+
+Accès via lien "Coupons" dans la sidebar du dashboard. **Seuls les administrateurs peuvent créer, modifier ou supprimer des codes promo.**
+
+- **Liste** : tous les codes avec leur statut (actif/inactif), type de réduction, valeur, contraintes (minimum, limite d'utilisations, expiration), compteur d'utilisations.
+- **Créer** : formulaire — code (MAJUSCULES, unique), type (`pct` = pourcentage, `fixe` = montant en $), valeur, commande minimum ($), limite d'utilisations (optionnel), date d'expiration (optionnel).
+- **Activer/Désactiver** : bouton toggle sans suppression.
+- **Supprimer** : avec confirmation.
+- **Déconnexion** : bouton présent sur la page (efface le cookie admin + redirige vers `/connexion`).
+
+### 5.3 Avis clients (`/admin/avis`)
 
 - Liste de tous les avis (tous produits confondus), filtrables par statut (`en_attente`/`publie`/`refuse`/tous), recherche par nom client ou texte.
 - Actions : **Publier**, **Refuser**, ou **Remettre en attente**.
 - Badge "Achat vérifié" affiché si `commande_verifiee = true`.
 
-### 5.3 Paiements (`/admin/paiements`)
+### 5.4 Paiements (`/admin/paiements`)
 
 - Liste des preuves de paiement soumises, filtrable par statut (`en_attente`/`validé`/`refusé`/tous).
 - Pour chaque paiement en attente : modale de décision avec note interne optionnelle → **Valider** ou **Refuser**.
 
-### 5.4 Zones de livraison (`/admin/zones-livraison`)
+### 5.5 Zones de livraison (`/admin/zones-livraison`)
 
 - CRUD des zones : nom, frais HTG, seuil de livraison gratuite, actif/inactif.
 - (Les champs `frais_usd`, `delai_min_heures`, `delai_max_heures` existent dans le modèle de données mais ne sont **pas encore éditables depuis ce formulaire admin** — ils ne sont définis que dans les données stub initiales.)
@@ -453,27 +494,31 @@ Accès via `/admin` → connexion avec `username=admin` (voir §4.2 et §7), ses
 ## 6. Règles de calcul (prix, livraison, promo)
 
 ```
-sous_total            = Σ (prix_unitaire_devise × quantité)  pour chaque article du panier
+sous_total            = Σ (prix_usd × quantité)  pour chaque article (affiché en USD)
 
 montant_reduction     = si code promo de type "pct"  → sous_total × reduction_valeur
                        = si code promo de type "fixe" → MIN(reduction_valeur, sous_total)
 
 sous_total_remise     = sous_total − montant_reduction
 
-frais_livraison (HTG) = si adresse.pays = "usa"            → 3500 HTG (constante fixe)
-                       = si zone trouvée ET sous_total_remise ≥ zone.seuil_gratuit → 0
-                       = si zone trouvée (sinon)            → zone.frais_htg
-                       = si zone introuvable                → 400 HTG (valeur par défaut)
-                       = seuil par défaut si zone introuvable → 2000 HTG
+frais_livraison       = si type_livraison = "express" :
+                            si zone.frais_express_usd défini → zone.frais_express_usd
+                            sinon                            → zone.frais_express_htg ÷ 130
+                       = si type_livraison = "standard" :
+                            si pays = "usa"                  → zone USA (frais_usd = 26.90)
+                            si zone trouvée ET sous_total_remise × 130 ≥ zone.seuil_gratuit → 0
+                            si zone.frais_usd défini (sinon) → zone.frais_usd
+                            si zone.frais_usd NULL           → zone.frais_htg ÷ 130
+                            si zone introuvable              → 400 ÷ 130 ≈ $3.08
 
-frais_livraison (USD) = si zone.frais_usd défini            → zone.frais_usd
-                       = sinon                               → frais_livraison_htg ÷ 130
-
-total                  = sous_total_remise + frais_livraison
+total_usd              = sous_total_remise + frais_livraison (en USD)
+total_htg              = total_usd × 130  (utilisé uniquement pour affichage MonCash)
 ```
 
-- Conversion HTG ↔ USD : taux fixe **1 USD = 130 HTG**, codé en dur dans le front (à terme : ce taux devrait probablement être configurable en base plutôt que fixé dans le code, voir §9).
-- Le code promo n'est validé (et son compteur incrémenté) qu'au moment de la **soumission finale du paiement**, pas à l'application du code dans le panier — un client peut donc appliquer un code, l'enlever, et il ne sera décompté que si la commande va jusqu'au bout.
+- **Affichage** : tous les montants sont en **USD** partout sur le site. Seule la confirmation MonCash affiche le total en HTG (car c'est la devise exigée par MonCash).
+- Conversion HTG ↔ USD : taux fixe **1 USD = 130 HTG**, codé en dur (à rendre configurable en base, voir §9).
+- Le code promo est validé au moment de la **soumission finale du paiement** (son compteur est incrémenté à ce moment-là uniquement).
+- La validation du coupon au checkout (`/api/promo/valider`) vérifie le montant minimum — ce que ne fait pas la validation au moment de l'ajout au compte (`/api/promo/check`).
 
 ---
 
@@ -483,10 +528,11 @@ total                  = sous_total_remise + frais_livraison
 |---|---|---|
 | Mot de passe client | **Non stocké, jamais vérifié** | Implémenter hash (bcrypt/argon2) + vérification réelle à la connexion |
 | Session client | Aucune (juste un `localStorage` côté navigateur, perdu si vidé) | Implémenter sessions serveur (JWT ou cookie signé comme pour l'admin) |
-| Compte admin | Pas de table — identifiants fixes en variables d'environnement (`ADMIN_USERNAME`, `ADMIN_PASSWORD`), token de session signé HMAC-SHA256 stocké en cookie `httpOnly` 24h | Décider si l'admin doit devenir un `Utilisateur` avec `role='admin'` en base, ou rester un compte spécial hors BDD |
-| OTP d'inscription | Fonctionnel (code 6 chiffres, email réel via Brevo SMTP), mais en mémoire (perdu au redémarrage du serveur) | Migrer vers une table avec expiration |
-| Réinitialisation mot de passe | Fonctionnel en mémoire (token 1h) | Migrer vers une table, et brancher réellement l'envoi d'email en production (actuellement le lien n'est loggé qu'en dev) |
-| Protection brute-force | Limite de 5 tentatives / 15 min **uniquement sur la connexion admin** | Étendre la même protection à la connexion client une fois les mots de passe réels en place |
+| Compte admin | Pas de table — identifiants fixes en variables d'environnement (`ADMIN_USERNAME`, `ADMIN_PASSWORD`), token de session signé HMAC-SHA256 stocké en cookie `httpOnly` 24h. L'état `isLoggedIn` est persisté en `localStorage` (`adminStore.partialize`) pour survivre aux navigations entre pages admin. | Décider si l'admin doit devenir un `Utilisateur` avec `role='admin'` en base, ou rester un compte spécial hors BDD |
+| OTP d'inscription | **Stateless JWT** (`lib/otpJwt.ts`) — token signé HMAC-SHA256 retourné au client et stocké en `sessionStorage`. Aucun stockage serveur nécessaire. Après vérification réussie, **connexion automatique** (pendingUser extrait du token). Variable d'environnement `OTP_SECRET` requise. | ✅ Architecture finale — **pas de table BDD nécessaire** pour l'OTP |
+| Réinitialisation mot de passe | Fonctionnel en mémoire (token 1h, `lib/resetTokens.ts`) | Migrer vers table `TokenReset`, brancher l'envoi d'email en production |
+| Protection brute-force | Limite de 5 tentatives / 15 min **uniquement sur la connexion admin** | Étendre à la connexion client |
+| Sécurité coupons | Validation côté serveur uniquement. `VALID_CODES` hardcodé retiré du frontend. Message d'erreur générique (ne révèle pas les codes existants). | ✅ Déjà implémenté |
 
 ---
 
@@ -501,14 +547,19 @@ Liste exhaustive des endroits où le code contient déjà des commentaires `// T
 | `app/api/avis/route.ts` | `Map` JS avec 5 avis d'exemple | `SELECT`/`INSERT INTO Avis` |
 | `app/api/avis/[id]/route.ts` | Modifie la `Map` en mémoire | `UPDATE Avis SET statut = ?` |
 | `app/api/produits/[id]/images/route.ts` | Retourne toujours un tableau vide | `SELECT * FROM ImageProduit WHERE id_produit = ?` |
-| `app/api/zones-livraison/route.ts` | Tableau JS codé en dur (9 zones) | `SELECT * FROM ZoneLivraison WHERE actif = TRUE` |
-| `app/api/promo/valider/route.ts` + `lib/promoStore.ts` | Tableau JS de 2 codes promo | `SELECT`/`UPDATE CodePromo` |
+| `app/api/zones-livraison/route.ts` | Tableau JS codé en dur (10 zones : 9 Haïti + 1 USA) | `SELECT * FROM ZoneLivraison WHERE actif = TRUE ORDER BY pays, frais_htg` |
+| `app/api/promo/valider/route.ts` + `lib/promoStore.ts` | Tableau JS de 2 codes promo — validation complète (minimum inclus) | `SELECT`/`UPDATE CodePromo` |
+| `app/api/promo/check/route.ts` | Tableau JS (même store) — validation légère pour ajout au compte (sans minimum) | `SELECT id FROM CodePromo WHERE code=? AND actif=TRUE AND ...` — retourne uniquement `{valid}` |
+| `app/api/promo/admin/route.ts` | Tableau JS (`lib/promoStore.ts`) — CRUD admin des coupons | `SELECT/INSERT/UPDATE/DELETE CodePromo` (protégé par cookie admin) |
+| `app/api/paiement/moncash/initier/route.ts` | Structure en place, nécessite `MONCASH_CLIENT_ID` + `MONCASH_CLIENT_SECRET` + `MONCASH_ENV` | Appel API MonCash : `POST /oauth/token` → `POST /Api/v1/CreatePayment` |
+| `app/api/paiement/moncash/verifier/route.ts` | Structure en place | Appel API MonCash : `POST /Api/v1/RetrieveTransactionPayment` → `UPDATE Paiement SET statut='validé'` |
 | `app/api/paiement/soumettre/route.ts` | `Map` JS en mémoire | `SELECT`/`INSERT`/`UPDATE Paiement` |
 | `app/api/paiement/[id]/valider/route.ts` | Pas de stockage réel, retourne juste la décision | `UPDATE Paiement SET statut = ?, note_admin = ?` |
 | `app/api/commandes/[id]/statut/route.ts` | Ne fait rien, retourne juste l'écho de la requête | `INSERT INTO HistoriqueStatutCommande` + `UPDATE Commande SET statut` |
 | `app/api/mot-de-passe/request/route.ts` + `lib/resetTokens.ts` | `Map` JS en mémoire | `INSERT INTO TokenReset` |
 | `app/api/mot-de-passe/reset/route.ts` | — | `UPDATE Utilisateur SET mot_de_passe_hash = ?` |
-| `app/api/otp/envoyer/route.ts` + `lib/otpStore.ts` | `Map` JS en mémoire | `INSERT INTO OtpVerification` (et création finale du compte une fois vérifié) |
+| `app/api/otp/envoyer/route.ts` + `lib/otpJwt.ts` | **Stateless JWT** — aucun stockage serveur. Token signé retourné au client, stocké en `sessionStorage`. | ✅ Pas de table BDD nécessaire — seulement la variable d'environnement `OTP_SECRET` |
+| `app/api/otp/verifier/route.ts` | Vérifie le JWT + hash du code soumis. En cas de succès, retourne `pendingUser` (name, email, telephone, pseudo). | ✅ Pas de requête SQL — vérification cryptographique uniquement |
 | `store/adminStore.ts` (`orders`, `customers`) | Toujours vide au démarrage (`[]`) — jamais peuplé car aucune vraie commande n'arrive encore de la BDD | À remplacer entièrement par des appels API qui lisent `Commande`/`Utilisateur` |
 | `store/ordersStore.ts` | Commandes stockées seulement dans le `localStorage` du navigateur du client | Idem — à remplacer par lecture serveur des commandes du compte connecté |
 | `store/favoritesStore.ts` | `localStorage` uniquement | Table `Favori` à créer (actuellement aucune route API n'existe même pour les favoris) |
@@ -521,16 +572,16 @@ Liste exhaustive des endroits où le code contient déjà des commentaires `// T
 
 Ces points ne sont **pas résolus par le code actuel** et nécessitent une décision avant de finaliser le schéma :
 
-1. **Identifiant utilisateur réel** — `authStore.User` n'a actuellement pas de champ `id` ; tout le système d'avis (`id_utilisateur`) est câblé en dur à `0`. Il faudra introduire un vrai système de session qui expose l'ID utilisateur réel au front.
-2. **Mot de passe** — entièrement absent du flux actuel (ni stocké à l'inscription, ni vérifié à la connexion). À spécifier : politique de hash, complexité minimale (actuellement seulement "6 caractères minimum" côté validation front).
-3. **Attribution des codes promo aux comptes** — le code ne montre aucun mécanisme qui ajoute un coupon à `user.coupons` (pas de formulaire, pas de logique d'attribution automatique observée). À clarifier avec le métier : promo générale appliquée par tout client via un champ libre, vs. codes personnalisés assignés un par un ?
-4. **Génération du numéro de commande** — actuellement générée **côté client** avec `crypto.getRandomValues` (4 octets aléatoires) ; en production, ceci devrait être généré côté serveur pour garantir l'unicité (actuellement aucune vérification d'unicité n'est faite).
-5. **Stockage des images produits** — actuellement en upload base64 directement dans le `localStorage` de l'admin (non viable en production) ; il faudra un vrai service de stockage de fichiers (S3, Cloudinary, etc.) une fois la BDD branchée.
-6. **Taux de change HTG/USD** — actuellement une constante codée en dur (130) ; doit-il devenir un paramètre configurable en base (pour suivre les fluctuations réelles) ?
-7. **Frais USA fixes** — la constante `USA_FEE = 3500 HTG` est codée en dur dans `app/panier/page.tsx`, séparée de la table `ZoneLivraison`. Faut-il l'intégrer comme une "zone" à part entière dans cette même table ?
-8. **Unification du statut de commande** — voir §2 ; nécessite un choix définitif de nomenclature unique.
-9. **Rôle admin** — table séparée vs. champ `role` sur `Utilisateur` (voir §7).
-10. **Préférence de langue (fr/en/es)** — actuellement stockée uniquement côté client (`localStorage`, jamais envoyée au serveur). Si le métier veut que la langue choisie influence aussi le contenu généré côté serveur (titre de page, e-mails transactionnels), il faudra soit l'ajouter comme colonne sur `Utilisateur` (`langue_preferee`), soit la propager via un cookie lisible côté serveur. Actuellement les e-mails (OTP, reset mot de passe) sont envoyés uniquement en français quelle que soit la langue du site.
+1. **Identifiant utilisateur réel** — `authStore.User` n'a actuellement pas de champ `id` ; tout le système d'avis (`id_utilisateur`) est câblé en dur à `0`. Il faudra introduire un vrai système de session qui expose l'ID utilisateur réel au front. Le `pseudo` (username) devra également être persisté en BDD lors de la création de compte.
+2. **Mot de passe** — entièrement absent du flux actuel (ni stocké à l'inscription, ni vérifié à la connexion). À spécifier : politique de hash (recommandé : bcrypt/argon2), complexité minimale (actuellement "6 caractères minimum" côté front uniquement).
+3. **Génération du numéro de commande** — actuellement générée **côté client** avec `crypto.getRandomValues` ; en production, doit être générée **côté serveur** pour garantir l'unicité (aucune vérification d'unicité n'est faite actuellement).
+4. **Stockage des images produits** — actuellement en upload base64 dans le `localStorage` de l'admin (non viable en production) ; il faudra un service de stockage de fichiers (S3, Cloudinary, etc.) une fois la BDD branchée.
+5. **Taux de change HTG/USD** — constante codée en dur (130) ; doit-il devenir configurable en base ?
+6. **Zone USA** : ✅ déjà intégrée dans `ZoneLivraison` comme une entrée à part entière (`pays='usa'`, `nom_zone='USA Standard'`). Plus de constante codée en dur dans le frontend.
+7. **Unification du statut de commande** — voir §2 ; nécessite un choix définitif de nomenclature unique avant la création de la table `Commande`.
+8. **Rôle admin** — table séparée vs. champ `role` sur `Utilisateur` (voir §7). Actuellement les identifiants admin sont en variables d'environnement (pas de table).
+9. **Préférence de langue (fr/en/es)** — stockée côté client uniquement. Si le métier veut influencer les e-mails transactionnels (OTP, reset) avec la langue choisie, ajouter `langue_preferee` sur `Utilisateur` ou utiliser un cookie serveur. Actuellement les e-mails s'envoient uniquement en français.
+10. **Variables d'environnement requises en production** (non couvertes par la BDD mais bloquantes) : `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_COOKIE`, `OTP_SECRET`, `BREVO_LOGIN_EMAIL`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET`, `MONCASH_ENV`, `NEXT_PUBLIC_BASE_URL`.
 
 ---
 
