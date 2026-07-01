@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, CheckCircle, XCircle, Tag } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Plus, Trash2, CheckCircle, XCircle, Tag, LogOut } from 'lucide-react';
+import { useAdminStore } from '@/store/adminStore';
 import type { CodePromo } from '@/lib/promoStore';
 
 const inputCls = 'w-full font-lato text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white';
 
 export default function AdminCouponsPage() {
+  const router = useRouter();
+  const { logout } = useAdminStore();
   const [coupons, setCoupons] = useState<CodePromo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -81,12 +84,29 @@ export default function AdminCouponsPage() {
     setCoupons((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    logout();
+    router.push('/connexion');
+  };
+
   return (
     <div className="min-h-screen bg-[#F2E9E1] p-6">
       <div className="max-w-3xl mx-auto">
-        <Link href="/admin/dashboard" className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors mb-6">
-          <ArrowLeft size={15} />Retour au dashboard
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => router.push('/admin/dashboard')}
+            className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors"
+          >
+            <ArrowLeft size={15} />Retour au dashboard
+          </button>
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 font-lato text-sm text-gray-400 hover:text-red-500 transition-colors px-3 py-2 rounded-xl hover:bg-red-50"
+          >
+            <LogOut size={14} />Déconnexion
+          </button>
+        </div>
 
         <div className="flex items-center justify-between mb-6">
           <div>
