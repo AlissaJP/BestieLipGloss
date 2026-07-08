@@ -1,12 +1,15 @@
 // Stateless OTP token — works in serverless (Vercel) without shared memory.
-// The 6-digit code is hashed (SHA-256 + server secret) inside a HMAC-signed token
-// returned to the browser, which keeps it in sessionStorage and sends it alongside
-// the code the user enters. No server-side Map needed.
+// The 6-digit code is hashed via PBKDF2-SHA256 (100k iterations, salt = OTP_SECRET:email)
+// inside a HMAC-signed token returned to the browser. Even if the JWT is stolen,
+// brute-forcing 1M codes requires 10^11 PBKDF2 rounds — infeasible in the 2-min window.
+// No server-side Map needed.
 
 const ENC = new TextEncoder()
 
 function getSecret(): string {
-  return process.env.OTP_SECRET ?? 'bestie-dev-otp-change-in-prod'
+  const secret = process.env.OTP_SECRET;
+  if (!secret) throw new Error('OTP_SECRET manquant dans les variables d\'environnement.');
+  return secret;
 }
 
 async function importKey(): Promise<CryptoKey> {
@@ -30,14 +33,20 @@ function fromB64url(str: string): ArrayBuffer {
   return buf.buffer
 }
 
-async function sha256hex(data: string): Promise<string> {
-  const hash = await crypto.subtle.digest('SHA-256', ENC.encode(data))
-  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('')
+async function pbkdf2Hash(code: string, email: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw', ENC.encode(code), { name: 'PBKDF2' }, false, ['deriveBits']
+  )
+  const salt = ENC.encode(`${getSecret()}:${email}`)
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' }, key, 256
+  )
+  return [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 interface OtpPayload {
   email: string
-  codeHash: string  // SHA-256(secret:code) — not reversible
+  codeHash: string  // PBKDF2-SHA256(code, salt=OTP_SECRET:email, 100k iter) — brute-force resistant
   exp: number       // Unix ms expiry
   name: string
   telephone: string
@@ -51,7 +60,7 @@ export async function createOtpToken(
   telephone: string,
   pseudo: string
 ): Promise<string> {
-  const codeHash = await sha256hex(`${getSecret()}:${code}`)
+  const codeHash = await pbkdf2Hash(code, email)
   const payload: OtpPayload = { email, codeHash, exp: Date.now() + 120_000, name, telephone, pseudo }
   const payloadB64 = toB64url(ENC.encode(JSON.stringify(payload)))
   const key = await importKey()
@@ -98,7 +107,7 @@ export async function verifyOtpToken(
   if (Date.now() > payload.exp) return { valid: false, reason: 'expired' }
 
   // 5. Code match (compare hashes — never expose actual code)
-  const codeHash = await sha256hex(`${getSecret()}:${code}`)
+  const codeHash = await pbkdf2Hash(code, email)
   if (codeHash !== payload.codeHash) return { valid: false, reason: 'invalid' }
 
   return { valid: true, pendingUser: { name: payload.name, email, telephone: payload.telephone, pseudo: payload.pseudo } }

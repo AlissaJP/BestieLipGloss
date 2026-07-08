@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAmountToken } from '@/lib/paymentToken';
 
 const MONCASH_BASE = process.env.MONCASH_ENV === 'production'
   ? 'https://moncashbutton.digicelgroup.com/Api'
@@ -23,7 +24,18 @@ async function getMoncashToken(): Promise<string> {
 // GET /api/paiement/moncash/verifier?orderId=BES-2025-XXXXXX
 export async function GET(request: NextRequest) {
   const orderId = request.nextUrl.searchParams.get('orderId');
+  const amountTokenRaw = request.nextUrl.searchParams.get('amountToken');
   if (!orderId) return NextResponse.json({ error: 'orderId manquant.' }, { status: 400 });
+
+  // Vérification du token de montant signé (présent pour tous les paiements récents)
+  let expectedMontant: number | null = null;
+  if (amountTokenRaw) {
+    const verified = await verifyAmountToken(amountTokenRaw).catch(() => null);
+    if (!verified || verified.orderId !== orderId) {
+      return NextResponse.json({ success: false, error: 'Token de montant invalide ou expiré.' }, { status: 400 });
+    }
+    expectedMontant = verified.montant;
+  }
 
   try {
     const token = await getMoncashToken();
@@ -51,6 +63,12 @@ export async function GET(request: NextRequest) {
         payerMobile: string;
       }
     };
+
+    // Vérifie que le montant payé correspond au montant signé côté serveur
+    if (expectedMontant !== null && data.payment.cost < expectedMontant - 1) {
+      console.error(`[MonCash] Montant insuffisant pour ${orderId}: attendu ${expectedMontant} HTG, reçu ${data.payment.cost} HTG`);
+      return NextResponse.json({ success: false, error: 'Montant payé insuffisant.' }, { status: 402 });
+    }
 
     // TODO (BDD): UPDATE Paiement SET statut='validé', reference_transaction=?, date_validation=NOW()
     //             WHERE id_commande = orderId

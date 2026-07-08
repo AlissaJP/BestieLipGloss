@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { signAmountToken } from '@/lib/paymentToken';
 
 // MonCash Merchant Payment API
 // Documentation : https://sandbox.moncashbutton.digicelgroup.com/Moncash-business/
@@ -82,10 +83,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token de paiement MonCash manquant.' }, { status: 502 });
     }
 
-    // URL vers laquelle rediriger le client pour effectuer le paiement
     const redirectUrl = `${MONCASH_REDIRECT}?token=${paymentToken}`;
+    const amountToken = await signAmountToken(id_commande, montant_htg);
 
-    return NextResponse.json({ success: true, redirect_url: redirectUrl, payment_token: paymentToken });
+    return NextResponse.json({ success: true, redirect_url: redirectUrl, payment_token: paymentToken, amount_token: amountToken });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue';

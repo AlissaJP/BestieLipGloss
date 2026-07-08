@@ -19,6 +19,7 @@ export interface OrderItem {
 export interface Order {
   id: string;
   customer: string;
+  customerEmail?: string;
   phone: string;
   address: string;
   items: OrderItem[];
@@ -26,6 +27,8 @@ export interface Order {
   status: OrderStatus;
   date: string;
   paymentMethod: PaymentMethod;
+  referenceTransaction?: string;
+  payerInfo?: string;
 }
 
 export interface AdminCustomer {
@@ -96,7 +99,7 @@ export const useAdminStore = create<AdminState>()(
         })),
     }),
     {
-      name: 'bestie-admin-v3',
+      name: 'bestie-admin-v1',
       skipHydration: true,
       partialize: (state) => ({
         isLoggedIn: state.isLoggedIn,

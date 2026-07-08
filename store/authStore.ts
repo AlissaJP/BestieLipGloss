@@ -16,7 +16,9 @@ export interface Address {
 }
 
 export interface User {
-  name: string;
+  prenom: string;
+  nom: string;
+  name: string;       // = prenom + (nom ? ' ' + nom : '')
   email: string;
   telephone?: string;
   pseudo?: string;
@@ -24,15 +26,29 @@ export interface User {
   coupons: string[];
 }
 
+interface LoginData {
+  prenom?: string;
+  nom?: string;
+  name?: string;
+  email: string;
+  telephone?: string;
+  pseudo?: string;
+  addresses?: Address[];
+  coupons?: string[];
+}
+
 interface AuthState {
   isLoggedIn: boolean;
   user: User | null;
   showAuthModal: boolean;
-  login: (userData: { name: string; email: string; telephone?: string; pseudo?: string }) => void;
+  registeredUsers: User[];
+  login: (userData: LoginData) => void;
   logout: () => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  updateUser: (updates: Partial<Pick<User, 'name' | 'email' | 'telephone' | 'pseudo'>>) => void;
+  updateUser: (updates: Partial<Pick<User, 'prenom' | 'nom' | 'name' | 'email' | 'telephone' | 'pseudo'>>) => void;
+  registerUser: (data: { prenom: string; nom: string; email: string; telephone?: string; pseudo?: string; address?: Address }) => void;
+  findUser: (identifier: string) => User | undefined;
   addAddress: (address: Address) => void;
   removeAddress: (id: string) => void;
   addCoupon: (code: string) => void;
@@ -45,15 +61,73 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
       user: null,
       showAuthModal: false,
-      login: (userData) =>
-        set({ isLoggedIn: true, user: { ...userData, pseudo: userData.pseudo ?? '', addresses: [], coupons: [] } }),
+      registeredUsers: [],
+
+      login: (userData) => {
+        const prenom = userData.prenom ?? '';
+        const nom = userData.nom ?? '';
+        const name = userData.name ?? (prenom + (nom ? ' ' + nom : '')).trim();
+        set({
+          isLoggedIn: true,
+          user: {
+            prenom,
+            nom,
+            name,
+            email: userData.email,
+            telephone: userData.telephone,
+            pseudo: userData.pseudo ?? '',
+            addresses: userData.addresses ?? [],
+            coupons: userData.coupons ?? [],
+          },
+        });
+      },
+
       logout: () => set({ isLoggedIn: false, user: null }),
       openAuthModal: () => set({ showAuthModal: true }),
       closeAuthModal: () => set({ showAuthModal: false }),
+
       updateUser: (updates) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null,
-        })),
+        set((state) => {
+          if (!state.user) return {};
+          const next = { ...state.user, ...updates };
+          if (updates.prenom !== undefined || updates.nom !== undefined) {
+            next.name = (next.prenom + (next.nom ? ' ' + next.nom : '')).trim();
+          }
+          return { user: next };
+        }),
+
+      registerUser: ({ prenom, nom, email, telephone, pseudo, address }) => {
+        const name = (prenom + (nom ? ' ' + nom : '')).trim();
+        const newUser: User = {
+          prenom,
+          nom,
+          name,
+          email,
+          telephone,
+          pseudo: pseudo ?? '',
+          addresses: address ? [address] : [],
+          coupons: [],
+        };
+        set((state) => {
+          const idx = state.registeredUsers.findIndex((u) => u.email === email);
+          if (idx >= 0) {
+            const updated = [...state.registeredUsers];
+            updated[idx] = newUser;
+            return { registeredUsers: updated };
+          }
+          return { registeredUsers: [...state.registeredUsers, newUser] };
+        });
+      },
+
+      findUser: (identifier: string) => {
+        const { registeredUsers } = get();
+        const key = identifier.trim().toLowerCase();
+        if (key.includes('@')) {
+          return registeredUsers.find((u) => u.email.toLowerCase() === key);
+        }
+        return registeredUsers.find((u) => u.pseudo?.toLowerCase() === key);
+      },
+
       addAddress: (address) =>
         set((state) => ({
           user: state.user
@@ -82,9 +156,13 @@ export const useAuthStore = create<AuthState>()(
         })),
     }),
     {
-      name: 'bestie-auth-v2',
+      name: 'bestie-auth-v1',
       skipHydration: true,
-      partialize: (state) => ({ isLoggedIn: state.isLoggedIn, user: state.user }),
+      partialize: (state) => ({
+        isLoggedIn: state.isLoggedIn,
+        user: state.user,
+        registeredUsers: state.registeredUsers,
+      }),
     }
   )
 );

@@ -8,7 +8,7 @@ import { Mail, RefreshCw, PartyPopper } from 'lucide-react';
 import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import { useAuthStore } from '@/store/authStore';
-import { useCartStore } from '@/store/cartStore';
+import type { Address } from '@/store/authStore';
 
 const OTP_LENGTH = 6;
 const OTP_DURATION = 120;
@@ -20,9 +20,7 @@ function VerificationForm() {
 
   const { lang } = useLanguageStore();
   const t = translations[lang].pages.otp;
-  const { login } = useAuthStore();
-  const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
-
+  const { registerUser } = useAuthStore();
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
   const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
@@ -68,16 +66,31 @@ function VerificationForm() {
         return;
       }
       sessionStorage.removeItem(`otp_token_${email}`);
-      // Connexion automatique avec les données de l'inscription
+
+      // Enregistre le profil complet pour que la connexion puisse le retrouver
       if (data.pendingUser) {
-        login({
-          name: data.pendingUser.name,
+        const prenom = sessionStorage.getItem(`pending_prenom_${email}`) ?? data.pendingUser.name.split(' ')[0] ?? '';
+        const nom = sessionStorage.getItem(`pending_nom_${email}`) ?? data.pendingUser.name.split(' ').slice(1).join(' ') ?? '';
+        sessionStorage.removeItem(`pending_prenom_${email}`);
+        sessionStorage.removeItem(`pending_nom_${email}`);
+
+        let address: Address | undefined;
+        const addrJson = sessionStorage.getItem(`pending_addr_${email}`);
+        if (addrJson) {
+          try { address = JSON.parse(addrJson) as Address; } catch { /* ignore */ }
+          sessionStorage.removeItem(`pending_addr_${email}`);
+        }
+
+        registerUser({
+          prenom,
+          nom,
           email: data.pendingUser.email,
           telephone: data.pendingUser.telephone,
           pseudo: data.pendingUser.pseudo,
+          address,
         });
-        syncCartOnLogin();
       }
+
       setStatus('success');
     } catch {
       setStatus('error');
@@ -117,23 +130,36 @@ function VerificationForm() {
     setDigits(Array(OTP_LENGTH).fill(''));
     setStatus('idle');
     setErrorMsg('');
-    setTimeLeft(OTP_DURATION);
+
+    // Récupère name/telephone/pseudo depuis le JWT expiré stocké en sessionStorage
+    let pendingData: { name?: string; telephone?: string; pseudo?: string } = {};
+    const existingToken = sessionStorage.getItem(`otp_token_${email}`);
+    if (existingToken) {
+      try {
+        const b64 = existingToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '=='.slice(0, (4 - b64.length % 4) % 4);
+      const payload = JSON.parse(atob(padded));
+        pendingData = { name: payload.name, telephone: payload.telephone, pseudo: payload.pseudo };
+      } catch {}
+    }
+
     try {
       const res = await fetch('/api/otp/envoyer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, ...pendingData }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setErrorMsg(data.error ?? t.errorNetwork);
         setStatus('error');
-        setTimeLeft(0);
+      } else {
+        if (data.token) sessionStorage.setItem(`otp_token_${email}`, data.token);
+        setTimeLeft(OTP_DURATION);
       }
     } catch {
       setErrorMsg(t.errorNetwork);
       setStatus('error');
-      setTimeLeft(0);
     }
     setTimeout(() => inputRefs.current[0]?.focus(), 50);
   };
@@ -177,7 +203,7 @@ function VerificationForm() {
             </p>
 
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/connexion')}
               className="block w-full bg-primary hover:bg-pink-400 text-white font-lato font-semibold py-3.5 rounded-xl transition-colors text-sm text-center"
             >
               {t.continueBtn}

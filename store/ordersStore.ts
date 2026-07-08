@@ -18,6 +18,13 @@ export interface StoredOrder {
   id: string;
   date: string;
   status: CustomerOrderStatus;
+  // Identité du client au moment de la commande
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  // Preuve de paiement
+  referenceTransaction?: string;  // Réf. Zelle / ID MonCash / last-4 carte
+  payerInfo?: string;             // Numéro MonCash du payeur / Nom porteur carte
   items: StoredOrderItem[];
   subtotalUSD: number;
   discountAmountUSD?: number;
@@ -35,6 +42,7 @@ export interface StoredOrder {
 interface OrdersState {
   orders: StoredOrder[];
   addOrder: (order: StoredOrder) => void;
+  updateOrderStatus: (id: string, status: CustomerOrderStatus) => void;
   cancelOrder: (id: string) => void;
 }
 
@@ -44,6 +52,10 @@ export const useOrdersStore = create<OrdersState>()(
       orders: [],
       addOrder: (order) =>
         set((state) => ({ orders: [order, ...state.orders] })),
+      updateOrderStatus: (id, status) =>
+        set((state) => ({
+          orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+        })),
       cancelOrder: (id) =>
         set((state) => ({
           orders: state.orders.map((o) =>
@@ -51,6 +63,6 @@ export const useOrdersStore = create<OrdersState>()(
           ),
         })),
     }),
-    { name: 'bestie-orders-v2', skipHydration: true }
+    { name: 'bestie-orders-v1', skipHydration: true }
   )
 );

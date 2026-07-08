@@ -11,7 +11,7 @@ import { useLanguageStore } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
 import CheckoutStepper from '@/components/CheckoutStepper';
 import type { ZoneLivraison } from '@/app/api/zones-livraison/route';
-import { useOrdersStore } from '@/store/ordersStore';
+import { useOrdersStore, type StoredOrder } from '@/store/ordersStore';
 import { WHATSAPP_URL, WHATSAPP_NUMBER } from '@/lib/contact';
 
 type DeliveryType = 'standard' | 'express';
@@ -94,12 +94,21 @@ export default function PanierPage() {
   const [promoLoading, setPromoLoading] = useState(false);
 
   const [zones, setZones] = useState<ZoneLivraison[]>([]);
+  const [zonesLoaded, setZonesLoaded] = useState(false);
+  const [zonesError, setZonesError] = useState(false);
   useEffect(() => {
     fetch('/api/zones-livraison')
       .then((r) => r.json())
-      .then((d) => setZones(d.zones ?? []))
-      .catch(() => {});
+      .then((d) => { setZones(d.zones ?? []); setZonesLoaded(true); })
+      .catch(() => { setZonesError(true); });
   }, []);
+  const retryZones = () => {
+    setZonesError(false);
+    fetch('/api/zones-livraison')
+      .then((r) => r.json())
+      .then((d) => { setZones(d.zones ?? []); setZonesLoaded(true); })
+      .catch(() => { setZonesError(true); });
+  };
 
   const savedAddresses = user?.addresses ?? [];
   const [selectedAddr, setSelectedAddr] = useState<Address | null>(null);
@@ -111,6 +120,15 @@ export default function PanierPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedAddresses.length]);
+
+  // C3 — reset deliveryType to 'standard' when the selected zone has no express option
+  useEffect(() => {
+    if (!zonesLoaded || !selectedAddr) return;
+    const zone = getZone(selectedAddr, zones);
+    if (!zone?.frais_express_htg && deliveryType === 'express') setDeliveryType('standard');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAddr?.id, zonesLoaded]);
+
   const [addrError, setAddrError] = useState('');
 
   const [instructionsLivraison, setInstructionsLivraison] = useState('');
@@ -135,7 +153,7 @@ export default function PanierPage() {
     : 0;
   const discountedSubtotal = subtotal - discountAmount;
 
-  const deliveryFee = selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, deliveryType) : 0;
+  const deliveryFee = zonesLoaded && selectedAddr ? addrFee(selectedAddr, discountedSubtotal, zones, deliveryType) : 0;
   const total = discountedSubtotal + deliveryFee;
 
   // USD calculations
@@ -146,7 +164,7 @@ export default function PanierPage() {
       : promoInfo.valeur / 130
     : 0;
   const discountedSubtotalUSD = subtotalUSD - discountAmountUSD;
-  const deliveryFeeUSD = selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones, deliveryType) : 0;
+  const deliveryFeeUSD = zonesLoaded && selectedAddr ? addrFeeUSD(selectedAddr, discountedSubtotalUSD, zones, deliveryType) : 0;
   const totalUSD = discountedSubtotalUSD + deliveryFeeUSD;
 
   // Délai estimé selon la zone et le type de livraison
@@ -184,6 +202,7 @@ export default function PanierPage() {
   };
 
   const handleDeliveryNext = () => {
+    if (!zonesLoaded) return;
     if (!selectedAddr) { setAddrError(tc.selectAddressError); return; }
     setAddrError('');
     setDeliveryData({
@@ -199,6 +218,8 @@ export default function PanierPage() {
   };
 
   // MonCash : redirige vers l'interface de paiement MonCash (API officielle)
+  // La commande est sauvegardée en sessionStorage et finalisée sur /panier/retour-moncash
+  // APRÈS vérification du paiement — le panier reste intact jusqu'à confirmation.
   const handleMoncashRedirect = async () => {
     if (!numeroCommande) return;
     setPaymentLoading(true);
@@ -209,31 +230,37 @@ export default function PanierPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_commande: numeroCommande, montant_htg: total }),
       });
-      const data = await res.json() as { success?: boolean; redirect_url?: string; error?: string };
+      const data = await res.json() as { success?: boolean; redirect_url?: string; error?: string; amount_token?: string };
       if (!res.ok || !data.redirect_url) {
         setPaymentError(data.error ?? tc.errorOccurred);
         return;
       }
-      // Sauvegarde la commande avant de quitter la page
-      const orderItems = items.map((i) => ({
-        name: i.name, shade: i.shade, quantity: i.quantity,
-        price_htg: i.price_htg, price_usd: i.price_usd, image: i.image, bgColor: i.bgColor,
-      }));
-      addOrder({
-        id: numeroCommande, date: new Date().toISOString(), status: 'attente',
-        items: orderItems,
+      const pendingOrder: StoredOrder = {
+        id: numeroCommande,
+        date: new Date().toISOString(),
+        status: 'attente',
+        customerName: user?.name || [user?.prenom, user?.nom].filter(Boolean).join(' ') || '',
+        customerEmail: user?.email ?? '',
+        customerPhone: user?.telephone ?? '',
+        items: items.map((i) => ({
+          name: i.name, shade: i.shade, quantity: i.quantity,
+          price_htg: i.price_htg, price_usd: i.price_usd, image: i.image, bgColor: i.bgColor,
+        })),
         subtotalUSD: parseFloat(subtotalUSD.toFixed(2)),
         discountAmountUSD: promoInfo ? parseFloat(discountAmountUSD.toFixed(2)) : undefined,
         promoCode: promoInfo?.code || undefined,
         deliveryFeeUSD: parseFloat(deliveryFeeUSD.toFixed(2)),
         deliveryType: deliveryData?.deliveryType,
-        total, totalUSD: parseFloat(totalUSD.toFixed(2)),
+        total,
+        totalUSD: parseFloat(totalUSD.toFixed(2)),
         deliveryAddress: deliveryData ? formatAddress(deliveryData.address) : '',
         instructionsLivraison: deliveryData?.instructions || undefined,
-        paymentMethod: 'moncash', devise: 'HTG',
-      });
-      clearCart();
-      window.location.href = data.redirect_url;  // Redirection vers MonCash
+        paymentMethod: 'moncash',
+        devise: 'HTG',
+      };
+      sessionStorage.setItem('moncash_pending_order', JSON.stringify(pendingOrder));
+      if (data.amount_token) sessionStorage.setItem('moncash_amount_token', data.amount_token);
+      window.location.href = data.redirect_url;
     } catch {
       setPaymentError(tc.errorConnection);
     } finally {
@@ -300,6 +327,15 @@ export default function PanierPage() {
         id: numeroCommande,
         date: new Date().toISOString(),
         status: 'attente',
+        customerName: user?.name || [user?.prenom, user?.nom].filter(Boolean).join(' ') || '',
+        customerEmail: user?.email ?? '',
+        customerPhone: user?.telephone ?? '',
+        referenceTransaction: paymentMethod === 'zelle'
+          ? (referenceTransaction.trim() || undefined)
+          : paymentMethod === 'card'
+            ? (cardNumber ? `**** ${cardNumber.replace(/\s/g, '').slice(-4)}` : undefined)
+            : undefined,
+        payerInfo: paymentMethod === 'card' ? (cardName.trim() || undefined) : undefined,
         items: orderItems,
         subtotalUSD: parseFloat(subtotalUSD.toFixed(2)),
         discountAmountUSD: promoInfo ? parseFloat(discountAmountUSD.toFixed(2)) : undefined,
@@ -571,9 +607,15 @@ export default function PanierPage() {
                               </option>
                             ))}
                           </select>
-                          {selectedAddr && (
+                          {zonesError ? (
+                            <div className="flex items-center justify-between gap-2 bg-amber-50 rounded-xl px-3 py-2 border border-amber-100 mt-2">
+                              <p className="font-lato text-sm text-amber-700">Impossible de charger les frais de livraison.</p>
+                              <button onClick={retryZones} className="font-lato text-xs font-semibold text-primary hover:underline whitespace-nowrap">Réessayer</button>
+                            </div>
+                          ) : selectedAddr && (
                             <p className="font-lato text-sm text-primary font-semibold mt-2">
-                              {tc.estimatedFee} {addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? tc.freeDelivery : `$${(addrFee(selectedAddr, discountedSubtotal, zones) / 130).toFixed(2)}`}
+                              {tc.estimatedFee}{' '}
+                              {!zonesLoaded ? '—' : addrFee(selectedAddr, discountedSubtotal, zones) === 0 ? tc.freeDelivery : `$${(addrFee(selectedAddr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                             </p>
                           )}
                         </>
@@ -595,8 +637,8 @@ export default function PanierPage() {
                         )}
                         <div className="flex justify-between font-lato text-gray-600">
                           <span>{tc.deliveryEstimate}</span>
-                          <span className={deliveryFee === 0 && selectedAddr ? 'text-green-600 font-semibold' : ''}>
-                            {!selectedAddr ? '—' : deliveryFee === 0 ? tc.free : `$${deliveryFeeUSD.toFixed(2)}`}
+                          <span className={deliveryFee === 0 && selectedAddr && zonesLoaded ? 'text-green-600 font-semibold' : ''}>
+                            {!selectedAddr || !zonesLoaded ? '—' : deliveryFee === 0 ? tc.free : `$${deliveryFeeUSD.toFixed(2)}`}
                           </span>
                         </div>
                         {selectedAddr && deliveryFee > 0 && discountedSubtotal < 2000 && (addr => (addr.country ?? 'hti') === 'hti')(selectedAddr) && (
@@ -697,7 +739,8 @@ export default function PanierPage() {
                               </p>
                               <p className="font-lato text-sm text-gray-500 mt-0.5">{formatAddress(addr)}</p>
                               <p className="font-lato text-sm text-primary font-semibold mt-1.5">
-                                {tc.deliveryFee} {addrFee(addr, discountedSubtotal, zones) === 0 ? tc.freeShort : `$${(addrFee(addr, discountedSubtotal, zones) / 130).toFixed(2)}`}
+                                {tc.deliveryFee}{' '}
+                                {!zonesLoaded ? '—' : addrFee(addr, discountedSubtotal, zones) === 0 ? tc.freeShort : `$${(addrFee(addr, discountedSubtotal, zones) / 130).toFixed(2)}`}
                               </p>
                             </div>
                             {selectedAddr?.id === addr.id && (
@@ -779,13 +822,21 @@ export default function PanierPage() {
                     </div>
                   </div>
 
+                  {zonesError && (
+                    <div className="flex items-center justify-between gap-3 bg-amber-50 rounded-xl px-4 py-3 border border-amber-100">
+                      <p className="font-lato text-sm text-amber-700">Impossible de charger les zones de livraison — les frais ne peuvent pas être calculés.</p>
+                      <button onClick={retryZones} className="font-lato text-sm font-semibold text-primary hover:underline whitespace-nowrap">Réessayer</button>
+                    </div>
+                  )}
+
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setStep(0)}
                       className="border border-pink-200 text-gray-600 font-lato text-base px-5 py-3 rounded-xl hover:border-primary hover:text-primary transition-colors min-h-[48px]">
                       {tc.back}
                     </button>
                     <button type="button" onClick={handleDeliveryNext}
-                      className="flex-1 bg-primary hover:bg-pink-400 text-white font-lato font-semibold text-base py-3 rounded-xl transition-colors min-h-[48px]">
+                      disabled={!zonesLoaded}
+                      className="flex-1 bg-primary hover:bg-pink-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-lato font-semibold text-base py-3 rounded-xl transition-colors min-h-[48px]">
                       {tc.continuePayment}
                     </button>
                   </div>

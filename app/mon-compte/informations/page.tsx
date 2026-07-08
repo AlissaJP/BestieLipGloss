@@ -142,8 +142,8 @@ export default function InformationsPage() {
 
   /* — Identity — */
   const [editIdent, setEditIdent] = useState(false);
-  const [identForm, setIdentForm] = useState({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' });
-  const saveIdent = () => { updateUser({ name: identForm.name, pseudo: identForm.pseudo }); setEditIdent(false); };
+  const [identForm, setIdentForm] = useState({ prenom: user?.prenom ?? '', nom: user?.nom ?? '', pseudo: user?.pseudo ?? '' });
+  const saveIdent = () => { updateUser({ prenom: identForm.prenom, nom: identForm.nom, pseudo: identForm.pseudo }); setEditIdent(false); };
 
   /* — Email — */
   const [editEmail, setEditEmail] = useState(false);
@@ -259,16 +259,23 @@ export default function InformationsPage() {
             {!editIdent ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-lato text-base text-gray-700"><span className="text-gray-400 mr-2">{t.identity.nameLabel}</span>{user?.name || '—'}</p>
+                  <p className="font-lato text-base text-gray-700"><span className="text-gray-400 mr-2">{t.identity.prenomLabel}</span>{user?.prenom || '—'}</p>
+                  <p className="font-lato text-base text-gray-700 mt-1"><span className="text-gray-400 mr-2">{t.identity.nomLabel}</span>{user?.nom || '—'}</p>
                   <p className="font-lato text-base text-gray-700 mt-1"><span className="text-gray-400 mr-2">{t.identity.usernameLabel}</span>{user?.pseudo || <span className="text-gray-300 italic">{t.identity.notSet}</span>}</p>
                 </div>
-                <button onClick={() => { setIdentForm({ name: user?.name ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
+                <button onClick={() => { setIdentForm({ prenom: user?.prenom ?? '', nom: user?.nom ?? '', pseudo: user?.pseudo ?? '' }); setEditIdent(true); }} className="font-lato text-base text-primary hover:underline">{t.edit}</button>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                <div>
-                  <label className={labelCls}>{t.identity.fullName}</label>
-                  <input className={inputCls} value={identForm.name} onChange={e => setIdentForm(p => ({ ...p, name: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}>{t.identity.prenomField}</label>
+                    <input className={inputCls} value={identForm.prenom} onChange={e => setIdentForm(p => ({ ...p, prenom: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t.identity.nomField}</label>
+                    <input className={inputCls} value={identForm.nom} onChange={e => setIdentForm(p => ({ ...p, nom: e.target.value }))} />
+                  </div>
                 </div>
                 <div>
                   <label className={labelCls}>{t.identity.username}</label>

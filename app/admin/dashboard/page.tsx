@@ -8,10 +8,55 @@ import {
   LogOut, CheckCircle, ArrowRight, ArrowLeft, TrendingUp, ShoppingBag, X,
   Phone, Mail, MapPin, Calendar, ChevronRight, Search, Menu,
   Package, Plus, Trash2, Edit3, Eye, EyeOff, Star, ExternalLink, XCircle, Ban, Upload,
+  Copy, CheckCheck,
 } from 'lucide-react';
-import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct } from '@/store/adminStore';
+import { useAdminStore, Order, OrderStatus, AdminCustomer, type ManagedProduct, type PaymentMethod } from '@/store/adminStore';
+import { useOrdersStore, type StoredOrder, type CustomerOrderStatus } from '@/store/ordersStore';
+import { useAuthStore, type User } from '@/store/authStore';
 import { useLanguageStore, type Lang } from '@/store/languageStore';
 import { translations } from '@/lib/translations';
+
+/* ── Status conversion (admin ↔ client) ── */
+const TO_ADMIN: Record<CustomerOrderStatus, OrderStatus> = {
+  attente: 'pending', valide: 'paid', livraison: 'shipping', livre: 'delivered', annule: 'cancelled',
+};
+const TO_CLIENT: Record<OrderStatus, CustomerOrderStatus> = {
+  pending: 'attente', paid: 'valide', shipping: 'livraison', delivered: 'livre', cancelled: 'annule',
+};
+
+function storedToAdminOrder(o: StoredOrder): Order {
+  return {
+    id: o.id,
+    customer: o.customerName || 'Client',
+    customerEmail: o.customerEmail,
+    phone: o.customerPhone || '',
+    address: o.deliveryAddress,
+    items: o.items.map((i) => ({ name: i.name, shade: i.shade, qty: i.quantity, price: i.price_htg })),
+    total: o.total,
+    status: TO_ADMIN[o.status] ?? 'pending',
+    date: new Date(o.date).toLocaleDateString('fr-FR'),
+    paymentMethod: o.paymentMethod as PaymentMethod,
+    referenceTransaction: o.referenceTransaction,
+    payerInfo: o.payerInfo,
+  };
+}
+
+function deriveCustomers(users: User[], orders: StoredOrder[]): AdminCustomer[] {
+  return users.map((u) => {
+    const userOrders = orders.filter((o) => o.customerEmail && o.customerEmail === u.email);
+    const sortedOrders = [...userOrders].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const firstDate = sortedOrders.length > 0 ? new Date(sortedOrders[0].date).toLocaleDateString('fr-FR') : '—';
+    return {
+      id: u.email,
+      name: u.name || [u.prenom, u.nom].filter(Boolean).join(' ') || u.email,
+      email: u.email,
+      phone: u.telephone ?? '—',
+      joinDate: firstDate,
+      ordersCount: userOrders.length,
+      totalSpent: userOrders.reduce((s, o) => s + o.total, 0),
+    };
+  });
+}
 
 type Tab = 'overview' | 'users' | 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled' | 'products';
 
@@ -176,7 +221,9 @@ function UserDrawer({ customer, orders, onClose }: {
   customer: AdminCustomer; orders: Order[]; onClose: () => void;
 }) {
   const t = useT();
-  const customerOrders = orders.filter((o) => o.customer === customer.name);
+  const customerOrders = orders.filter((o) =>
+    (o.customerEmail && o.customerEmail === customer.email) || o.customer === customer.name
+  );
 
   return (
     <AnimatePresence>
@@ -277,6 +324,7 @@ function UserDrawer({ customer, orders, onClose }: {
                           </p>
                         </div>
                       </div>
+                      <PaymentProof order={order} />
                     </div>
                   ))}
                 </div>
@@ -293,9 +341,16 @@ function UserDrawer({ customer, orders, onClose }: {
 export default function AdminDashboard() {
   const router = useRouter();
   const {
-    isLoggedIn, logout, orders, customers, updateOrderStatus,
+    isLoggedIn, logout,
     managedProducts, addProduct, updateProduct, deleteProduct, togglePublished,
   } = useAdminStore();
+
+  const { orders: clientOrders, updateOrderStatus: clientUpdateStatus } = useOrdersStore();
+  const { registeredUsers } = useAuthStore();
+
+  // Données dérivées en temps réel depuis les stores client
+  const orders: Order[] = clientOrders.map(storedToAdminOrder);
+  const customers: AdminCustomer[] = deriveCustomers(registeredUsers, clientOrders);
   const { lang, setLang } = useLanguageStore();
   const t = translations[lang].admin;
   const tc = translations[lang].common;
@@ -305,12 +360,16 @@ export default function AdminDashboard() {
   const [orderSearch, setOrderSearch] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (!isLoggedIn && !loggingOut) router.replace('/admin');
-  }, [isLoggedIn, loggingOut, router]);
+    if (!mounted || loggingOut) return;
+    if (!isLoggedIn) router.replace('/admin');
+  }, [mounted, isLoggedIn, loggingOut, router]);
 
-  if (!isLoggedIn) return null;
+  if (!mounted || !isLoggedIn) return null;
 
   const pending   = orders.filter((o) => o.status === 'pending');
   const paid      = orders.filter((o) => o.status === 'paid');
@@ -341,7 +400,8 @@ export default function AdminDashboard() {
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     const order = orders.find((o) => o.id === id);
-    updateOrderStatus(id, status);
+    // Écrit dans ordersStore (partagé avec le client) — le client voit le changement immédiatement
+    clientUpdateStatus(id, TO_CLIENT[status]);
     // TODO (BDD): INSERT INTO HistoriqueStatutCommande + UPDATE Commande SET statut
     await fetch(`/api/commandes/${id}/statut`, {
       method: 'POST',
@@ -680,6 +740,102 @@ export default function AdminDashboard() {
   );
 }
 
+/* ─── CopyButton ─── */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copier"
+      className="ml-1.5 text-gray-400 hover:text-primary transition-colors flex-shrink-0"
+    >
+      {copied ? <CheckCheck size={13} className="text-green-500" /> : <Copy size={13} />}
+    </button>
+  );
+}
+
+/* ─── PaymentProof ─── */
+const PAYMENT_COLOR: Record<string, string> = {
+  moncash: 'bg-orange-50 border-orange-100 text-orange-700',
+  zelle:   'bg-blue-50   border-blue-100   text-blue-700',
+  card:    'bg-purple-50 border-purple-100 text-purple-700',
+  cash:    'bg-green-50  border-green-100  text-green-700',
+};
+const PAYMENT_DOT: Record<string, string> = {
+  moncash: 'bg-orange-400',
+  zelle:   'bg-blue-400',
+  card:    'bg-purple-400',
+  cash:    'bg-green-400',
+};
+
+function PaymentProof({ order }: { order: Order }) {
+  const colorCls = PAYMENT_COLOR[order.paymentMethod] ?? 'bg-gray-50 border-gray-100 text-gray-600';
+  const dotCls   = PAYMENT_DOT[order.paymentMethod]   ?? 'bg-gray-400';
+
+  // Libellé de la référence selon le mode de paiement
+  const refLabel =
+    order.paymentMethod === 'moncash' ? 'ID transaction'
+    : order.paymentMethod === 'card'  ? 'N° carte'
+    : 'Réf. transaction';
+
+  // Texte quand la référence est absente
+  const refMissing =
+    order.paymentMethod === 'moncash' ? 'En attente MonCash'
+    : order.paymentMethod === 'zelle' ? '⚠ Réf. non fournie'
+    : '—';
+
+  return (
+    <div className="mt-3 pt-3 border-t border-pink-50">
+      <div className={`flex flex-wrap items-center gap-x-5 gap-y-2 px-3.5 py-2.5 rounded-xl border ${colorCls} w-full`}>
+
+        {/* Mode de paiement */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
+          <span className="font-lato text-[11px] font-bold uppercase tracking-wider opacity-75">
+            {PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod}
+          </span>
+        </div>
+
+        {/* Référence de transaction */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className="font-lato text-[10px] opacity-60 shrink-0 whitespace-nowrap">{refLabel} :</span>
+          {order.referenceTransaction ? (
+            <>
+              <span className="font-mono text-xs font-bold tracking-tight truncate">
+                {order.referenceTransaction}
+              </span>
+              <CopyButton text={order.referenceTransaction} />
+            </>
+          ) : (
+            <span className={`font-lato text-xs italic ${order.paymentMethod === 'zelle' ? 'text-amber-600 font-semibold not-italic' : 'opacity-40'}`}>
+              {refMissing}
+            </span>
+          )}
+        </div>
+
+        {/* Payeur / Titulaire (si disponible) */}
+        {order.payerInfo && (
+          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+            <span className="font-lato text-[10px] opacity-60 shrink-0">
+              {order.paymentMethod === 'card' ? 'Titulaire :' : 'Payeur :'}
+            </span>
+            <span className="font-lato text-xs font-semibold truncate max-w-[130px]">
+              {order.payerInfo}
+            </span>
+            <CopyButton text={order.payerInfo} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── OrdersSection ─── */
 function OrdersSection({
   title, subtitle, orders, search, onSearch, searchPlaceholder, noResultsLabel,
@@ -775,6 +931,9 @@ function OrdersSection({
                     </div>
                   </div>
                 </div>
+
+                {/* Preuve de paiement */}
+                <PaymentProof order={order} />
 
                 {/* Timeline statut */}
                 <AnimatePresence>

@@ -23,7 +23,7 @@ function ConnexionForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(adminRedirect ? t.adminRestricted : '');
-  const { login } = useAuthStore();
+  const { login, findUser } = useAuthStore();
   const { login: adminLogin } = useAdminStore();
   const syncCartOnLogin = useCartStore((s) => s.syncCartOnLogin);
   const router = useRouter();
@@ -54,12 +54,23 @@ function ConnexionForm() {
       return;
     }
 
-    const isEmail = email.includes('@');
-    const name = isEmail
-      ? (() => { const raw = email.split('@')[0].replace(/[._-]/g, ' '); return raw.charAt(0).toUpperCase() + raw.slice(1); })()
-      : email.trim().charAt(0).toUpperCase() + email.trim().slice(1);
-    const storedEmail = isEmail ? email.trim() : `${email.trim().toLowerCase().replace(/\s+/g, '.')}@bestie.app`;
-    login({ name, email: storedEmail });
+    const identifier = email.trim();
+    const isEmail = identifier.includes('@');
+
+    // Cherche le profil complet enregistré lors de l'inscription
+    const existingUser = findUser(identifier);
+    if (existingUser) {
+      login(existingUser);
+    } else {
+      // Fallback si l'utilisateur n'a pas encore de profil enregistré
+      login({
+        prenom: '',
+        nom: '',
+        name: '',
+        email: isEmail ? identifier : `${identifier.toLowerCase().replace(/\s+/g, '.')}@bestie.app`,
+        pseudo: isEmail ? '' : identifier,
+      });
+    }
     syncCartOnLogin();
     router.push('/');
   };

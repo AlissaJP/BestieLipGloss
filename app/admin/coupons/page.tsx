@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, CheckCircle, XCircle, Tag, LogOut } from 'lucide-react';
 import { useAdminStore } from '@/store/adminStore';
+import { useLanguageStore } from '@/store/languageStore';
+import { translations } from '@/lib/translations';
 import type { CodePromo } from '@/lib/promoStore';
 
 const inputCls = 'w-full font-lato text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-primary bg-white';
@@ -11,6 +13,10 @@ const inputCls = 'w-full font-lato text-sm border border-gray-200 rounded-xl px-
 export default function AdminCouponsPage() {
   const router = useRouter();
   const { logout } = useAdminStore();
+  const { lang } = useLanguageStore();
+  const tc = translations[lang].admin.coupons;
+  const ta = translations[lang].admin;
+
   const [coupons, setCoupons] = useState<CodePromo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -34,7 +40,7 @@ export default function AdminCouponsPage() {
 
   const handleCreate = async () => {
     if (!form.code.trim() || !form.reduction_pct) {
-      setError('Code et valeur de réduction requis.');
+      setError(tc.errorRequired);
       return;
     }
     setSaving(true);
@@ -51,12 +57,12 @@ export default function AdminCouponsPage() {
             : parseFloat(form.reduction_pct),
           date_expiration: form.date_expiration || null,
           nb_utilisations_max: form.nb_utilisations_max ? parseInt(form.nb_utilisations_max) : null,
-          montant_minimum: form.montant_minimum ? parseFloat(form.montant_minimum) * 130 : null, // convertit USD→HTG
+          montant_minimum: form.montant_minimum ? parseFloat(form.montant_minimum) * 130 : null,
           actif: true,
         }),
       });
       const data = await res.json() as { promo?: CodePromo; error?: string };
-      if (!res.ok) { setError(data.error ?? 'Erreur.'); return; }
+      if (!res.ok) { setError(data.error ?? tc.errorRequired); return; }
       if (data.promo) setCoupons((prev) => [...prev, data.promo!]);
       setShowForm(false);
       setForm({ code: '', type_reduction: 'pct', reduction_pct: '', date_expiration: '', nb_utilisations_max: '', montant_minimum: '' });
@@ -75,7 +81,7 @@ export default function AdminCouponsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Supprimer ce coupon ?')) return;
+    if (!confirm(tc.confirmDelete)) return;
     await fetch('/api/promo/admin', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -98,40 +104,38 @@ export default function AdminCouponsPage() {
             onClick={() => router.push('/admin/dashboard')}
             className="inline-flex items-center gap-2 font-lato text-sm text-gray-500 hover:text-primary transition-colors"
           >
-            <ArrowLeft size={15} />Retour au dashboard
+            <ArrowLeft size={15} />{tc.backDashboard}
           </button>
           <button
             onClick={handleLogout}
             className="inline-flex items-center gap-2 font-lato text-sm text-gray-400 hover:text-red-500 transition-colors px-3 py-2 rounded-xl hover:bg-red-50"
           >
-            <LogOut size={14} />Déconnexion
+            <LogOut size={14} />{ta.logout}
           </button>
         </div>
 
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-playfair font-bold text-2xl text-gray-800 flex items-center gap-2">
-              <Tag size={20} className="text-primary" />Gestion des coupons
+              <Tag size={20} className="text-primary" />{tc.title}
             </h1>
-            <p className="font-lato text-sm text-gray-500 mt-0.5">
-              Seul l'admin peut créer des coupons. Les clients peuvent les ajouter à leur compte depuis Mon Compte.
-            </p>
+            <p className="font-lato text-sm text-gray-500 mt-0.5">{tc.subtitle}</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center gap-2 bg-primary hover:bg-pink-400 text-white font-lato text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
           >
-            <Plus size={15} />Nouveau coupon
+            <Plus size={15} />{tc.newBtn}
           </button>
         </div>
 
         {loading ? (
-          <div className="text-center py-16 font-lato text-gray-400">Chargement…</div>
+          <div className="text-center py-16 font-lato text-gray-400">{tc.loading}</div>
         ) : (
           <div className="space-y-3">
             {coupons.length === 0 && (
               <div className="bg-white rounded-2xl border border-pink-100 p-10 text-center">
-                <p className="font-lato text-gray-400 text-sm">Aucun coupon. Cliquez sur "Nouveau coupon" pour en créer un.</p>
+                <p className="font-lato text-gray-400 text-sm">{tc.empty}</p>
               </div>
             )}
             {coupons.map((c) => (
@@ -140,26 +144,26 @@ export default function AdminCouponsPage() {
                   <div className="flex items-center gap-3 flex-wrap mb-1">
                     <span className="font-playfair font-bold text-gray-800 text-base tracking-wider">{c.code}</span>
                     <span className={`font-lato text-xs font-semibold px-2.5 py-0.5 rounded-full ${c.actif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {c.actif ? 'Actif' : 'Inactif'}
+                      {c.actif ? tc.statusActive : tc.statusInactive}
                     </span>
                   </div>
                   <div className="font-lato text-sm text-gray-600 space-y-0.5">
                     <p>
-                      Réduction : <strong className="text-primary">
+                      {tc.labelReduction} <strong className="text-primary">
                         {c.type_reduction === 'pct'
                           ? `${Math.round(c.reduction_pct * 100)} %`
                           : `$${(c.reduction_pct / 130).toFixed(2)}`}
                       </strong>
                     </p>
                     {c.montant_minimum != null && (
-                      <p className="text-gray-400 text-xs">Commande minimum : ${(c.montant_minimum / 130).toFixed(2)}</p>
+                      <p className="text-gray-400 text-xs">{tc.labelMinOrder} ${(c.montant_minimum / 130).toFixed(2)}</p>
                     )}
                     {c.date_expiration && (
-                      <p className="text-gray-400 text-xs">Expire le {new Date(c.date_expiration).toLocaleDateString('fr-FR')}</p>
+                      <p className="text-gray-400 text-xs">{tc.labelExpires} {new Date(c.date_expiration).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'fr-FR')}</p>
                     )}
                     {c.nb_utilisations_max != null && (
                       <p className="text-gray-400 text-xs">
-                        Utilisations : {c.nb_utilisations_actuel} / {c.nb_utilisations_max}
+                        {tc.labelUsage} {c.nb_utilisations_actuel} / {c.nb_utilisations_max}
                       </p>
                     )}
                   </div>
@@ -168,14 +172,14 @@ export default function AdminCouponsPage() {
                   <button
                     onClick={() => handleToggle(c.id)}
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${c.actif ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                    title={c.actif ? 'Désactiver' : 'Activer'}
+                    title={c.actif ? tc.disableTitle : tc.enableTitle}
                   >
                     {c.actif ? <CheckCircle size={16} /> : <XCircle size={16} />}
                   </button>
                   <button
                     onClick={() => handleDelete(c.id)}
                     className="w-9 h-9 bg-red-50 text-red-400 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors"
-                    title="Supprimer"
+                    title={tc.deleteTitle}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -189,10 +193,10 @@ export default function AdminCouponsPage() {
         {showForm && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-              <h2 className="font-playfair font-bold text-lg text-gray-800 mb-5">Nouveau coupon</h2>
+              <h2 className="font-playfair font-bold text-lg text-gray-800 mb-5">{tc.formTitle}</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">Code *</label>
+                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">{tc.fieldCode} *</label>
                   <input
                     value={form.code}
                     onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
@@ -202,19 +206,19 @@ export default function AdminCouponsPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">Type de réduction *</label>
+                  <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">{tc.fieldType} *</label>
                   <select
                     value={form.type_reduction}
                     onChange={(e) => setForm((f) => ({ ...f, type_reduction: e.target.value as 'pct' | 'fixe' }))}
                     className={inputCls}
                   >
-                    <option value="pct">Pourcentage (%)</option>
-                    <option value="fixe">Montant fixe ($)</option>
+                    <option value="pct">{tc.typePct}</option>
+                    <option value="fixe">{tc.typeFixed}</option>
                   </select>
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Valeur * {form.type_reduction === 'pct' ? '(ex. 10 pour 10%)' : '(montant en $)'}
+                    {tc.fieldValue} * {form.type_reduction === 'pct' ? tc.valuePctHint : tc.valueFixedHint}
                   </label>
                   <input
                     type="number"
@@ -228,7 +232,7 @@ export default function AdminCouponsPage() {
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Commande minimum ($) <span className="text-gray-400 font-normal">(optionnel)</span>
+                    {tc.fieldMinOrder} <span className="text-gray-400 font-normal">{tc.optional}</span>
                   </label>
                   <input
                     type="number"
@@ -242,7 +246,7 @@ export default function AdminCouponsPage() {
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Limite d'utilisations <span className="text-gray-400 font-normal">(optionnel, vide = illimitée)</span>
+                    {tc.fieldMaxUses} <span className="text-gray-400 font-normal">{tc.maxUsesHint}</span>
                   </label>
                   <input
                     type="number"
@@ -255,7 +259,7 @@ export default function AdminCouponsPage() {
                 </div>
                 <div>
                   <label className="font-lato text-sm font-medium text-gray-700 block mb-1.5">
-                    Date d'expiration <span className="text-gray-400 font-normal">(optionnel)</span>
+                    {tc.fieldExpiry} <span className="text-gray-400 font-normal">{tc.optional}</span>
                   </label>
                   <input
                     type="date"
@@ -269,11 +273,11 @@ export default function AdminCouponsPage() {
               <div className="flex gap-3 mt-6">
                 <button onClick={() => { setShowForm(false); setError(''); }}
                   className="flex-1 border border-gray-200 text-gray-600 font-lato text-sm py-2.5 rounded-xl hover:border-gray-300 transition-colors">
-                  Annuler
+                  {tc.cancelBtn}
                 </button>
                 <button onClick={handleCreate} disabled={saving}
                   className="flex-1 bg-primary hover:bg-pink-400 disabled:opacity-50 text-white font-lato text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                  {saving ? 'Création…' : 'Créer le coupon'}
+                  {saving ? tc.saving : tc.saveBtn}
                 </button>
               </div>
             </div>
