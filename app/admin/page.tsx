@@ -28,17 +28,23 @@ export default function AdminLoginPage() {
     if (!username || !password) { setError(t.errorFillAll); return; }
     setLoading(true);
     setError('');
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      login();
-      router.push('/admin/dashboard');
-    } else {
-      setError(t.errorInvalid);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.ok) {
+        login();
+        router.push('/admin/dashboard');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? t.errorInvalid);
+      }
+    } catch {
+      setError('Erreur de connexion. Vérifie que le serveur est démarré.');
+    } finally {
+      setLoading(false);
     }
   };
 
