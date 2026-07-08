@@ -315,7 +315,7 @@ export default function Header() {
                         <div className="px-4 py-3.5 bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100 flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-lg flex-shrink-0 select-none">👩🏾</div>
                           <div className="min-w-0">
-                            <p className="font-playfair font-semibold text-base text-gray-800 truncate">{user?.name}</p>
+                            <p className="font-playfair font-semibold text-base text-gray-800 truncate">{user?.pseudo || user?.prenom || user?.name}</p>
                             <p className="font-lato text-sm text-gray-400 truncate">{user?.email}</p>
                           </div>
                         </div>
@@ -435,7 +435,7 @@ export default function Header() {
                       <div className="flex items-center gap-3 py-3 border-b border-gray-50">
                         <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-lg select-none">👩🏾</div>
                         <div>
-                          <p className="font-lato text-sm font-semibold text-gray-800">{user?.name}</p>
+                          <p className="font-lato text-sm font-semibold text-gray-800">{user?.pseudo || user?.prenom || user?.name}</p>
                           <p className="font-lato text-xs text-gray-400">{user?.email}</p>
                         </div>
                       </div>

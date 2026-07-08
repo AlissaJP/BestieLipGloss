@@ -16,6 +16,19 @@ export default function StoreHydration() {
     useLanguageStore.persist.rehydrate();
     useFavoritesStore.persist.rehydrate();
     useOrdersStore.persist.rehydrate();
+
+    // Sync cross-tab : quand un autre onglet modifie localStorage,
+    // on rehydrate le store concerné pour que l'admin voit les nouvelles
+    // inscriptions/commandes sans avoir à rafraîchir la page.
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'bestie-auth-v1')      useAuthStore.persist.rehydrate();
+      if (e.key === 'bestie-orders-v1')    useOrdersStore.persist.rehydrate();
+      if (e.key === 'bestie-cart-v1')      useCartStore.persist.rehydrate();
+      if (e.key === 'bestie-favorites-v1') useFavoritesStore.persist.rehydrate();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
   return null;
 }
